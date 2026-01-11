@@ -1,0 +1,349 @@
+Skip to content
+Chat history
+
+
+
+You said:
+Here is a list of channel ideas in no particular order. Please rank them on how likely they are to be a successful youtube channel bringing in millions and millions of views, making thousands of dollars per month. Do not let the order I give them to you in sway you in any way. 
+
+1. Impossible Scenarios (Non-Horror Version)
+Each video explores a single impossible-but-grounded scenario and walks through the consequences.
+
+Examples:
+“What if humans stopped feeling boredom?”
+“What if no one could lie for 24 hours?”
+“What if pain stopped existing?”
+“What if everyone aged one year overnight?”
+
+Visuals:
+Abstract people, cities, symbols, repeating imagery
+Ease of visuals: ⭐⭐⭐⭐⭐
+Pipeline reuse: ~100%
+
+2. Disturbing Facts Explained as Stories
+Not lists. Not facts. Each video is one disturbing truth told as a short narrative.
+
+Examples:
+“The reason drowning doesn’t look like drowning”
+“Why your brain lies to you under stress”
+“What actually happens when people think they’re being watched”
+
+Key rule:
+Never “here are 5 facts”. Always one focused story.
+
+Visuals:
+Faces, shadows, crowds, symbolic motion
+Ease of visuals: ⭐⭐⭐⭐☆
+Pipeline reuse: ~90%
+
+3. True Near-Miss Disasters
+Stories about real disasters that almost happened — but didn’t.
+
+Examples:
+“The power outage that almost shut down a continent”
+“The software bug that nearly grounded every flight”
+“The phone call that prevented a catastrophe”
+
+Important:
+You never show technical details.
+You tell it like a thriller.
+
+Visuals:
+Storms, clocks, tension imagery
+Ease of visuals: ⭐⭐⭐⭐☆
+Pipeline reuse: ~85%
+
+4. Creepiest Things That Happened to Normal People
+Short, unsettling real-world incidents with no explanation.
+
+Examples:
+“A family kept hearing footsteps… from inside the walls”
+“A man received messages from his own number
+“A town heard the same sound every night”
+
+Visuals:
+Generic houses, rooms, night scenes
+Ease of visuals: ⭐⭐⭐⭐⭐
+Pipeline reuse: ~95%
+
+5. Psychological Experiments That Went Wrong
+Narrated breakdowns of famous or obscure experiments, framed as stories.
+
+Examples:
+“The experiment that permanently changed its subjects”
+“The test that proved people will obey almost anything”
+
+Key:
+Focus on human reaction, not procedure.
+
+Visuals:
+Rooms, faces, abstract lab imagery
+Ease of visuals: ⭐⭐⭐⭐☆
+Pipeline reuse: ~80%
+
+6. Strange Rules People Didn’t Know They Were Following
+Everyday human behaviors explained as invisible rules.
+
+Examples:
+“Why people freeze in crowds”
+“Why no one helps in emergencies”
+“Why silence makes people uncomfortable”
+
+Visuals:
+Crowds, motion, empty spaces
+Ease of visuals: ⭐⭐⭐⭐⭐
+Pipeline reuse: ~85%
+
+7. Long-Form Horror / Thriller Stories (Companion Channel)
+Compared to the existing horror shorts channel...
+Fewer images
+Longer static shots
+Much longer scripts
+Clear narrative checkpoints
+
+Can reuse Shorts as funnels
+
+Visuals:
+Slow, atmospheric, minimal
+Ease of visuals: ⭐⭐⭐⭐⭐
+Pipeline reuse: ~100%
+ChatGPT said:
+Below is a ranked list from most likely to least likely to become a mass-scale YouTube success (millions of views, consistent $1k–$10k+/month).
+Ranking is based on historical YouTube performance patterns, retention mechanics, shareability, algorithm friendliness, and your ability to execute at scale with automation.
+
+1. Creepiest Things That Happened to Normal People
+(Your #4)
+
+Why this wins
+
+Proven evergreen genre (AskReddit, MrBallen-adjacent, TikTok creepypasta)
+
+“This really happened” creates immediate curiosity + belief tension
+
+Extremely strong hook density
+
+Works exceptionally well in Shorts and long-form
+
+Algorithm strengths
+
+High swipe-stop
+
+Strong comments (“this happened to me”)
+
+Excellent rewatch/share behavior
+
+Risk
+
+Must avoid obvious fiction tone
+
+Requires steady sourcing or believable synthesis
+
+Verdict:
+Highest probability of multi-million view videos.
+This is your safest bet for scale.
+
+2. Disturbing Facts Explained as Stories
+(Your #2)
+
+Why it works
+
+Combines education + discomfort (very high retention)
+
+One-idea focus prevents fatigue
+
+Already validated across Shorts and TikTok
+
+Algorithm strengths
+
+Strong watch-through due to “I didn’t know this”
+
+High save rate
+
+Less saturation than list-based facts
+
+Risk
+
+Needs disciplined writing to avoid drifting into “fact list energy”
+
+Tone must stay grounded, not sensational
+
+Verdict:
+Extremely strong, slightly less viral than #1 but more durable long-term.
+
+3. Impossible Scenarios (Non-Horror)
+(Your #1)
+
+Why it works
+
+Infinite idea surface
+
+Zero sourcing risk
+
+Perfect for automation
+
+Clean, advertiser-friendly
+
+Algorithm strengths
+
+Excellent curiosity hooks
+
+Strong retention if consequences escalate properly
+
+Very scalable
+
+Why it’s not #1
+
+Less emotional than fear-based content
+
+Virality depends heavily on writing quality
+
+Fewer “share because it shocked me” moments
+
+Verdict:
+High ceiling, slightly lower hit rate per video.
+Best non-horror flagship channel.
+
+4. True Near-Miss Disasters
+(Your #3)
+
+Why it works
+
+Real-world stakes = strong tension
+
+Thriller framing is effective
+
+High credibility appeal
+
+Why it’s lower
+
+Narrower audience
+
+Requires factual accuracy (slows scale)
+
+Less rewatchable than psychology/horror
+
+Algorithm strengths
+
+Strong mid-video retention
+
+Good long-form performance
+
+Decent Shorts performance
+
+Verdict:
+Solid channel, fewer viral spikes but good consistency.
+
+5. Psychological Experiments That Went Wrong
+(Your #5)
+
+Why it works
+
+Human behavior always performs
+
+Strong moral/emotional angle
+
+Why it struggles
+
+Oversaturated topic
+
+Familiar experiments reduce novelty
+
+Easy to drift into documentary pacing
+
+Algorithm reality
+
+Performs well with strong editing
+
+Harder to stand out without a unique framing rule
+
+Verdict:
+Good secondary channel, not a breakout machine.
+
+6. Strange Rules People Didn’t Know They Were Following
+(Your #6)
+
+Why it’s interesting
+
+Relatable
+
+Easy to produce
+
+Clean visuals
+
+Why it underperforms
+
+Low emotional intensity
+
+Often feels “obvious” halfway through
+
+Lower share impulse
+
+Algorithm reality
+
+Fine for steady views
+
+Rarely explodes unless phrasing is exceptional
+
+Verdict:
+Reliable but unlikely to produce massive spikes.
+
+7. Long-Form Horror / Thriller Stories (Companion Channel)
+(Your #7)
+
+Why it’s last
+
+Long-form horror is crowded
+
+Slower growth
+
+Monetization lag
+
+Why you should still do it
+
+Shorts funnel strategy is smart
+
+High RPM potential over time
+
+Excellent brand depth
+
+Verdict:
+Strategically smart, but not a fast path to millions.
+
+Final Ranking (Most → Least Likely to Hit Massive Scale)
+Creepiest Things That Happened to Normal People
+
+Disturbing Facts Explained as Stories
+
+Impossible Scenarios (Non-Horror)
+
+True Near-Miss Disasters
+
+Psychological Experiments That Went Wrong
+
+Strange Rules People Didn’t Know They Were Following
+
+Long-Form Horror / Thriller Stories
+
+Blunt Strategic Take
+If your goal is money + speed + scale:
+
+Launch #1 and #2 first
+
+Use #3 as your clean, advertiser-safe backbone
+
+Treat #7 as a slow-burn asset, not a growth engine
+
+If you want, next step I can:
+
+Assign expected view ranges per video
+
+Map RPM expectations
+
+Or tell you which two to launch first and why
+
+
+
+
+No file chosenNo file chosen
+ChatGPT can make mistakes. Check important info.
+

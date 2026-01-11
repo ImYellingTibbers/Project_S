@@ -1,0 +1,38 @@
+# -------------------------
+# Python / virtualenv
+# -------------------------
+.venv/
+env/
+venv/
+
+__pycache__/
+*.pyc
+*.pyo
+
+# -------------------------
+# Runtime / generated data
+# -------------------------
+runs/
+**/runs/
+
+_tmp_queue/
+**/_tmp_queue/
+
+awaiting_upload/
+**/awaiting_upload/
+
+*.log
+*.db
+*.sqlite
+
+# -------------------------
+# Secrets / config
+# -------------------------
+.env
+secrets/
+
+# -------------------------
+# OS junk
+# -------------------------
+.DS_Store
+Thumbs.db
