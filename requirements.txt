@@ -1,11 +1,67 @@
-openai
-requests
+# ----------------------------
+# Core utilities
+# ----------------------------
 python-dotenv
-numpy
+requests
+aiohttp
+websockets
+psutil
+pyyaml
+tqdm
+rich
+
+# ----------------------------
+# Numeric / ML foundations
+# ----------------------------
+numpy<2.0
+scipy
+einops
 hdbscan
-opencv-python
-insightface
+
+# ----------------------------
+# PyTorch stack
+# ----------------------------
+torch
+torchvision
+torchaudio
+torchsde
+
+# ----------------------------
+# Model / inference tooling
+# ----------------------------
+safetensors
+huggingface-hub
+transformers
+accelerate
+openai
 openai-whisper
+insightface
+
+# ----------------------------
+# Image / video processing
+# ----------------------------
+pillow
+opencv-python
+imageio
+imageio-ffmpeg
+av
+kornia
+
+# ----------------------------
+# ComfyUI internals / helpers
+# ----------------------------
+comfy_kitchen
+omegaconf
+
+# ----------------------------
+# Google / YouTube APIs
+# ----------------------------
 google-api-python-client
 google-auth
 google-auth-oauthlib
+
+# ----------------------------
+# Server / API (used by ComfyUI)
+# ----------------------------
+fastapi
+uvicorn
