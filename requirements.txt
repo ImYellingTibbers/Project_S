@@ -65,3 +65,4 @@ google-auth-oauthlib
 # ----------------------------
 fastapi
 uvicorn
+comfyui-frontend-package
