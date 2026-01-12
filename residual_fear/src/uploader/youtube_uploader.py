@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -22,6 +23,7 @@ def load_json(path: Path) -> Dict[str, Any]:
 
 def get_authenticated_service(client_secrets_path: Path, token_path: Path):
     creds = None
+
     if token_path.exists():
         creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
 
@@ -29,12 +31,23 @@ def get_authenticated_service(client_secrets_path: Path, token_path: Path):
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets_path), SCOPES)
-            creds = flow.run_local_server(port=0)
+            flow = InstalledAppFlow.from_client_secrets_file(
+                str(client_secrets_path),
+                SCOPES,
+            )
+
+            # WSL-safe: start local server but DO NOT try to open browser
+            creds = flow.run_local_server(
+                host="localhost",
+                port=0,
+                open_browser=False
+            )
+
         token_path.parent.mkdir(parents=True, exist_ok=True)
         token_path.write_text(creds.to_json(), encoding="utf-8")
 
     return build("youtube", "v3", credentials=creds)
+
 
 
 def upload_video(youtube, video_path: Path, title: str, description: str, tags: List[str], language: str,

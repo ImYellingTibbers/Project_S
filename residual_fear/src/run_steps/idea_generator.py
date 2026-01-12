@@ -239,64 +239,50 @@ SUPERNATURAL CONTEXT (ALLOWED, NOT EXPLAINED):
 {seed.get("supernatural_allowance")}
 """.strip()
 
-
-
-
 PROMPT = """
-You are generating ideas for an automated YouTube horror shorts pipeline.
+You generate VIRAL-READY horror short ideas as FIRST-PERSON CONFESSIONAL HOOKS.
 
-Each idea MUST describe a situation that becomes more dangerous or irreversible if ignored.
-Safe or purely atmospheric anomalies are not acceptable.
+Your only job: output ideas that would stop a scroll in 1–2 seconds and feel like a real person admitting something dangerous is STILL happening.
 
-IDEAS SHOULD:
-- Begin with something already wrong
-- Imply that the narrator has already failed to stop the situation
-- Imply escalation over time
-- Make it clear that continuing the situation will cause harm, loss, or permanent change
-- Make it clear WHY the narrator can no longer stay silent about it
-- Imply that not telling anyone makes the situation worse
-- Each idea must include an implicit consequence for silence (If the narrator does nothing, something bad continues or worsens.)
+EACH IDEA MUST:
+- Be 1–2 sentences TOTAL.
+- Be written in first person ("I...").
+- Start INSIDE CONSEQUENCE (already losing sleep/safety/privacy/sanity/job/relationships).
+- Center on ONE dominant physical/sensory anomaly (one thing) that keeps violating normal life.
+- Include a concrete noun for the anomaly (hum, knocking, wet footprints, clicking, shadow, breathing glass, etc.).
+- Show escalation (closer, louder, more frequent, less avoidable).
+- Include ONE irreversible sacrifice the narrator has already made (stopped sleeping in bed, stopped showering at night, moved rooms, taped doors, quit a job, etc.).
+- End with an unresolved threat that is getting worse RIGHT NOW.
 
-IDEAS SHOULD NOT:
-- Be easily ignored without consequence
-- Be resolved by simply leaving or waiting
-- Exist only as a strange but harmless occurrence
+DO NOT:
+- Use discovery framing (avoid: "I noticed", "I found", "I discovered", "I came across", "one day I saw").
+- Add explanations, lore, rules, demon names, or “what it is.”
+- Add multiple unrelated anomalies. One idea = one anomaly.
+- Use mirrors/reflections as a plot device.
+- Use readable text as a plot device (notes, letters, signs, texts, emails, headlines).
+- Use crowds, lots of characters, or complicated action.
+- Mention filming, cameras, or social media.
+- Make it a joke.
 
-All ideas must be easy to visualize as a short sequence of AI-generated images.
-Prefer single locations, few characters, and simple physical evidence of something being wrong.
-Avoid crowds, complex action, abstract metaphors, or rapid scene changes.
+NARRATOR CONSTRAINT:
+- The narrator is a man. Do not make the primary subject a woman.
 
-IDEA CONSTRAINTS (NON-NEGOTIABLE):
+QUALITY BAR:
+- Not “spooky.” It must feel personally violating and escalating.
+- Strong hook language is allowed, but keep it natural—like someone talking, not writing prose.
 
-{IDEA_SEED_TEXT}
-
-IMPORTANT:
-- Do NOT mention filming, cameras, actors, budgets, or production cost.
-- Keep everything monetization-safe: implied horror only, no graphic gore, no sexual violence, no hate or harassment.
-- Supernatural explanations are allowed, but must remain implied or observed only.
-- Do NOT name demons, monsters, or lore explicitly.
-- Do NOT use mirrors or reflections as a plot device.
-- All ideas must feature a male main character.
-- Do NOT use women as the primary subject of the story.
-
-TASK:
-Generate 6–8 horror YouTube Shorts ideas.
-
-RULES:
-- Each idea must be 1–2 sentences.
-- Each idea must clearly imply escalation or consequence.
-- Avoid comedy.
-- Avoid readable text as a plot device.
-- Avoid relying on identical images or repeated static comparisons.
-- Return ONLY valid JSON. Do not include commentary, markdown, or explanations.
-- Return ONLY valid JSON in this exact format:
+OUTPUT (STRICT):
+Return ONLY valid JSON with 6–8 ideas in exactly this format:
 
 {{
   "ideas": [
-    {{"id": 1, "idea": "..."}}
+    {{"id": 1, "idea": "..." }}
   ]
 }}
-"""
+
+IDEA SEED (non-negotiable — your ideas must reflect this mechanism/escalation/consequence):
+{IDEA_SEED_TEXT}
+""".strip()
 
 def _mentions_female_protagonist(text: str) -> bool:
     """
@@ -373,7 +359,7 @@ def main() -> int:
             + PROMPT.format(IDEA_SEED_TEXT=seed_prompt_text)
         )
 
-        raw = call_llm(prompt)
+        raw = call_llm(prompt + "\n\nRespond ONLY with JSON. No explanations, no prose, no markdown, no notes.")
         try:
             model_json = json.loads(raw)
         except json.JSONDecodeError:

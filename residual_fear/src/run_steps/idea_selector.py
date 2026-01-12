@@ -84,89 +84,49 @@ def _contains_ellipsis(obj) -> bool:
 
 
 SELECTION_PROMPT = """
-You are selecting the strongest idea for a short-form horror video AND imagining the memory it would naturally come from.
+You are a ruthless YouTube Shorts producer. Your goal is to choose the ONE idea with the highest probability of going viral as a first-person horror confessional.
 
-Think like someone deciding what they are finally willing to confess.
-Choose the idea that feels most dangerous to ignore or leave unresolved when told in first person.
+Pick the idea that:
+- Stops the scroll instantly (threat is obvious in 1 sentence)
+- Feels real (a normal life is being violated, not “spooky vibes”)
+- Escalates fast (worsens through repeat violation)
+- Has a clear irreversible cost already paid (sleep/safety/privacy/sanity/routine)
+- Stays SIMPLE (one anomaly, one narrator, minimal setup)
+- Has strong “I need to comment/share this” energy (creepy, unfair, personal)
 
-PRIMARY SELECTION CRITERIA (MOST IMPORTANT):
-- The idea must already include a clear loss that has occurred before narration
-- The idea must imply that the narrator is ALREADY losing something (sleep, safety, access, control, ability to function)
-- The anomaly must actively interfere with normal life, not just be observed
-- The idea must make it clear that the narrator cannot simply ignore, delay, or leave the situation
-- The situation must be getting worse THROUGH REPEAT VIOLATION, not discovery
-- If the idea does not imply restriction, harm, or forced adaptation, it is invalid
+SCORING (1–10):
+Score each idea on viral potential using these signals:
+1) Immediate hook potential (could be the first line of the script)
+2) Personal violation + consequence (already losing something)
+3) Escalation speed + inevitability (can’t ignore, can’t outwait)
+4) Simplicity/clarity (one anomaly, instantly visualizable)
+5) Freshness (doesn’t feel generic)
 
-CRITICAL FRAMING RULE (NON-NEGOTIABLE):
-- The winning idea must be written as if the anomaly has already been happening before the narration begins
-- Do NOT select or rewrite ideas framed as first discovery (e.g. "discovers", "finds", "investigates", "comes across")
-- The idea must imply the narrator is already living inside the problem, not encountering it for the first time
-- If the idea sounds like an inciting incident instead of an ongoing violation, it is invalid
-- If the idea could be summarized as “this is where it started,” it is invalid
+WINNER REQUIREMENTS:
+- Do NOT rewrite ideas. Select as-is.
+- If an idea is unclear, slow, harmless, or “discovery framed,” score it low.
+- Prefer the idea that can end with a single devastating unresolved line.
 
-SECONDARY CRITERIA:
-- Believability when told as a calm recollection
-- Escalation through persistence, proximity, or consequence
-- Supernatural elements are allowed but must remain implied or observed only
+PREP STORY (winner only):
+Write EXACTLY 2 sentences, first-person, past tense, spoken/confessional.
 
-AVOID SELECTING IDEAS THAT:
-- Require cameras, recordings, screens, or footage to perceive the anomaly
-- Are strange but ultimately harmless
-- Can be solved by simply leaving, waiting, or ignoring the situation
-- Rely only on mood, atmosphere, or curiosity
-- Feel like anecdotes instead of confessions
-- Bundle multiple strange events instead of one escalating violation
-- Rely on thematic horror (identity, replacement) without a clear physical anchor
+Hard constraint: The prep_story must mention ONLY the single anomaly from the winner idea.
+- You must reuse the same anomaly noun from the winner idea (e.g., "knocking", "hum", "clicking").
+- Do NOT introduce any new objects or effects (no closets, lights, shadows, footprints, whispers, etc.) unless that exact element is already the anomaly in the winner idea.
+- Do NOT add a second anomaly.
 
-RULES:
-- Evaluate ideas independently (ignore order)
-- Must work as a 45–55 second first-person narration
-- Implied horror only (no gore, no lore, no explanations)
-- Avoid gimmicks or twists that require explanation
+Sentence rules:
+- Sentence 1 starts inside consequence (loss/restriction) and anchors the setting in one place (bedroom/hallway/apartment/etc).
+- Sentence 1 includes the irreversible change already made.
+- Sentence 2 ends with escalation (closer/louder/more frequent/less avoidable).
+- No explanations, no lore.
+- NEVER use "..." or the ellipsis character "…".
 
-For the winning idea:
-- Select the idea ONLY IF it is already framed as an ONGOING situation
-- Do NOT fix, rescue, or rewrite weak ideas
-- If an idea requires reframing to work, it is invalid
-- Avoid verbs like "discovers", "finds", "investigates", or "comes across"
-- Briefly explain WHY it works as a short horror story
-- Focus on stakes, escalation, and consequence
-- Provide a short prep story that feels like a memory the narrator is recalling
-- Avoid verbs like "finds", "discovers", "investigates"
-- The idea must feel like something that has been happening for a while
-
-CRITICAL CONSTRAINT:
-- Prefer ideas with ONE dominant physical anomaly.
-- If an idea introduces multiple unrelated anomalies (keys + doors + objects + identity), it is weaker.
-- The best idea can be summarized as: "One thing keeps happening, and it’s getting worse."
-
-PREP STORY RULES:
-- Exactly 2 sentences
-- First person, past tense
-- Conversational + confessional (sounds spoken), with understated dread (not purple prose)
-- Mention the location once
-- Name the ONE physical anomaly explicitly using a concrete noun
-- Include one quick human reaction (e.g., "I froze", "I laughed", "I told myself it was nothing")
-- Establish that the anomaly was already happening before the narration
-- End sentence 2 with an unresolved escalation (it persists / gets closer / happens again)
-- No resolution, no explanation
-- Do NOT introduce any other anomalies
-- NEVER use "..." or the ellipsis character "…" anywhere
-
-OUTPUT JSON ONLY:
-{
-  "scored": [
-    { "idea": "...", "score": 1-10, "reason": "one sentence" }
-  ],
-  "top_three": [
-    { "idea": "...", "reason": "one sentence" }
-  ],
-  "winner": {
-    "idea": "...",
-    "reason": "why this idea works as a story",
-    "prep_story": "2 sentence first-person memory seed"
-  }
-}
+OUTPUT:
+Return ONLY valid minified JSON with exactly these keys:
+- scored: list of objects {idea, score, reason}
+- top_three: list of 3 objects {idea, reason}
+- winner: object {idea, reason, prep_story}
 """.strip()
 
 
@@ -220,6 +180,12 @@ def main():
         )
 
     prep_story = selection["winner"].get("prep_story", "")
+    winner_raw = str(selection["winner"].get("idea", "")).strip()
+
+    if re.fullmatch(r"\d+", winner_raw):
+        idx = int(winner_raw) - 1
+        if 0 <= idx < len(shuffled):
+            selection["winner"]["idea"] = shuffled[idx]["idea"]
 
     out = {
         "schema": {"name": "idea_selector", "version": "0.6.1"},

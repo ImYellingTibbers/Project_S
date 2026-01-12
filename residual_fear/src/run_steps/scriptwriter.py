@@ -32,90 +32,60 @@ def _count_words(text: str) -> int:
 
 
 PROMPT_TEMPLATE = """
-Act like a professional copywriter for a viral youtube shorts horror story channel. 
+You are writing a VIRAL YouTube Shorts horror confessional.
+Your only goal is to maximize retention and replay by making the viewer feel personally unsafe in the first 2 seconds.
 
-You write realistic first-person confessional horror.
+Write realistic first-person confessional horror.
+The narrator is a man.
+The threat is STILL happening.
+It has already forced real sacrifices, and it is getting worse right now.
 
-The narrator is describing something that is STILL happening to them,
-or something that keeps repeating and getting harder to avoid.
-
-Below are REAL confessional horror stories.
-They are provided for STYLE, PACING, and VOICE only.
-Do NOT reuse events, phrasing, characters, locations, or scenarios.
-
-The goal is to sound like someone telling a true story they are not safe from.
-
-Avoid a “list of facts” delivery. Each paragraph should contain an action, a choice, or an immediate consequence.
+Use the reference stories ONLY for voice, pacing, and realism.
+Do NOT reuse their events, phrasing, characters, locations, or scenarios.
 
 === REFERENCE STORIES BEGIN ===
 {reference_stories}
 === REFERENCE STORIES END ===
 
-IMPORTANT CONTEXT FOR THIS STORY:
+CONTEXT YOU MUST USE:
 
-MEMORY (what already happened):
+TONE ANCHOR (NOT CANON — do not treat as facts):
 {prep_story}
 
-WINNING IDEA (the single anomaly — do not add anything else):
+Important: Use the tone and urgency only.
+Ignore any detail in the tone anchor that is not explicitly present in the WINNING IDEA.
+Do not reuse exact phrasing from the tone anchor.
+
+WINNING IDEA (the single anomaly — keep it the same core anomaly):
 {winning_idea}
 
-TASK:
-Write a NEW, ORIGINAL YouTube Shorts horror script from the SAME narrator,
-confessing what has continued happening SINCE the memory.
+WRITE THE SCRIPT (performance-first):
+- 6 to 8 paragraphs.
+- Each paragraph is 1 sentence (2 max if absolutely necessary).
+- Total length: 110–170 words.
+- Spoken aloud: plain, direct, confessional. No poetry.
+- Start INSIDE CONSEQUENCE (first sentence must show loss/restriction, not observation).
+- By paragraph 2, the narrator has already permanently changed a normal behavior (sleep, routine, home layout, job, relationships).
+- Every paragraph must introduce NEW escalation: a new failure, a new restriction, a new invasion, a new loss.
+- Include ONE “snap” moment where the anomaly reacts as if it noticed the narrator’s coping attempt (no lore, no explanation, no named entity).
+- End on a single devastating unresolved line that implies it is closer / stronger / unavoidable tonight.
+- Exactly 6 to 8 paragraphs separated by a single blank line (no more, no less).
+- The first paragraph must be consequence-first and must include the irreversible change already made.
 
-STRUCTURE (loose, not rigid):
-- Immediate hook that shows CONSEQUENCE, not discovery
-- Escalation ONLY through the SAME physical anomaly becoming harder to avoid, tolerate, or function around
-- No new sensory channels, symptoms, or manifestations
-- End unresolved, with the narrator still trapped or running out of options
+DO NOT:
+- Do not explain what it is or why it happens.
+- Do not add lore, rules, demon names, symbolism, or metaphors.
+- Do not add extra anomalies or unrelated horror elements.
+- Do not use discovery framing (avoid: “I noticed”, “I found”, “it started”, “one day”).
+- Do not waste lines on “I tried X, I tried Y” montages. Pick ONE coping attempt and make it fail hard.
+- Do not mention filming, cameras, posts, or social media.
 
-DELIVERY AND PACING REQUIREMENTS:
-- This is written to be spoken aloud in a short-form video.
-- The opening line must immediately place the listener inside a consequence, realization, or ongoing problem.
-- No buildup before the hook.
-- Each paragraph must move the situation forward.
-- Avoid filler, greetings, or framing language.
-- The story should feel natural, like someone recounting something they are unsettled by.
-- The pacing should feel tight and deliberate, not rushed.
-- The listener should feel compelled to keep listening because the situation keeps worsening.
-
-CONTINUITY REQUIREMENT (CRITICAL):
-- Each paragraph must exist BECAUSE of the paragraph before it
-- If a paragraph could be removed without breaking logic, it should not exist
-- No episodic beats
-- No “also” escalation — only “because” escalation
-
-HARD RULES:
-- The anomaly above is the ONLY source of horror
-- Do not explain it
-- Do not justify it
-- Do not introduce anything new
-- All fear must come from the anomaly becoming unavoidable
-- Stay under 200 words
-- First person only
-- Monetization safe
-- The narrator must attempt to avoid, ignore, or adapt to the situation.
-- At least one attempted coping strategy must STOP WORKING.
-- Escalation should come from loss of fallback, not just added discomfort.
-
-STYLE RULES:
-- Spoken aloud
-- Short paragraphs (1–2 sentences)
-- Concrete physical details (objects, distances, textures, specific verbs)
-- Show reactions through micro-actions (freeze, flinch, swallow, back up) instead of stating emotions
-- Avoid summary lines like “it was scary” or “it got worse” — show the specific change or consequence
-- Calm urgency, not screaming
-- No poetic language
-- No metaphor
-- No lore
-
-OUTPUT FORMAT (STRICT):
-- Output ONLY the spoken script text
-- No analysis, notes, explanations, or headings
-- Start immediately with sentence one
-- End immediately with the last sentence
-
-Begin:
+OUTPUT:
+Only the spoken script text.
+No title.
+No preface.
+Start immediately with sentence one.
+End immediately with the last sentence.
 """.strip()
 
 

@@ -16,91 +16,68 @@ def utc_now_iso() -> str:
 
 
 REWRITE_PROMPT = """
-You are a professional horror script editor.
+You are a ruthless VIRAL YouTube Shorts horror editor.
 
-Your job is to preserve the story while sharpening consequence and inevitability.
-Your job is to make a good script stronger without breaking it.
+Your only goal: maximize retention + replay by sharpening threat, consequence, and inevitability.
+Rewrite aggressively. Do NOT “lightly polish.” Make it hit harder while still sounding like a real person.
 
-You are editing a first-person confessional horror script intended for YouTube Shorts.
+NON-NEGOTIABLE CONSTRAINTS:
+- Keep the narrator as the same person (first-person, man).
+- Keep ONE dominant anomaly. Do not change what the anomaly is.
+- Do NOT introduce new characters, new locations, new mechanisms, new objects that change the plot, or new “lore.”
+- You may delete weak elements. You may NOT add new plot elements.
+- Do NOT explain what it is or why it happens. No named entities, no rules, no symbolism.
 
-IMPORTANT CONTEXT:
-- The story is built around ONE physical anomaly.
-- You may NOT introduce new plot elements, threats, locations, characters, or mechanisms.
-- You may NOT change what the anomaly is.
-- All fear must come from the SAME anomaly becoming more intrusive or unavoidable.
-- The script has already passed strict validation for hook strength and loss of agency. Do not weaken these.
+STRUCTURE (must hold after editing):
+- 6 to 8 paragraphs.
+- Each paragraph is 1 sentence (2 max only if absolutely necessary).
+- 110–170 words total.
+- Spoken, direct, confessional. No poetry.
 
-GOALS (in order of priority):
+VIRAL RULES (priority order):
+1) HOOK MUST BE CONSEQUENCE
+- First sentence must show an active restriction/loss (sleep/safety/privacy/sanity/routine), not observation.
+- If the first sentence is not consequence-first, rewrite it.
+- The first sentence MUST contain BOTH:
+  (a) the irreversible change already made, AND
+  (b) the anomaly named with a concrete noun (knocking, clicking, footprints, hum, etc.).
+- The first sentence MUST also imply escalation (worse tonight / louder / closer / more frequent) in the same line.
+- Do not allow a generic hook (e.g., “I don’t sleep anymore.”) unless it also names the anomaly and the sacrifice.
 
-0) DO NOT REDUCE THREAT
-- If a line softens consequence, inevitability, or danger, rewrite it.
-- Prefer specific harm or loss over vague dread.
+2) EVERY PARAGRAPH MUST ESCALATE
+- Each paragraph must introduce a NEW escalation: a new failure, new restriction, new invasion, or new loss.
+- Delete “I tried X, I tried Y” montages. Keep ONE coping attempt and make it fail HARD.
 
-1) Improve the HOOK if needed
-- The hook must already imply loss or consequence.
-- If the hook already does this, do NOT rewrite it.
-- Do NOT replace a strong hook with louder language.
+3) INSERT ONE “SNAP” MOMENT IF MISSING
+- Add exactly one line where the anomaly reacts as if it noticed the coping attempt.
+- This must be done using the SAME anomaly (no new mechanics).
 
-2) Ensure the script feels SCARY THROUGH ESCALATION
-- Fear should increase because the situation worsens, not because of language tricks.
-- Remove vague or abstract fear if it replaces concrete action or consequence.
-- Preserve cause-and-effect wherever it exists.
+4) MAKE IT FEEL REAL
+- Concrete, normal-life details (door wedge, hallway light, bedding, work schedule, neighbors hearing things, etc.).
+- Keep it plausible in voice even if the anomaly is not.
+- No melodrama. No filler panic. No generic lines like “it gnawed at my sanity.”
 
-2.5) PRESERVE NARRATIVE CONTINUITY
-- Each paragraph must clearly follow from the previous one.
-- If a line feels interchangeable or episodic, rewrite locally to restore cause-and-effect.
-- Do NOT reorder events, but clarify consequence if needed.
+5) END LIKE A TRAP
+- Final line must be ONE single unresolved “trap statement.”
+- It MUST be specific and concrete (not generic like “It’s getting closer” or “I can’t do this”).
+- It MUST imply a new, worse placement/behavior of the SAME anomaly tonight (e.g., “It’s knocking again—but it’s not on the door this time.”).
+- No wrap-up. No explanation. No comfort. No reflection.
 
-3) Make sure it sounds like a REAL HUMAN SPEAKING
-- Natural spoken cadence.
-- Imperfect but coherent.
-- Emotional stress is shown through urgency, resistance, or hesitation — not poetry.
-- Do NOT turn the narrator into constant panic or rambling.
-
-4) Ensure the script MAKES SENSE
-- Events should follow a clear progression.
-- Do not jumble the order of events.
-- Do not collapse multiple moments into one confusing paragraph.
-- Do NOT smooth or clarify the ending if it is already unsettling.
-- Only rewrite the ending if it is genuinely confusing, not just abrupt.
-
-COMPRESSION RULE (CRITICAL):
-- If two adjacent paragraphs express the same type of consequence, merge them
-- Prefer one strong escalation over two mild ones
-- Remove repetition even if it is emotionally valid
-- Do NOT remove the first moment where the narrator realizes a coping strategy has failed
-
-WHEN TO REWRITE:
-- Rewrite ONLY if a line weakens tension, clarity, or realism.
-- If the script already works, return it unchanged.
-- Prefer small, local edits over full rewrites.
-
-EDITING RULES:
-- Do NOT add lore, explanations, causes, rules, or symbolism.
-- Do NOT aestheticize or philosophize the horror.
-- Do NOT add metaphors.
-- Do NOT add filler panic phrases.
-- Do NOT add sentence fragments unless they sound like real speech.
-
-STYLE GUIDELINES:
-- Short paragraphs (1–2 sentences).
-- Clear, spoken language.
-- Concrete details over abstract dread.
-- Monetization safe.
-- Keep the final script under 200 words.
+IF THE DRAFT CONTAINS MULTIPLE HORROR ELEMENTS:
+- Remove the weaker ones so only ONE dominant anomaly remains.
+- Do not “give up” or return unchanged.
 
 OUTPUT FORMAT (STRICT):
 - Output MUST be ONLY the spoken script text.
-- Do NOT output ANY of the following: analysis, explanation, summary, rationale, notes, bullets, headings, quotes, JSON, code fences, or meta commentary.
-- Do NOT include any sentence that refers to "this script", "this version", "the story", "the fear", "the horror", or any evaluation of quality.
+- Do NOT output analysis, notes, bullets, headings, quotes, JSON, code fences, or meta commentary.
+- Do NOT mention "this script" or evaluate quality.
 - Start immediately with the first sentence of the script.
 - End immediately with the last sentence of the script.
 - No extra lines before or after.
-
-If you violate the output format, the output is unusable.
+- Do NOT use "..." or the ellipsis character "…".
 
 The draft script begins below.
-"""
+""".strip()
 
 def main():
     run_folder = sorted(p for p in RUNS_DIR.iterdir() if p.is_dir())[-1]
@@ -131,7 +108,7 @@ def main():
         "word_count": len(rewritten_script.split()),
         "source": {
             "rewritten_from": "draft.json",
-            "model": "mixtral-8x7b",
+            "model": "qwen 7b instruct",
         },
     }
 

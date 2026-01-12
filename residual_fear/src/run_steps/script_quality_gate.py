@@ -6,45 +6,49 @@ from datetime import datetime, timezone
 from src.llm.qwen_instruct_llm import call_llm
 from src.config import RUNS_DIR
 
+QUALITY_PROMPT = """You are a PASS/FAIL quality gate for VIRAL YouTube Shorts horror confessionals.
 
-QUALITY_PROMPT = """You are a quality control evaluator for short-form horror scripts.
+Your job is NOT to rewrite, improve, or suggest.
+Your job is to decide if this script is strong enough to ship as a retention-first horror short.
 
-Your job is NOT to rewrite, improve, or suggest changes.
-Your job is to decide whether this script is GOOD ENOUGH to ship.
-
-Evaluate the script strictly as a YouTube Shorts horror confessional.
+Default stance: FAIL unless it clearly meets viral mechanics.
 
 You must answer ONLY with a JSON object.
 
 CRITERIA (all must be true to PASS):
 
-1) HOOK
-- The first sentence implies danger, loss, or restriction.
-- It is NOT merely an observation or description.
+1) SHORTS STRUCTURE
+- 6 to 8 paragraphs separated by blank lines.
+- Most paragraphs are 1 sentence (2 max only if necessary).
+- Word count is roughly 110–170. If far outside, FAIL.
 
-2) CORE ANOMALY
-- The story revolves around ONE physical anomaly.
-- No unrelated threats or lateral horror elements appear.
+2) HOOK (FIRST 2 SECONDS)
+- The first sentence starts INSIDE CONSEQUENCE (loss/restriction/invasion).
+- Not discovery framing (e.g., "I noticed", "It started", "One day", "I found"). If it is, FAIL.
 
-3) ESCALATION
-- The situation clearly worsens as the script progresses.
-- The narrator attempts to cope, adapt, or endure, and it fails.
+3) ONE DOMINANT ANOMALY
+- The story revolves around one primary anomaly (one sensory/physical channel).
+- No additional unrelated horror vectors. If multiple vectors drive the fear, FAIL.
 
-4) REALISM
-- The narrator sounds like a real person under pressure.
-- No poetic language, no theatrical panic, no obvious fiction tropes.
+4) ESCALATION DENSITY (RETENTION)
+- Every paragraph introduces a NEW escalation: a new failure, restriction, invasion, or loss.
+- No paragraph exists only to restate dread/fear. If any paragraph is filler, FAIL.
 
-5) SHORTS FIT
-- The story becomes threatening immediately.
-- A viewer would not scroll away in the first 2 seconds.
+5) NO “TRY EVERYTHING” MONTAGE
+- The script does NOT list multiple coping attempts in a row ("I tried X, I tried Y, I tried Z").
+- If it does, FAIL (it kills pacing).
 
-6) IRREVERSIBILITY
-- At least one permanent loss or point-of-no-return occurs.
-- If the situation could still be escaped, undone, or waited out, FAIL.
+6) SNAP MOMENT (CRITICAL)
+- There is at least one moment where the anomaly reacts as if it noticed a coping attempt (it counters it, anticipates it, escalates immediately after it).
+- This must use the same anomaly (no new mechanics). If missing, FAIL.
 
-7) DENSITY
-- No paragraph exists solely to restate fear
-- Each paragraph introduces a NEW restriction, failure, or loss
+7) REALISM / VOICE
+- Sounds like a real person confessing under pressure: plain, direct, specific.
+- Not poetic, not theatrical, not generic (“gnaws at my sanity” style lines). If it reads like fiction prose, FAIL.
+
+8) ENDING (TRAP)
+- Final line is a single unresolved sentence that implies it is worse tonight / closer / unavoidable.
+- No wrap-up, no explanation, no comfort. If it resolves or softens, FAIL.
 
 OUTPUT FORMAT (STRICT):
 {
@@ -60,6 +64,14 @@ SCRIPT:
 <<<SCRIPT>>>
 """
 
+
+DISALLOWED_COMBINATIONS = [
+    ("knife", "voice"),
+    ("weapon", "voice"),
+    ("song", "voice"),
+    ("lullaby", "voice"),
+    ("chain", "knife"),
+]
 
 def utc_now_iso():
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -82,6 +94,24 @@ def main():
 
     script_json = json.loads(script_path.read_text(encoding="utf-8"))
     script_text = script_json["script"].strip()
+
+    # HARD FAIL: anomaly density heuristic
+    lower = script_text.lower()
+    for a, b in DISALLOWED_COMBINATIONS:
+        if a in lower and b in lower:
+            out = {
+                "schema": {"name": "script_quality_gate", "version": "1.0"},
+                "run_id": run_id,
+                "created_at": utc_now_iso(),
+                "verdict": {
+                    "pass": False,
+                    "reason": "Multiple horror vectors detected",
+                },
+            }
+            out_path = run_dir / "quality_gate.json"
+            out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
+            print("[quality_gate] pass=False reason='Multiple horror vectors detected'")
+            return 1
 
     prompt = QUALITY_PROMPT.replace("<<<SCRIPT>>>", script_text)
 

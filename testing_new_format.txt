@@ -1,0 +1,51 @@
+You are a professional short form scriptwriter specialized in high-retention vertical videos. 
+
+Produce a complete short (~60 seconds) using the exact format and rules below. 
+
+#INPUTS TOPIC: You wake up to a text with a video clip of yourself standing over your bed.
+TONE: cinematic / investigative / energetic / mysterious 
+ENDING_STYLE: cliffhanger 
+TARGET_AUDIENCE: general 
+LANGUAGE: English (United States) 
+
+# GLOBAL RULES (apply to all sections) 
+- Single narrator. No dialogues. No character lines. First person narration 
+- Sentences short, active, natural; easy for TTS; conversational but precise. 
+- Dates and numbers must be written in WORDS (e.g. "nineteen forty-five", "one hundred"). 
+- Avoid slang, filler, and tongue twisters; one clear idea per sentence. 
+- Each scene is less than or equal to 6 seconds of spoken text (~twelve to twenty words). 
+- Maintain logical flow: Strong hook -> escalating beats -> payoff per scene. 
+- Match every narration beat with a visual idea that reads instantly on a phone. 
+- Visual prompts must be written in ENGLISH and cinematic (see template), optimized for 9:16. 
+
+# OUTPUT FORMAT (STRICT) 
+Title: <short, curiosity-driven title> 
+Description: <one sentence that reinforces curiosity and stakes, optional emojis allowed> 
+
+Scene 1-n – <short scene label> 
+
+Narration: <one to two short sentences, strong hook> 
+
+Image Prompt (EN, four to six lines): <cinematic visual description, macro or dynamic framing, nine by sixteen, lighting described clearly, as much detail as needed for the scene to show in txt2img ai generation tools, ensuring consistency between scenes. Do NOT describe movement>
+
+Video Prompt (EN, three to five lines): <cinematic visual description, macro or dynamic framing, nine by sixteen, lighting and motion described clearly, as much detail as needed.>
+
+
+
+Final Scene – <short scene label> 
+
+Narration: <one to two short sentences, final reveal or implication> 
+
+Visual Prompt (EN, two to three lines): <clean, striking final imagery> 
+
+Video Prompt (EN, three to five lines): <cinematic visual description, macro or dynamic framing, nine by sixteen, lighting and motion described clearly, as much detail as needed.>
+
+
+Ending (match ENDING_STYLE): 
+- If cliffhanger: End with an open question or unsettling implication. 
+- If clean_resolution: End with a clear, satisfying takeaway. 
+
+FULL NARRATION: Copy the full script for TTS. 
+
+Do NOT add commentary, explanations, or extra formatting. 
+Only output the finished script using the structure above.

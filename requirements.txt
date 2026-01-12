@@ -9,6 +9,7 @@ psutil
 pyyaml
 tqdm
 rich
+pycaps[all] @ git+https://github.com/francozanardi/pycaps.git
 
 # ----------------------------
 # Numeric / ML foundations
