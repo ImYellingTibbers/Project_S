@@ -96,6 +96,9 @@ BANNED_TERMS = [
     "blood spray",
     "torture",
     "sexual assault",
+    
+    # Oversaturated    
+    "smiling", "grinning", "wide eyes", "uncanny", "entity", "glitch", "backrooms", "liminal", "skinwalker"
 ]
 
 # Optional: normalize common variants before matching
@@ -253,6 +256,7 @@ EACH IDEA MUST:
 - Show escalation (closer, louder, more frequent, less avoidable).
 - Include ONE irreversible sacrifice the narrator has already made (stopped sleeping in bed, stopped showering at night, moved rooms, taped doors, quit a job, etc.).
 - End with an unresolved threat that is getting worse RIGHT NOW.
+- Focus the escalation on daily micro-routines: brushing teeth, checking the baby monitor, charging a phone, or looking through a peephole. The more 'boring' the activity, the more 'viral' the violation feels when the anomaly interferes.
 
 DO NOT:
 - Use discovery framing (avoid: "I noticed", "I found", "I discovered", "I came across", "one day I saw").

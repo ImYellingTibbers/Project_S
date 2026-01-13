@@ -38,9 +38,7 @@ VIRAL RULES (priority order):
 1) HOOK MUST BE CONSEQUENCE
 - First sentence must show an active restriction/loss (sleep/safety/privacy/sanity/routine), not observation.
 - If the first sentence is not consequence-first, rewrite it.
-- The first sentence MUST contain BOTH:
-  (a) the irreversible change already made, AND
-  (b) the anomaly named with a concrete noun (knocking, clicking, footprints, hum, etc.).
+- The first sentence MUST be under 15 words and focus entirely on the irreversible loss to create immediate empathy/dread. Sentence 2 must then name the anomaly and the escalation.
 - The first sentence MUST also imply escalation (worse tonight / louder / closer / more frequent) in the same line.
 - Do not allow a generic hook (e.g., “I don’t sleep anymore.”) unless it also names the anomaly and the sacrifice.
 
@@ -48,9 +46,7 @@ VIRAL RULES (priority order):
 - Each paragraph must introduce a NEW escalation: a new failure, new restriction, new invasion, or new loss.
 - Delete “I tried X, I tried Y” montages. Keep ONE coping attempt and make it fail HARD.
 
-3) INSERT ONE “SNAP” MOMENT IF MISSING
-- Add exactly one line where the anomaly reacts as if it noticed the coping attempt.
-- This must be done using the SAME anomaly (no new mechanics).
+3) INSERT ONE “SNAP” MOMENT: The anomaly must react to the narrator's coping attempt in a way that is audibly or visually 'impossible' (e.g., if the narrator moved to the basement to avoid the clicking, the clicking should now be coming from inside his own chest or the phone in his hand).
 
 4) MAKE IT FEEL REAL
 - Concrete, normal-life details (door wedge, hallway light, bedding, work schedule, neighbors hearing things, etc.).

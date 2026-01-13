@@ -61,6 +61,7 @@ WINNING IDEA (the single anomaly — keep it the same core anomaly):
 
 WRITE THE SCRIPT (performance-first):
 - 6 to 8 paragraphs.
+- Paragraph 4 must be a 'Pattern Interrupt': a sentence under 5 words that resets the tension (e.g., 'Then it stopped.' or 'I was wrong.')
 - Each paragraph is 1 sentence (2 max if absolutely necessary).
 - Total length: 110–170 words.
 - Spoken aloud: plain, direct, confessional. No poetry.
@@ -71,6 +72,7 @@ WRITE THE SCRIPT (performance-first):
 - End on a single devastating unresolved line that implies it is closer / stronger / unavoidable tonight.
 - Exactly 6 to 8 paragraphs separated by a single blank line (no more, no less).
 - The first paragraph must be consequence-first and must include the irreversible change already made.
+- Use specific, low-budget, high-impact visuals.
 
 DO NOT:
 - Do not explain what it is or why it happens.

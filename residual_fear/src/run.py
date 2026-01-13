@@ -110,7 +110,12 @@ STEP_5_VO_GENERATOR = {
     "script": "src/run_steps/vo_generator.py",
 }
 
-STEP_6_IMAGE_PROMPT_PLANNER = {
+STEP_6_STORYBOARD_CREATOR = {
+    "label": "Step 6 - Storyboard Creator",
+    "script": "src/run_steps/storyboard_creator.py",
+}
+
+STEP_6B_IMAGE_PROMPT_PLANNER = {
     "label": "Step 6 - Image prompt planner",
     "script": "src/run_steps/image_prompt_planner.py",
 }
@@ -173,15 +178,16 @@ def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
         STEP_4_SCRIPT_EDITOR,
         STEP_4B_SCRIPT_QUALITY_GATE,
         STEP_5_VO_GENERATOR,
-        STEP_6_IMAGE_PROMPT_PLANNER,
-        STEP_7_METADATA_GENERATOR,
-        STEP_8_IMAGE_GENERATOR,
-        STEP_9_TIMING_PLANNER,
-        STEP_10_VIDEO_ASSEMBLER,
-        STEP_10B_ADD_CAPTIONS,
-        STEP_11_INGEST_RUN,
-        STEP_11B_APPEND_CTA,
-        STEP_12_QUEUE_UPLOAD,
+        STEP_6_STORYBOARD_CREATOR,
+        # STEP_6B_IMAGE_PROMPT_PLANNER,
+        # STEP_7_METADATA_GENERATOR,
+        # STEP_8_IMAGE_GENERATOR,
+        # STEP_9_TIMING_PLANNER,
+        # STEP_10_VIDEO_ASSEMBLER,
+        # STEP_10B_ADD_CAPTIONS,
+        # STEP_11_INGEST_RUN,
+        # STEP_11B_APPEND_CTA,
+        # STEP_12_QUEUE_UPLOAD,
     ]
 
 
