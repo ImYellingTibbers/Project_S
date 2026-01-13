@@ -50,70 +50,92 @@ Think in BROAD TERMS ONLY.
 The script informs tone and category, not specifics.
 
 --------------------------------
-TITLE RULES (HOOK-BASED)
+TITLE RULES (SCROLL-STOPPING)
 --------------------------------
-- 28–45 characters
-- Statement, not a question
-- Broad hook based on the core situation
-- First-person phrasing preferred
-- NO specific objects, locations, or events
-- NO metaphors
-- NO emojis
-- NO genre words (horror, scary, spooky, paranormal)
+- 30–50 characters (optimize for Shorts truncation)
+- First-person confessional
+- Explicit fear state OR threat (being watched, followed, trapped, hunted)
+- ONE dominant fear keyword that maps to known horror clusters
+- Prefer phrases commonly used in viral horror titles.
+- Avoid poetic abstraction when a concrete fear phrase exists.
+- Genre words allowed if natural
+- When the threat is unclear, prefer “someone” over “something.”
 
-GOOD:
-- I Think Something Is Trapping Me
-- I Shouldn’t Have Stayed Inside
-- I Don’t Feel Alone Anymore
+GOOD EXAMPLES:
+- I Think Something Evil Is Watching Me
+- I Shouldn’t Have Ignored the Knocking
+- I Don’t Feel Safe in My Own House
+- Something Is Wrong When I’m Alone
 
-BAD:
-- My Bedroom Door Sealed Itself Shut
-- The Wardrobe Started Whispering
-- The Floor Isn’t Solid Anymore
+BAD EXAMPLES:
+- An Entity Appeared at 3:14 AM
+- The Door Was Possessed
+- Paranormal Bedroom Incident
 
 --------------------------------
-DESCRIPTION RULES (LIGHT SPECIFICITY)
+DESCRIPTION RULES (DISCOVERY-OPTIMIZED)
 --------------------------------
-Exactly 3 short lines.
+4–6 short lines.
 
-This is the ONLY place specificity is allowed.
+Rules:
+- Plain language
+- No poetry
+- No emojis
+- No hashtags
+- No CTAs
 
 Structure:
-- Line 1: “This is a story about …”
-- Line 2: escalation or worsening
-- Line 3: confessional unease
+- Line 1: Confessional setup
+- Line 2: What changed or escalated
+- Line 3: Loss of control or safety
+- Line 4–6: Reinforce dread, uncertainty, isolation
 
-Keep it simple.
-No poetry.
-No emojis.
-No hashtags.
-No CTAs.
+Descriptions should read like a quiet admission.
+The core fear concept from the title should appear at least once in the description using different wording.
+At least two different lines must independently imply the same fear topic using different wording.
+At most one additional line may restate the fear using different wording.
 
 --------------------------------
-TAGS RULES (EXTREMELY BROAD)
+TAGS RULES (TIERED REACH)
 --------------------------------
-- 15–20 tags
-- Tags MUST be generic, high-volume horror terms
-- Tags MUST apply to thousands of videos
-- ZERO story details
-- ZERO clever phrasing
+20–30 tags total.
 
-Use only concepts like:
+Tier 0 (Search-aligned queries):
+- someone watching me
+- not alone
+- creepy true stories
+- scary true stories
+- real horror stories
+
+Tier 1 (High volume):
 - horror
 - scary
 - creepy
-- spooky
+- scary story
 - horror short
 - horror shorts
-- scary story
-- scary stories
-- creepypasta
-- horror storytime
-- disturbing
-- dark
-- nightmare
-- suspense
+- creepy story
 - fear
+
+Tier 2 (Medium intent):
+- first person horror
+- confessional horror
+- short horror story
+- scary confession
+- true horror style
+- unsettling stories
+- paranoia
+- dread
+- anxiety
+- isolation
+- unease
+- panic
+
+Tier 3 (Format signals):
+- youtube shorts
+- shorts horror
+- horror narration
+- dark stories
 
 --------------------------------
 INPUTS
@@ -178,7 +200,42 @@ def main():
 
     raw = call_llm(prompt)
     metadata = extract_json(raw)
+    # --- HARD VALIDATION ---
+    title = metadata.get("title", "")
+    SEO_FEAR_TERMS = [
+        "watch", "follow", "alone", "trapped", "knocking",
+        "someone", "inside", "behind", "staring", "coming"
+    ]
 
+    if not any(term in title.lower() for term in SEO_FEAR_TERMS):
+        raise RuntimeError("Title lacks strong SEO fear term")
+
+    if not (22 <= len(title) <= 50):
+        raise RuntimeError(f"Title length out of bounds: {len(title)}")
+
+    tags = metadata.get("tags", [])
+    if not (20 <= len(tags) <= 30):
+        raise RuntimeError(f"Invalid tag count: {len(tags)}")
+
+    description_lines = metadata.get("description_lines", [])
+
+    if len(description_lines) < 4:
+        # Pad description by repeating core fear in different wording
+        title = metadata.get("title", "")
+        fear_hint = title.lower().replace("i ", "").strip()
+
+        while len(description_lines) < 4:
+            description_lines.append(
+                f"I can’t shake the feeling that {fear_hint}."
+            )
+
+        metadata["description_lines"] = description_lines
+
+    metadata["description_lines"] = [
+        line[:1].upper() + line[1:] if line else line
+        for line in metadata.get("description_lines", [])
+    ]
+    
     out = {
         "schema": {
             "name": "metadata_generator",
