@@ -100,7 +100,7 @@ def build_storyboard_prompt(
     return f"""
 You are a top-tier YouTube Shorts visual director specializing in viral, high-retention, confessional horror.
 
-You are creating a COHESIVE VISUAL STORY that supports a narrated horror confession.
+You are creating a COHESIVE VISUAL STORY centered on a human experiencing the narrated horror.
 
 IMPORTANT:
 - Do NOT illustrate every sentence.
@@ -117,6 +117,20 @@ STRICT RULES:
 - Every scene must introduce NEW visual information.
 - The visual situation MUST escalate over time.
 
+HUMAN PRESENCE RULES (IMPORTANT):
+- Unless impossible, EACH scene should visibly include the narrator or another humanoid figure.
+- When the narrator is visible in a scene, explicitly include the phrase “the narrator” in the visual_description.
+- If the narrator is not visible in a scene, do not mention them at all.
+- The human may be shown as:
+  • full body
+  • partial body (torso, legs, back)
+  • silhouette
+  • figure in darkness
+  • figure at a distance
+- Faces are allowed but not required.
+- The human must be visible in the frame, not implied only by objects or environment.
+- Avoid excessive close-ups; vary distance and framing across scenes.
+
 IMAGE CONSTRAINTS:
 - Describe ONLY what is physically visible.
 - Use concrete, physical details only.
@@ -129,8 +143,8 @@ IMAGE CONSTRAINTS:
 - Physical change is allowed (objects moved, doors ajar, lights failing).
 
 CHARACTER CONSISTENCY:
-When the character appears, use this description consistently:
-{canon["character_description"]}
+The narrator is a single consistent human across scenes.
+Do NOT invent or vary appearance details.
 
 GLOBAL VISUAL STYLE (applies to all scenes):
 {canon["style"]}
@@ -148,7 +162,8 @@ Return ONLY valid JSON in this format:
 {{
   "scenes": [
     {{
-      "visual_description": "A grounded, physical description of what the viewer sees."
+      "visual_description": "A grounded, physical description of what the viewer sees.",
+      "includes_narrator": true
     }}
   ]
 }}
@@ -209,7 +224,8 @@ def main():
     for i, scene in enumerate(scenes):
         storyboard["scenes"].append({
             "scene_index": i,
-            "visual_description": scene["visual_description"]
+            "visual_description": scene["visual_description"],
+            "includes_narrator": bool(scene.get("includes_narrator", True))
         })
 
     out_path = run_folder / "storyboard.json"

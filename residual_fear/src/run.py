@@ -116,8 +116,13 @@ STEP_6_STORYBOARD_CREATOR = {
 }
 
 STEP_6B_IMAGE_PROMPT_PLANNER = {
-    "label": "Step 6 - Image prompt planner",
+    "label": "Step 6B - Image prompt planner",
     "script": "src/run_steps/image_prompt_planner.py",
+}
+
+STEP_6C_MIDWAY_SCORE = {
+    "label": "Step 6C - Midway Scorer",
+    "script": "src/run_steps/midway_score.py",
 }
 
 STEP_7_METADATA_GENERATOR = {
@@ -174,12 +179,11 @@ def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
     return [
         # STEP_1_IDEA_GENERATOR,
         # STEP_2_IDEA_SELECTOR,
-        STEP_3_SCRIPTWRITER,
-        # STEP_4_SCRIPT_EDITOR,
-        # STEP_4B_SCRIPT_QUALITY_GATE,
-        STEP_5_VO_GENERATOR,
-        STEP_6_STORYBOARD_CREATOR,
+        # STEP_3_SCRIPTWRITER, 
+        # STEP_5_VO_GENERATOR,
+        # STEP_6_STORYBOARD_CREATOR,
         # STEP_6B_IMAGE_PROMPT_PLANNER,
+        STEP_6C_MIDWAY_SCORE,
         # STEP_7_METADATA_GENERATOR,
         # STEP_8_IMAGE_GENERATOR,
         # STEP_9_TIMING_PLANNER,
