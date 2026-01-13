@@ -196,8 +196,23 @@ def _validate_ideas_payload(model_json: Dict[str, Any]) -> Tuple[bool, str, List
             )
             continue
 
-        if re.search(r"\b(has been|keeps|won't stop|every night|for weeks)\b", idea_text.lower()):
-            item["ongoing_bonus"] = True
+        LOSS_MARKERS = [
+            "i stopped",
+            "i can't sleep",
+            "i no longer",
+            "i avoid",
+            "i had to",
+            "i moved",
+            "i sleep with",
+            "i don't use",
+            "i quit",
+        ]
+
+        if not any(m in idea_text.lower() for m in LOSS_MARKERS):
+            warnings.append(
+                f"ideas[{i}] dropped: no irreversible loss stated upfront: '{idea_text}'"
+            )
+            continue
 
         valid_ideas.append(item)
 

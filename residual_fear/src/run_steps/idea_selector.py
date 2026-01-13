@@ -101,6 +101,7 @@ Score each idea on viral potential using these signals:
 3) Escalation speed + inevitability (can’t ignore, can’t outwait)
 4) Simplicity/clarity (one anomaly, instantly visualizable)
 5) Freshness (doesn’t feel generic)
+6) Concrete sensory noun (sound, object, motion) appears in the first clause
 
 WINNER REQUIREMENTS:
 - Do NOT rewrite ideas. Select as-is.
@@ -128,6 +129,12 @@ Return ONLY valid minified JSON with exactly these keys:
 - top_three: list of 3 objects {idea, reason}
 - winner: object {idea, reason, prep_story}
 """.strip()
+
+
+SENSORY_NOUNS = [
+    "knocking", "clicking", "breathing", "footsteps", "scraping",
+    "tapping", "cracking", "wet", "cold", "weight", "pressure"
+]
 
 
 def main():
@@ -181,6 +188,18 @@ def main():
 
     prep_story = selection["winner"].get("prep_story", "")
     winner_raw = str(selection["winner"].get("idea", "")).strip()
+    
+    winner_text = str(selection["winner"].get("idea", "")).lower()
+
+    SENSORY_NOUNS = [
+        "knocking", "clicking", "breathing", "footsteps", "scraping",
+        "tapping", "cracking", "wet", "cold", "weight", "pressure"
+    ]
+
+    if not any(n in winner_text for n in SENSORY_NOUNS):
+        raise RuntimeError(
+            f"[idea_selector] Winner lacks concrete sensory noun: '{winner_text}'"
+        )
 
     if re.fullmatch(r"\d+", winner_raw):
         idx = int(winner_raw) - 1

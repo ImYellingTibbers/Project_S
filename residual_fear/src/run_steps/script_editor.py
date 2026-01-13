@@ -54,10 +54,9 @@ VIRAL RULES (priority order):
 - No melodrama. No filler panic. No generic lines like “it gnawed at my sanity.”
 
 5) END LIKE A TRAP
-- Final line must be ONE single unresolved “trap statement.”
-- It MUST be specific and concrete (not generic like “It’s getting closer” or “I can’t do this”).
-- It MUST imply a new, worse placement/behavior of the SAME anomaly tonight (e.g., “It’s knocking again—but it’s not on the door this time.”).
-- No wrap-up. No explanation. No comfort. No reflection.
+- The final sentence MUST relocate the SAME anomaly to a place it has never been before.
+- That location must violate personal boundaries (bed, body, breath, clothing, hands).
+- If the anomaly does not change location or behavior, the ending is invalid.
 
 IF THE DRAFT CONTAINS MULTIPLE HORROR ELEMENTS:
 - Remove the weaker ones so only ONE dominant anomaly remains.

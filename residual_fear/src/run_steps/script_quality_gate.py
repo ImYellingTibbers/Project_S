@@ -24,7 +24,10 @@ CRITERIA (all must be true to PASS):
 
 2) HOOK (FIRST 2 SECONDS)
 - The first sentence starts INSIDE CONSEQUENCE (loss/restriction/invasion).
-- Not discovery framing (e.g., "I noticed", "It started", "One day", "I found"). If it is, FAIL.
+- Structural losses (job, home, city, routine, relationship) count as valid consequences IF they are irreversible and tied to the anomaly.
+- State-based loss statements (e.g., "I no longer sleep", "I stopped using my bed") ARE valid.
+- Discovery framing only applies to observation-based openings ("I noticed", "It started", "One day", "I found").
+- If the first sentence describes observation instead of loss, FAIL.
 
 3) ONE DOMINANT ANOMALY
 - The story revolves around one primary anomaly (one sensory/physical channel).
@@ -66,12 +69,23 @@ SCRIPT:
 
 
 DISALLOWED_COMBINATIONS = [
+    # True multi-vector conflicts (separate mechanisms)
     ("knife", "voice"),
     ("weapon", "voice"),
     ("song", "voice"),
     ("lullaby", "voice"),
     ("chain", "knife"),
 ]
+
+ESCALATION_COMPATIBLE_TERMS = [
+    # Allowed escalation expressions of the SAME anomaly
+    ("click", "static"),
+    ("hum", "static"),
+    ("knock", "thud"),
+    ("breath", "breathing"),
+    ("footstep", "movement"),
+]
+
 
 def utc_now_iso():
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -99,19 +113,41 @@ def main():
     lower = script_text.lower()
     for a, b in DISALLOWED_COMBINATIONS:
         if a in lower and b in lower:
+            # Allow escalation-compatible terms
+            if any(
+                ea in lower and eb in lower
+                for ea, eb in ESCALATION_COMPATIBLE_TERMS
+            ):
+                continue
+
             out = {
                 "schema": {"name": "script_quality_gate", "version": "1.0"},
                 "run_id": run_id,
                 "created_at": utc_now_iso(),
                 "verdict": {
                     "pass": False,
-                    "reason": "Multiple horror vectors detected",
+                    "reason": "Multiple unrelated horror vectors detected",
                 },
             }
-            out_path = run_dir / "quality_gate.json"
-            out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
-            print("[quality_gate] pass=False reason='Multiple horror vectors detected'")
-            return 1
+    # Hard fail if first sentence lacks anomaly mention
+    first_sentence = script_text.splitlines()[0].lower()
+    if not any(
+        k in first_sentence
+        for k in ["knock", "click", "hum", "breath", "footstep", "static", "sound"]
+    ):
+        out = {
+            "schema": {"name": "script_quality_gate", "version": "1.0"},
+            "run_id": run_id,
+            "created_at": utc_now_iso(),
+            "verdict": {
+                "pass": False,
+                "reason": "First sentence lacks concrete anomaly reference",
+            },
+        }
+        out_path = run_dir / "quality_gate.json"
+        out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        print("[quality_gate] pass=False reason='First sentence lacks concrete anomaly reference'")
+        return 1
 
     prompt = QUALITY_PROMPT.replace("<<<SCRIPT>>>", script_text)
 

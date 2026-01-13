@@ -146,6 +146,7 @@ ESCALATION GUIDANCE:
 - Middle scenes: abnormal behavior, rule changes, physical reaction.
 - Late scenes: loss of control, intensification, or inevitability.
 - Each escalation must introduce a new physical behavior from the threat or a new failed coping attempt.
+- The FINAL image must visually place the anomaly closer to the character’s body than ever before (bed surface, chest level, hand level, under covers, inches from face).
 
 Return ONLY valid JSON in this format:
 
@@ -200,6 +201,11 @@ def main():
     # Basic escalation sanity check: final scene should not be calmer than first
     first_desc = scenes[0]["visual_description"].lower()
     last_desc = scenes[-1]["visual_description"].lower()
+    body_markers = ["bed", "chest", "hands", "face", "under the covers", "pillow"]
+    if not any(b in last_desc for b in body_markers):
+        raise RuntimeError(
+            "Final storyboard frame lacks body-proximity escalation."
+        )
 
     weak_end_markers = ["quiet", "still", "calm", "motionless", "unchanged"]
 

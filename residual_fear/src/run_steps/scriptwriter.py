@@ -65,7 +65,10 @@ WRITE THE SCRIPT (performance-first):
 - Each paragraph is 1 sentence (2 max if absolutely necessary).
 - Total length: 110–170 words.
 - Spoken aloud: plain, direct, confessional. No poetry.
-- Start INSIDE CONSEQUENCE (first sentence must show loss/restriction, not observation).
+- The FIRST sentence must contain BOTH:
+  (a) the irreversible loss AND
+  (b) the anomaly itself.
+  If either is missing, the script is invalid.
 - By paragraph 2, the narrator has already permanently changed a normal behavior (sleep, routine, home layout, job, relationships).
 - Every paragraph must introduce NEW escalation: a new failure, a new restriction, a new invasion, a new loss.
 - Include ONE “snap” moment where the anomaly reacts as if it noticed the narrator’s coping attempt (no lore, no explanation, no named entity).
