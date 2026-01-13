@@ -10,142 +10,175 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in path:
     path.insert(0, str(ROOT))
 
-REFERENCE_PATH = ROOT / "src" / "assets" / "reference_files" / "confessional_reference_stories.txt"
-
-if not REFERENCE_PATH.exists():
-    raise FileNotFoundError(f"Missing reference file: {REFERENCE_PATH}")
-
-REFERENCE_STORIES = REFERENCE_PATH.read_text(encoding="utf-8")
-
 from src.config import RUNS_DIR, SCRIPTWRITER_LLM_MODEL
-# from src.llm.mixtral_llm import call_llm
-from src.llm.qwen_instruct_llm import call_llm
+from src.llm.openai_llm import call_llm
+# from src.llm.qwen_instruct_llm import call_llm
 
-MAX_ATTEMPTS = 3
+MAX_ATTEMPTS = 2
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def build_run_id() -> str:
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def _count_words(text: str) -> int:
     return len([w for w in text.split() if w])
 
 
+def _has_strong_hook(script: str) -> bool:
+    first_line = script.strip().splitlines()[0].lower()
+
+    if len(first_line.split()) > 15:
+        return False
+
+    anomaly_triggers = [
+        "doesn't",
+        "didn't",
+        "wasn't",
+        "weren't",
+        "never",
+        "kept",
+        "started",
+        "moved",
+        "appeared",
+        "followed",
+        "asked me",
+        "knew my",
+        "said my name",
+        "no one else",
+        "only i could",
+        "every night",
+    ]
+
+    return any(trigger in first_line for trigger in anomaly_triggers)
+
+
+REFERENCE_PATH = (
+    Path(__file__).resolve()
+    .parents[2]
+    / "assets"
+    / "reference_files"
+    / "viral_horror_scripts.txt"
+)
+
+
+def load_reference_scripts() -> str:
+    if not REFERENCE_PATH.exists():
+        return ""
+
+    text = REFERENCE_PATH.read_text(encoding="utf-8").strip()
+    if not text:
+        return ""
+
+    return text
+
+
 PROMPT_TEMPLATE = """
-You are writing a VIRAL YouTube Shorts horror confessional.
-Your only goal is to maximize retention and replay by making the viewer feel personally unsafe in the first 2 seconds.
+Act like a YouTube Shorts horror specialist whose sole job is to maximize:
+- Scroll-stopping hooks (first 1–2 seconds)
+- Retention through escalation
+- Unresolved dread that forces rewatches and comments
 
-Write realistic first-person confessional horror.
-The narrator is a man.
-The threat is STILL happening.
-It has already forced real sacrifices, and it is getting worse right now.
+Below are REAL viral horror confessional scripts.
+They are provided ONLY to demonstrate:
+- Hook cadence
+- Sentence length patterns
+- Escalation structure
+- Symbol repetition
+- Ending restraint
 
-Use the reference stories ONLY for voice, pacing, and realism.
-Do NOT reuse their events, phrasing, characters, locations, or scenarios.
+DO NOT copy plots, characters, names, locations, or specific objects.
+DO NOT reference these scripts directly.
+Use them ONLY as stylistic and structural guidance.
 
-=== REFERENCE STORIES BEGIN ===
-{reference_stories}
-=== REFERENCE STORIES END ===
+=== VIRAL REFERENCE SCRIPTS ===
+{reference_scripts}
+=== END REFERENCE SCRIPTS ===
 
-CONTEXT YOU MUST USE:
+NOW WRITE A NEW SCRIPT WITH THESE STRICT RULES:
 
-TONE ANCHOR (NOT CANON — do not treat as facts):
-{prep_story}
+NARRATOR:
+- White adult male
+- First-person confessional
+- Speaking as if this is real and unresolved
 
-Important: Use the tone and urgency only.
-Ignore any detail in the tone anchor that is not explicitly present in the WINNING IDEA.
-Do not reuse exact phrasing from the tone anchor.
+STORY:
+- Do not make any scripts around the idea of mirrors or reflections.
+- Prefer the threat to be an unknown or unseen physical force rather than an emotional one.
+- Do not center the horror around identity confusion, self-doubt, or internal psychological transformation.
+- The threat must be external, observable, and capable of acting independently of the narrator’s emotions.
 
-WINNING IDEA (the single anomaly — keep it the same core anomaly):
-{winning_idea}
+HOOK (CRITICAL):
+- The FIRST LINE must immediately imply something impossible, wrong, or unseen by others
+- No backstory before the hook
+- No throat-clearing
+- No “I don’t believe in ghosts” style openings unless paired with an immediate contradiction
 
-WRITE THE SCRIPT (performance-first):
-- 6 to 8 paragraphs.
-- Paragraph 4 must be a 'Pattern Interrupt': a sentence under 5 words that resets the tension (e.g., 'Then it stopped.' or 'I was wrong.')
-- Each paragraph is 1 sentence (2 max if absolutely necessary).
-- Total length: 110–170 words.
-- Spoken aloud: plain, direct, confessional. No poetry.
-- The FIRST sentence must contain BOTH:
-  (a) the irreversible loss AND
-  (b) the anomaly itself.
-  If either is missing, the script is invalid.
-- By paragraph 2, the narrator has already permanently changed a normal behavior (sleep, routine, home layout, job, relationships).
-- Every paragraph must introduce NEW escalation: a new failure, a new restriction, a new invasion, a new loss.
-- Include ONE “snap” moment where the anomaly reacts as if it noticed the narrator’s coping attempt (no lore, no explanation, no named entity).
-- End on a single devastating unresolved line that implies it is closer / stronger / unavoidable tonight.
-- Exactly 6 to 8 paragraphs separated by a single blank line (no more, no less).
-- The first paragraph must be consequence-first and must include the irreversible change already made.
-- Use specific, low-budget, high-impact visuals.
+CADENCE RULES:
+- Prefer short sentences early (5–10 words)
+- Allow longer sentences ONLY after tension is established
+- Use paragraph breaks to simulate breath and panic
+- Avoid flowery language
 
-DO NOT:
-- Do not explain what it is or why it happens.
-- Do not add lore, rules, demon names, symbolism, or metaphors.
-- Do not add extra anomalies or unrelated horror elements.
-- Do not use discovery framing (avoid: “I noticed”, “I found”, “it started”, “one day”).
-- Do not waste lines on “I tried X, I tried Y” montages. Pick ONE coping attempt and make it fail hard.
-- Do not mention filming, cameras, posts, or social media.
+ESCALATION RULES:
+- Choose ONE escalation mode and stick to it:
+  (A) Time-based escalation (night → days → years later)
+  OR
+  (B) Location-based escalation (private → outside → public)
+- Introduce ONE repeating symbol, sound, phrase, or behavior
+- Repeat it at least 3 times with increasing threat or proximity
+- Each repetition must make avoidance harder
+- Avoid framing the climax around “who I am” or “what I’m becoming.”
 
-OUTPUT:
-Only the spoken script text.
-No title.
-No preface.
-Start immediately with sentence one.
-End immediately with the last sentence.
+ENDING RULES:
+- Do NOT explain the phenomenon
+- Do NOT resolve the threat
+- The final line must imply one of the following:
+  • The threat has moved closer
+  • The narrator has been found
+  • The narrator has been identified or remembered
+- End on an external implication, not internal reflection
+- Prefer endings where the danger is situational rather than existential.
+
+MONETIZATION:
+- No gore
+- No explicit violence
+- Fear should come from implication, surveillance, pursuit, or inevitability
+
+FORMAT:
+- ~60 seconds spoken (80–220 words)
+- Output ONLY the spoken script
+- No title
+- No preface
+- Start immediately with the first line
+- End immediately with the last line
 """.strip()
 
 
 def _validate(script: str):
-    lines = [l for l in script.splitlines() if l.strip()]
     wc = len(script.split())
+    if wc < 80 or wc > 220:
+        return False, f"Word count out of bounds ({wc})"
 
-    if wc > 190:
-        return False, f"Too many words ({wc}). Compress escalation."
-    if wc < 100:
-        return False, f"Too few words ({wc}). Expand slightly."
-    if len(lines) < 6:
-        return False, f"Too few paragraphs ({len(lines)})."
-
-    first = lines[0].lower()
-    bad_openers = [
-        "something felt",
-        "something was wrong",
-        "i noticed",
-        "it started",
-        "there was something",
-        "i didn't think much",
-    ]
-
-    if any(b in first for b in bad_openers):
-        return False, "Weak hook: first sentence describes observation, not consequence."
-
-    loss_markers = [
-        "i couldn't",
-        "i can't",
-        "i stopped",
-        "i don't sleep",
-        "i no longer",
-        "i don't leave",
-        "i avoid",
-    ]
-
-    if not any(m in script.lower() for m in loss_markers):
-        return False, "No clear loss of agency detected."
+    if not _has_strong_hook(script):
+        return False, "First line too long or not hook-like"
 
     return True, "ok"
 
 
 
 def main():
-    run_folder = sorted(p for p in RUNS_DIR.iterdir() if p.is_dir())[-1]
-    idea_json = json.loads((run_folder / "idea.json").read_text(encoding="utf-8"))
+    run_id = build_run_id()
+    run_folder = RUNS_DIR / run_id
+    run_folder.mkdir(parents=True, exist_ok=True)
 
-    prep_story = idea_json["data"]["winner"]["prep_story"]["text"]
-    winning_idea = idea_json["data"]["winner"]["idea"]
+    reference_scripts = load_reference_scripts()
 
     prompt = PROMPT_TEMPLATE.format(
-        reference_stories=REFERENCE_STORIES,
-        winning_idea=winning_idea,
-        prep_story=prep_story
+        reference_scripts=reference_scripts
     )
 
     last_error = None
@@ -175,11 +208,9 @@ def main():
 
 
     out = {
-        "schema": {"name": "scriptwriter_draft", "version": "0.6.0"},
-        "run_id": idea_json["run_id"],
+        "schema": {"name": "scriptwriter"},
+        "run_id": run_id,
         "created_at": utc_now_iso(),
-        "winning_idea": winning_idea,
-        "prep_story": prep_story,
         "script": script,
         "word_count": _count_words(script),
         "validation": {
@@ -189,7 +220,7 @@ def main():
         },
     }
 
-    out_path = run_folder / "draft.json"
+    out_path = run_folder / "script.json"
     out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
     print(f"Wrote {out_path}")
 

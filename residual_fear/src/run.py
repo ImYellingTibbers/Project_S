@@ -172,11 +172,11 @@ STEP_12_QUEUE_UPLOAD = {
 def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
 
     return [
-        STEP_1_IDEA_GENERATOR,
-        STEP_2_IDEA_SELECTOR,
+        # STEP_1_IDEA_GENERATOR,
+        # STEP_2_IDEA_SELECTOR,
         STEP_3_SCRIPTWRITER,
-        STEP_4_SCRIPT_EDITOR,
-        STEP_4B_SCRIPT_QUALITY_GATE,
+        # STEP_4_SCRIPT_EDITOR,
+        # STEP_4B_SCRIPT_QUALITY_GATE,
         STEP_5_VO_GENERATOR,
         STEP_6_STORYBOARD_CREATOR,
         # STEP_6B_IMAGE_PROMPT_PLANNER,

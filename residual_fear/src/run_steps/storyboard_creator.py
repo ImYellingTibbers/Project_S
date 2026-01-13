@@ -29,16 +29,6 @@ def stable_seed(run_folder: Path) -> int:
     return int(h[:16], 16)
 
 
-def extract_sentences(script_text: str) -> List[str]:
-    # Preserve narration order exactly
-    sentences = []
-    for block in script_text.split("\n"):
-        block = block.strip()
-        if block:
-            sentences.append(block)
-    return sentences
-
-
 def extract_json(text: str) -> Dict[str, Any]:
     start = text.find("{")
     end = text.rfind("}")
@@ -103,30 +93,40 @@ def generate_canon(run_folder: Path) -> Dict[str, str]:
 # -------------------------------------------------
 
 def build_storyboard_prompt(
-    sentences: List[str],
+    script_text: str,
     canon: Dict[str, str],
     winning_idea: str
 ) -> str:
     return f"""
-You are a top-tier youtube shorts visual director specializing in viral, high-retention, confessional horror stories.
+You are a top-tier YouTube Shorts visual director specializing in viral, high-retention, confessional horror.
 
-You are creating a storyboard where EACH IMAGE must help prevent the viewer from scrolling away.
+You are creating a COHESIVE VISUAL STORY that supports a narrated horror confession.
 
-STRICT RULES (follow exactly):
-- Create ONE still image per narrated sentence.
+IMPORTANT:
+- Do NOT illustrate every sentence.
+- Create visual SCENES that follow the narrative beats and escalation of the story.
+- Each scene may represent multiple spoken lines.
+- Focus on cohesion, continuity, and escalation — not timing precision.
+
+SCENE COUNT RULES (follow exactly):
+- Create BETWEEN 8 AND 16 scenes total.
+- Fewer scenes if the story is simple.
+- More scenes only if escalation demands it.
+
+STRICT RULES:
 - Every scene must introduce NEW visual information.
-- At least every 2–3 scenes, the visual situation MUST visibly escalate or change.
-- The final scene MUST feel worse, more threatening, or more inescapable than the first.
-- You have complete freedom to show whatever you want as long as it fits in the narrative of the story. 
+- The visual situation MUST escalate over time.
 
 IMAGE CONSTRAINTS:
 - Describe ONLY what is physically visible.
-- Use concrete, physical details (objects, posture, light, motion, damage).
-- NO abstract concepts (e.g. “visible rhythm”, “felt presence”, “sense of dread”).
+- Use concrete, physical details only.
+- NO abstract concepts.
 - NO metaphors.
 - NO symbolism.
 - NO camera directions.
-- NO movement
+- NO camera movement.
+- NO abstract motion.
+- Physical change is allowed (objects moved, doors ajar, lights failing).
 
 CHARACTER CONSISTENCY:
 When the character appears, use this description consistently:
@@ -135,30 +135,25 @@ When the character appears, use this description consistently:
 GLOBAL VISUAL STYLE (applies to all scenes):
 {canon["style"]}
 
-STORY CONTEXT (do not restate, only inform escalation):
+STORY CONTEXT (do not restate verbatim, only guide escalation):
 {winning_idea}
 
-SCRIPT SENTENCES (one image per sentence, in order):
-{json.dumps(sentences, indent=2)}
-
-ESCALATION GUIDANCE:
-- Early scenes: tension, anticipation, subtle unease.
-- Middle scenes: abnormal behavior, rule changes, physical reaction.
-- Late scenes: loss of control, intensification, or inevitability.
-- Each escalation must introduce a new physical behavior from the threat or a new failed coping attempt.
-- The FINAL image must visually place the anomaly closer to the character’s body than ever before (bed surface, chest level, hand level, under covers, inches from face).
+FULL SCRIPT (for narrative understanding only):
+\"\"\"
+{script_text}
+\"\"\"
 
 Return ONLY valid JSON in this format:
 
 {{
   "scenes": [
     {{
-      "sentence_index": 0,
       "visual_description": "A grounded, physical description of what the viewer sees."
     }}
   ]
 }}
 """.strip()
+
 
 
 # -------------------------------------------------
@@ -179,7 +174,6 @@ def main():
     if not script_text:
         raise RuntimeError("Script is empty")
 
-    sentences = extract_sentences(script_text)
     winning_idea = script_json.get("winning_idea", "")
 
     canon = generate_canon(run_folder)
@@ -188,29 +182,21 @@ def main():
         encoding="utf-8"
     )
 
-    prompt = build_storyboard_prompt(sentences, canon, winning_idea)
+    prompt = build_storyboard_prompt(script_text, canon, winning_idea)
 
     print("[*] Calling LLM for Storyboard creation...")
     response = call_llm(prompt)
     payload = extract_json(response)
 
     scenes = payload.get("scenes")
-    if not isinstance(scenes, list) or len(scenes) != len(sentences):
-        raise RuntimeError("Storyboard scene count does not match script")
-    
-    # Basic escalation sanity check: final scene should not be calmer than first
-    first_desc = scenes[0]["visual_description"].lower()
-    last_desc = scenes[-1]["visual_description"].lower()
-    body_markers = ["bed", "chest", "hands", "face", "under the covers", "pillow"]
-    if not any(b in last_desc for b in body_markers):
+    if not isinstance(scenes, list):
+        raise RuntimeError("Storyboard response missing scenes list")
+
+    scene_count = len(scenes)
+    if scene_count < 8 or scene_count > 16:
         raise RuntimeError(
-            "Final storyboard frame lacks body-proximity escalation."
+            f"Storyboard scene count out of bounds: {scene_count} (expected 8–16)"
         )
-
-    weak_end_markers = ["quiet", "still", "calm", "motionless", "unchanged"]
-
-    if any(w in last_desc for w in weak_end_markers) and not any(w in first_desc for w in weak_end_markers):
-        print("[WARN] Final storyboard scene may lack escalation. Consider regenerating.")
 
     storyboard = {
         "schema": {"name": "storyboard", "version": PROJECT_VERSION},
@@ -222,15 +208,14 @@ def main():
 
     for i, scene in enumerate(scenes):
         storyboard["scenes"].append({
-            "sentence_index": i,
-            "script_text": sentences[i],
+            "scene_index": i,
             "visual_description": scene["visual_description"]
         })
 
     out_path = run_folder / "storyboard.json"
     out_path.write_text(json.dumps(storyboard, indent=2), encoding="utf-8")
 
-    print(f"[SUCCESS] Storyboard saved with {len(sentences)} scenes.")
+    print(f"[SUCCESS] Storyboard saved with {scene_count} scenes.")
 
 
 if __name__ == "__main__":
