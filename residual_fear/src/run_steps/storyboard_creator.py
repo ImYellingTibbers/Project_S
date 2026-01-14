@@ -48,22 +48,27 @@ CHARACTER_POOL = {
     "hair": ["short dark brown hair, slightly unkempt"],
     "facial_hair": ["short trimmed beard", "light stubble"],
     "eyes": ["wide, alert eyes that look exhausted"],
-    "expression": ["tight-jawed and anxious"],
+    "expression": ["neutral expression"],
     "clothing": ["dark canvas work jacket", "faded black t-shirt"],
     "detail": ["slight nervous sweat at the hairline"]
 }
 
 STYLE_BASE = (
-    "Stylistic realism, cinematic horror, deep shadows, "
-    "muted desaturated colors, heavy grain, still-frame photography"
+    "cinematic horror still, "
+    "dark atmospheric realism, "
+    "stylized realism, not a photograph, "
+    "intentional cinematic composition, "
+    "clear foreground, midground, and background separation, "
+    "shadow-driven lighting, minimal fill light, "
+    "desaturated, cold moody color palette, "
+    "soft volumetric fog and atmospheric depth, "
+    "environmental storytelling emphasis, "
+    "grim folklore horror tone"
 )
 
 STYLE_VARIANTS = [
-    "gritty 90s thriller grade",
-    "modern digital cinema look",
-    "low-contrast nocturnal palette"
+    "grim folklore horror cinematic still"
 ]
-
 
 def generate_canon(run_folder: Path) -> Dict[str, str]:
     rng = random.Random(stable_seed(run_folder))
@@ -95,80 +100,44 @@ def generate_canon(run_folder: Path) -> Dict[str, str]:
 def build_storyboard_prompt(
     script_text: str,
     canon: Dict[str, str],
-    winning_idea: str
+    min_scenes: int
 ) -> str:
     return f"""
-You are a top-tier YouTube Shorts visual director specializing in viral, high-retention, confessional horror.
+You are a YouTube Shorts professional who specializes in creating visually interesting scenes that keep viewer retention high.
 
-You are creating a COHESIVE VISUAL STORY centered on a human experiencing the narrated horror.
+Your task is to create approximately {min_scenes} short visual scenes that follow the narrative flow of the provided script.
 
-IMPORTANT:
-- Do NOT illustrate every sentence.
-- Create visual SCENES that follow the narrative beats and escalation of the story.
-- Each scene may represent multiple spoken lines.
-- Focus on cohesion, continuity, and escalation — not timing precision.
+Each scene should:
+- Show something visually interesting or changing in the story
+- Feel like a frozen moment from a video (not a sentence being acted out)
+- Help the viewer understand or feel progression in the story
 
-SCENE COUNT RULES (follow exactly):
-- Create BETWEEN 8 AND 16 scenes total.
-- Fewer scenes if the story is simple.
-- More scenes only if escalation demands it.
+Guidelines:
+- You will need MANY scenes to maintain retention
+- Scenes should escalate visually over time
+- Focus on environments, objects, and visible outcomes
+- The narrator may appear, but should not dominate every scene
+- Describe each scene purely visually (assume audio may be muted)
 
-STRICT RULES:
-- Every scene must introduce NEW visual information.
-- The visual situation MUST escalate over time.
+For each scene:
+- Write a concise visual description
+- Indicate whether the narrator is visible in the scene
 
-HUMAN PRESENCE RULES (IMPORTANT):
-- Unless impossible, EACH scene should visibly include the narrator or another humanoid figure.
-- When the narrator is visible in a scene, explicitly include the phrase “the narrator” in the visual_description.
-- If the narrator is not visible in a scene, do not mention them at all.
-- The human may be shown as:
-  • full body
-  • partial body (torso, legs, back)
-  • silhouette
-  • figure in darkness
-  • figure at a distance
-- Faces are allowed but not required.
-- The human must be visible in the frame, not implied only by objects or environment.
-- Avoid excessive close-ups; vary distance and framing across scenes.
+FULL SCRIPT (for reference only):
+\"\"\"{script_text}\"\"\"
 
-IMAGE CONSTRAINTS:
-- Describe ONLY what is physically visible.
-- Use concrete, physical details only.
-- NO abstract concepts.
-- NO metaphors.
-- NO symbolism.
-- NO camera directions.
-- NO camera movement.
-- NO abstract motion.
-- Physical change is allowed (objects moved, doors ajar, lights failing).
-
-CHARACTER CONSISTENCY:
-The narrator is a single consistent human across scenes.
-Do NOT invent or vary appearance details.
-
-GLOBAL VISUAL STYLE (applies to all scenes):
-{canon["style"]}
-
-STORY CONTEXT (do not restate verbatim, only guide escalation):
-{winning_idea}
-
-FULL SCRIPT (for narrative understanding only):
-\"\"\"
-{script_text}
-\"\"\"
-
-Return ONLY valid JSON in this format:
-
+Output JSON only:
 {{
   "scenes": [
     {{
-      "visual_description": "A grounded, physical description of what the viewer sees.",
+      "visual_description": "A concise physical description of what is visible.",
       "includes_narrator": true
     }}
   ]
 }}
-""".strip()
 
+Do NOT include explanations or commentary.
+""".strip()
 
 
 # -------------------------------------------------
@@ -177,7 +146,6 @@ Return ONLY valid JSON in this format:
 
 def main():
     run_folder = find_latest_run_folder()
-    print(f"[*] Processing Storyboard for: {run_folder.name}")
 
     script_path = run_folder / "script.json"
     if not script_path.exists():
@@ -186,10 +154,12 @@ def main():
     script_json = json.loads(script_path.read_text(encoding="utf-8"))
 
     script_text = script_json.get("script", "")
+    word_count = len(script_text.split())
+    estimated_duration_sec = word_count / 2.5
+
+    MIN_SCENES = int(estimated_duration_sec // 3)
     if not script_text:
         raise RuntimeError("Script is empty")
-
-    winning_idea = script_json.get("winning_idea", "")
 
     canon = generate_canon(run_folder)
     (run_folder / "visual_canon.json").write_text(
@@ -197,9 +167,8 @@ def main():
         encoding="utf-8"
     )
 
-    prompt = build_storyboard_prompt(script_text, canon, winning_idea)
+    prompt = build_storyboard_prompt(script_text, canon, MIN_SCENES)
 
-    print("[*] Calling LLM for Storyboard creation...")
     response = call_llm(prompt)
     payload = extract_json(response)
 
@@ -208,9 +177,13 @@ def main():
         raise RuntimeError("Storyboard response missing scenes list")
 
     scene_count = len(scenes)
-    if scene_count < 8 or scene_count > 16:
+
+    ALLOWED_UNDER = 2  # wiggle room
+
+    if scene_count < (MIN_SCENES - ALLOWED_UNDER):
         raise RuntimeError(
-            f"Storyboard scene count out of bounds: {scene_count} (expected 8–16)"
+            f"Storyboard scene count too low: {scene_count} "
+            f"(minimum required: {MIN_SCENES}, allowed underflow: {ALLOWED_UNDER})"
         )
 
     storyboard = {
@@ -225,7 +198,12 @@ def main():
         storyboard["scenes"].append({
             "scene_index": i,
             "visual_description": scene["visual_description"],
-            "includes_narrator": bool(scene.get("includes_narrator", True))
+            "includes_narrator": bool(scene.get("includes_narrator", True)),
+            "visual_intent": (
+                "human_focus"
+                if bool(scene.get("includes_narrator", True)) and random.random() < 0.35
+                else "environment_focus"
+            )
         })
 
     out_path = run_folder / "storyboard.json"

@@ -28,12 +28,43 @@ def load_json(path: Path) -> dict:
 
 
 def extract_json(text: str) -> dict:
+    if not text or not text.strip():
+        raise RuntimeError("Judge LLM returned empty response")
+
     text = text.strip()
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end == -1:
-        raise RuntimeError("Judge LLM did not return JSON")
-    return json.loads(text[start:end + 1])
+
+    # Strip markdown fences if present
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+
+    # Find first JSON object
+    first_brace = text.find("{")
+    if first_brace == -1:
+        raise RuntimeError(f"Judge LLM did not return JSON:\n{text[:300]}")
+
+    text = text[first_brace:]
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Attempt to auto-fix missing closing braces
+        open_braces = text.count("{")
+        close_braces = text.count("}")
+
+        if close_braces < open_braces:
+            text = text + ("}" * (open_braces - close_braces))
+
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(
+                f"Invalid JSON from Judge LLM:\n{text[:500]}"
+            ) from e
 
 
 # ---------------------------
@@ -168,14 +199,34 @@ def main():
     }
 
     prompt = (
-        JUDGE_PROMPT
-        + "\n\nINPUT:\n"
-        + json.dumps(judge_input, indent=2)
-        + "\n\nOUTPUT:\n"
-    )
+      "SYSTEM:\n"
+      "You are a JSON-only evaluation engine.\n"
+      "You MUST output ONLY valid JSON.\n"
+      "DO NOT include explanations, analysis, summaries, or text.\n"
+      "If you include anything outside JSON, the output is invalid.\n\n"
+      + JUDGE_PROMPT
+      + "\n\nINPUT:\n"
+      + json.dumps(judge_input, indent=2)
+      + "\n\nOUTPUT (JSON ONLY):\n"
+  )
 
     raw = call_llm(prompt)
-    judged = extract_json(raw)
+
+    try:
+        judged = extract_json(raw)
+    except RuntimeError:
+        # One forced retry with hard JSON constraint
+        retry_prompt = (
+            "SYSTEM:\n"
+            "OUTPUT ONLY JSON.\n"
+            "NO TEXT.\n"
+            "NO EXPLANATIONS.\n"
+            "NO ANALYSIS.\n"
+            "JSON ONLY.\n\n"
+            + prompt
+        )
+        raw = call_llm(retry_prompt)
+        judged = extract_json(raw)
 
     output = {
         "schema": {"name": "midway_score", "version": "1.0"},

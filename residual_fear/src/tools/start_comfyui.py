@@ -12,7 +12,7 @@ READY_ENDPOINT = "/system_stats"
 TIMEOUT = 180
 
 # 🔴 HARD PIN the venv python that you just proved works
-PYTHON_BIN = str(Path(__file__).resolve().parents[3] / ".venv" / "bin" / "python")
+PYTHON_BIN = os.path.expanduser("~/ai/ComfyUI/venv/bin/python")
 
 COMFY_CMD = [
     PYTHON_BIN,

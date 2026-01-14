@@ -1,5 +1,6 @@
 import json
 import time
+import re
 from sys import path
 from pathlib import Path
 from datetime import datetime, timezone
@@ -44,171 +45,105 @@ def extract_json(text: str) -> dict:
             lines = lines[:-1]
         text = "\n".join(lines).strip()
 
-    # HARD PREFIX ENFORCEMENT
-    first_brace = text.find("{")
-    if first_brace == -1:
-        raise RuntimeError(
-            f"LLM returned no JSON object:\n{text[:300]}"
-        )
+    # Find first JSON object and parse ONLY that object (brace-balanced)
+    start = text.find("{")
+    if start == -1:
+        raise RuntimeError(f"LLM returned no JSON object:\n{text[:300]}")
 
-    text = text[first_brace:]
+    depth = 0
+    end = None
+    for i in range(start, len(text)):
+        ch = text[i]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = i + 1
+                break
+
+    if end is None:
+        raise RuntimeError(f"LLM returned unterminated JSON:\n{text[start:start+500]}")
+
+    candidate = text[start:end]
 
     try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        # Attempt to auto-fix common truncation: missing closing braces
-        open_braces = text.count("{")
-        close_braces = text.count("}")
+        return json.loads(candidate)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Invalid JSON from LLM:\n{candidate[:500]}") from e
+            
+            
+AUDIO_REGEX = re.compile(
+    r"""
+    \b(
+        hear|heard|hearing|
+        sound|sounds|sounded|
+        noise|noises|
+        echo|echoes|echoing|
+        ring|rings|ringing|
+        knock|knocks|knocking|
+        whisper|whispers|whispering|
+        scream|screams|screaming|
+        shout|shouts|shouting|
+        murmur|murmurs|murmuring|
+        hum|hums|humming|
+        buzz|buzzes|buzzing|
+        click|clicks|clicking|
+        creak|creaks|creaking|
+        scrape|scrapes|scraping|
+        tap|taps|tapping
+    )\b
+    """,
+    re.IGNORECASE | re.VERBOSE
+)
 
-        if close_braces < open_braces:
-            text = text + ("}" * (open_braces - close_braces))
 
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError as e:
-            raise RuntimeError(
-                f"Invalid JSON from LLM:\n{text[:500]}"
-            ) from e
+def strip_audio_language(text: str) -> str:
+    # Remove clauses containing audio references
+    text = re.sub(
+        r"[^.]*\b(" + AUDIO_REGEX.pattern + r")\b[^.]*\.?",
+        "",
+        text,
+        flags=re.IGNORECASE | re.VERBOSE
+    )
 
-        
+    # Clean up spacing and punctuation
+    text = re.sub(r"\s{2,}", " ", text)
+    text = re.sub(r"\s+,", ",", text)
+    text = re.sub(r"\s+\.", ".", text)
+
+    return text.strip()
+
         
 PROMPTGEN_PROMPT = """
-TASK LOCK (MANDATORY)
+You are a STRICT IMAGE PROMPT TRANSLATOR.
 
-You are NOT allowed to:
-- summarize
-- explain
-- restate
-- describe the storyboard
-- list scenes in prose
-- add headings or sections
+Your job is to COPY the visual_description into an image prompt.
+You MUST NOT invent new objects, locations, lighting, environments, or actions.
 
-You MUST:
-- read the input silently
-- output ONLY the JSON defined below
+ALLOWED CHANGES:
+- Minor grammar cleanup
+- Remove audio-only words if present
 
-You are an IMAGE PROMPT GENERATOR.
+FORBIDDEN:
+- Adding new locations
+- Adding new props
+- Changing time of day
+- Changing lighting
+- Adding symbolism
+- Adding narrative detail
+- Adding emotions
+- Adding camera language
+- Adding ANY detail not explicitly present
 
-You do NOT decide story, motion, pacing, or meaning.
-You translate storyboard intent into simple, literal, diffusion-ready image prompts.
+If the visual_description is vague, KEEP IT VAGUE.
+DO NOT improve it.
 
---------------------------------
-CORE PRINCIPLE (CRITICAL)
---------------------------------
-Less is more.
-
-Use minimal, literal, physically clear language, but make sure to not omit any crucial details (setting, colors, objects, etc.)
-Do NOT be poetic, narrative, or descriptive beyond what is visually necessary.
-
---------------------------------
-GLOBAL VISUAL STYLE CANON (MANDATORY)
---------------------------------
-All images MUST follow this exact visual style:
-
-- cinematic horror still
-- realistic, grounded environments
-- low-key lighting, high contrast
-- deep shadows, limited color palette
-- muted colors (dark blues, sickly greens, dirty browns)
-- subtle film grain
-- soft volumetric fog or haze where applicable
-- shallow to moderate depth of field
-- no stylization, no illustration, no surreal art styles
-- photorealistic but unsettling
-
-This style is NON-NEGOTIABLE and must be implicitly applied to every image_prompt_body.
-Do NOT restate this style verbatim in the prompt.
-
---------------------------------
-GLOBAL RULES
---------------------------------
-- The image generator has NO memory
-- Every image prompt must be fully self-contained
-- Humans MAY appear when explicitly required by the storyboard unit.
-- If a human is present, they will be referred to as "the narrator" ONLY.
-- Do NOT invent appearance details for the narrator.
-- Do NOT describe faces unless explicitly required by the framing.
-- No animals or wildlife of any kind.
-- Supernatural or impossible creatures are allowed.
-- Creatures must not resemble real animals
-- If an object appears, it should be static and partially framed
-- If "includes_narrator": true, the prompt MUST explicitly reference "the narrator" as a visible human.
-- If false, do NOT reference the narrator.
-
-For the first scene ONLY (scene_index == 0):
-- Add a visually arresting element that creates immediate curiosity or tension.
-- Use descriptors like “striking contrast,” “partial silhouette,” “unexpected detail,” “unsettling composition.”
-  
---------------------------------
-LANGUAGE RULES (VERY IMPORTANT)
---------------------------------
-- Prefer static physical states over actions
-- Prefer neutral verbs:
-  - touching
-  - resting
-  - standing
-  - positioned
-  - partially visible
-  - etc.
-- Prefer simple adjectives
-- Avoid adjectives that could be interpreted as other items, or use words with double meanings
-- Avoid verbs that can imply tools or objects:
-- DO NOT use: brushing, scrubbing, sweeping, painting, wiping
-- Do NOT invent props, tools, or symbolic details
-- Do NOT add sensory details unless they are required for setting continuity
-- Do NOT describe emotions, thoughts, or intent
-- Keep prompts simple, make it dead easy for the AI image generator to create the desired scene
-- When the narrator appears, ALWAYS refer to them using the exact phrase: "the narrator"
-- Do NOT use synonyms (man, person, figure, male, etc.)
-
---------------------------------
-SETTING CONSISTENCY
---------------------------------
-- Maintain consistent location identity across scenes
-- Re-describe the setting simply from different angles or distances
-- Do NOT add new environmental elements unless implied by the storyboard
-
---------------------------------
-PER-UNIT TASK
---------------------------------
-For EACH input unit:
-- Generate image_prompt_body (txt2img) using ALL provided fields
-- scene_index is a zero-based index indicating scene order.
-
---------------------------------
-IMAGE PROMPT GUIDELINES
---------------------------------
-Each image_prompt_body should:
-- Describe a single realistic frame
-- Use simple, literal language
-- Clearly state:
-  - subject (if any)
-  - setting
-  - framing or viewpoint if relevant
-- Avoid unnecessary adjectives
-- Avoid narrative sequencing
-
---------------------------------
-OUTPUT FORMAT (STRICT)
---------------------------------
+OUTPUT FORMAT (STRICT JSON ONLY):
 {
-  "scenes": [
-    {
-      "scene_index": number,
-      "image_prompt_body": string
-    }
-  ]
+  "scene_index": number,
+  "image_prompt_body": string
 }
-
-- No explanations
-- No commentary
-- Output JSON only
-
-IMPORTANT:
-- Your entire response MUST be valid JSON
-- Do not include any text before or after the JSON
-- Do not wrap the JSON in markdown
-- Begin your response with '{' and end with '}'
 """.strip()
 
 
@@ -225,6 +160,9 @@ def main():
     script_json = json.loads((run_folder / "script.json").read_text(encoding="utf-8"))
     run_id = script_json.get("run_id")
     storyboard = json.loads((run_folder / "storyboard.json").read_text(encoding="utf-8"))
+    canon = storyboard.get("canon", {})
+    canon_character = canon.get("character_description", "").strip()
+    canon_style = canon.get("style", "").strip()
 
     # -------- Prompt generation pass --------
     pg_input = {
@@ -237,8 +175,19 @@ def main():
         unit = dict(unit)
         unit["includes_narrator"] = unit.get("includes_narrator", True)
 
+        original_visual_description = unit.get("visual_description", "").strip()
+        clean_visual_description = strip_audio_language(original_visual_description)
+
+        # If audio stripping nukes the entire description, fall back to original
+        if not clean_visual_description:
+            clean_visual_description = original_visual_description
+
         single_pg_input = {
-            "units": [unit],
+            "scene": {
+                "scene_index": unit["scene_index"],
+                "visual_description": clean_visual_description,
+                "includes_narrator": unit.get("includes_narrator", True)
+            }
         }
 
         single_prompt = (
@@ -260,14 +209,46 @@ def main():
 
         parsed = extract_json(raw)
 
-        if "scenes" not in parsed or not parsed["scenes"]:
-            raise RuntimeError(
-                f"Promptgen returned no scenes for scene_index={unit.get('scene_index')}"
+        # Normalize possible shapes
+        if isinstance(parsed, dict) and (
+            "image_prompt_body" in parsed or "image_prompt" in parsed
+        ):
+            image_prompt_body = parsed.get("image_prompt_body") or parsed.get("image_prompt")
+
+        elif isinstance(parsed, dict) and "scene" in parsed and isinstance(parsed["scene"], dict):
+            image_prompt_body = (
+                parsed["scene"].get("image_prompt_body")
+                or parsed["scene"].get("image_prompt")
             )
 
-        # Take the first scene only (promptgen is single-unit scoped)
-        promptgen_scenes.append(parsed["scenes"][0])
+        elif (
+            isinstance(parsed, dict)
+            and "scenes" in parsed
+            and isinstance(parsed["scenes"], list)
+            and parsed["scenes"]
+        ):
+            first = parsed["scenes"][0]
+            image_prompt_body = first.get("image_prompt_body") or first.get("image_prompt")
 
+        else:
+            raise RuntimeError(
+                f"Promptgen returned unusable JSON for scene_index={unit['scene_index']}"
+            )
+
+
+        if not isinstance(image_prompt_body, str) or not image_prompt_body.strip():
+            # Deterministic fallback: use cleaned visual_description verbatim
+            image_prompt_body = clean_visual_description
+
+            if not image_prompt_body or not image_prompt_body.strip():
+                raise RuntimeError(
+                    f"Promptgen failed and visual_description is empty for scene_index={unit['scene_index']}\nParsed JSON:\n{json.dumps(parsed, indent=2)}"
+                )
+
+        promptgen_scenes.append({
+            "scene_index": unit["scene_index"],
+            "image_prompt_body": image_prompt_body.strip(),
+        })
 
         # CRITICAL: throttle GPU + Ollama
         time.sleep(0.05)
@@ -297,7 +278,12 @@ def main():
         
         image_prompt_body = pg["image_prompt_body"]
 
-        if "narrator" in image_prompt_body.lower():
+        # Prepend canonical style verbatim to every prompt
+        if canon_style:
+            image_prompt_body = f"{canon_style}. {image_prompt_body}"
+
+        # Preserve narrator detection logic
+        if "narrator" in pg["image_prompt_body"].lower():
             unit["includes_narrator"] = True
 
         merged = {

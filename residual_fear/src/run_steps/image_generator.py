@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -39,31 +40,40 @@ class ComfyConfig:
     
     
 HORROR_VISUAL_BIAS = (
-    "ominous, unsettling, oppressive atmosphere, "
-    "low visibility, heavy shadow, harsh contrast, "
-    "claustrophobic framing, obscured details, "
+    "ominous, oppressive atmosphere, "
+    "deep shadow dominance, limited visibility, "
+    "dense fog or haze obscuring distance, "
+    "isolated subject or silhouette within the frame, "
+    "strong negative space, "
     "threat implied but not shown, "
-    "psychological horror, cinematic lighting, "
-    "grain, noise, imperfect, uncomfortable composition"
+    "psychological horror tone, "
+    "moody cinematic lighting, uneven illumination, "
+    "silhouettes emphasized over detail, "
+    "grim, unsettling composition, "
+    "single cinematic frame, one shot only, no panels, no split frame, "
+    "no collage, no triptych, no film strip, no storyboard layout"
 )
 
 NEGATIVE_PROMPT = (
-    "cgi, 3d render, illustration, painting, anime, cartoon, "
-    "stylized, concept art, graphic novel, "
-    "painterly, oil painting, watercolor, "
-    "neon lighting, fantasy lighting, supernatural glow, "
-    "heavy color grading, extreme HDR, "
-    "fisheye lens, ultra wide distortion, dutch angle, "
+    "anime, cartoon, chibi, "
+    "bright cheerful lighting, "
+    "neon colors, oversaturated colors, "
+    "extreme HDR, glowing outlines, "
+    "fantasy magic effects, supernatural glow, "
+    "cgi, plastic skin, video game graphics, "
+    "fisheye lens, ultra wide distortion, "
+    "dutch angle, tilted horizon, "
     "impossible geometry, warped architecture, "
-    "blur, low resolution, noise, motion blur, "
-    "jpeg artifacts, compression artifacts, "
-    "people, humans, person, body, face, head, "
-    "hands, fingers, limbs, silhouettes, "
-    "reflections, mirrors, "
+    "low resolution, jpeg artifacts, compression artifacts, "
+    "motion blur, streaking, smear, "
+    "extra people, crowd, "
+    "duplicate heads, extra limbs, missing limbs, "
+    "malformed hands, distorted anatomy, "
     "text, watermark, logo, subtitles, captions, "
     "UI elements, branded signage, readable labels, "
-    "graphic gore, dismemberment, exposed organs, "
-    "blood spray, torture"
+    "graphic gore, exposed organs, torture, dismemberment, "
+    "multiple frames, split screen, diptych, triptych, collage, "
+    "storyboard, comic panel, film strip, contact sheet, montage"
 )
 
 
@@ -78,29 +88,6 @@ def load_json(p: Path) -> dict:
 
 def save_json(p: Path, d: dict):
     p.write_text(json.dumps(d, indent=2), encoding="utf-8")
-
-def stable_seed(run_id: str | None, run_dir: Path | None = None) -> int:
-    """
-    Generate a stable numeric seed.
-    Priority:
-    1) run_id string (preferred)
-    2) run_dir name
-    3) hard fallback
-    """
-    source = None
-
-    if isinstance(run_id, str) and run_id:
-        source = run_id
-    elif run_dir is not None:
-        source = run_dir.name
-    else:
-        source = "fallback"
-
-    try:
-        return int(source.split("__")[0].replace("_", ""))
-    except Exception:
-        return sum(ord(c) for c in source) * 1000
-
 
 # ----------------------------
 # ComfyUI plumbing
@@ -186,32 +173,36 @@ def main():
     cfg = ComfyConfig()
     run = latest_run_dir()
     image_plan = load_json(run / "image_plan.json")
+    visual_canon = load_json(run / "visual_canon.json")
+    CHARACTER_CANON = visual_canon["character_description"]
+    STYLE_CANON = visual_canon["style"]
     run_id = image_plan["run_id"]
-    seed0 = stable_seed(run_id, run)
+    seed = random.randint(100000, 1000000)
 
     images_dir = run / "images"
     images_dir.mkdir(exist_ok=True)
 
     workflows = {
-        "beats": load_json(ROOT / "src/image_generation/horror_shorts_txt2img_beat_workflow.json"),
+        "scenes": load_json(ROOT / "src/image_generation/horror_shorts_txt2img_beat_workflow.json"),
     }
 
     
-    # ---- Pass 1: Beats
-    for beat in image_plan["beats"]:
-        beat_id = beat["beat_id"]
+    # ---- Pass 1: scenes
+    for scene in image_plan["scenes"]:
+        scene_index = scene["scene_index"]
 
-        if beat.get("unit_type") == "microbeat":
-            micro_id = beat["microbeat_id"]
-            out_name = f"beat_{beat_id:03d}_micro_{micro_id:03d}"
-        else:
-            out_name = f"beat_{beat_id:03d}"
+        out_name = f"scene_{scene_index:03d}"
 
         wf = patch_prompt(
-            workflows["beats"],
-            positive=f"{HORROR_VISUAL_BIAS}. {beat['image_prompt_body']}",
+            workflows["scenes"],
+            positive=(
+                f"{CHARACTER_CANON}. "
+                f"{STYLE_CANON}. "
+                f"{HORROR_VISUAL_BIAS}. "
+                f"{scene['image_prompt_body']}"
+            ),
             negative=NEGATIVE_PROMPT,
-            seed=seed0 + beat_id * 1000 + (beat.get("microbeat_id", 0)),
+            seed=seed + scene_index * 1000,
             filename=f"project_s/{out_name}",
         )
 

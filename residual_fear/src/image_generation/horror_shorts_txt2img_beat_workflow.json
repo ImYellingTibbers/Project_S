@@ -25,7 +25,7 @@
   },
   "55": {
     "inputs": {
-      "seed": 813473939531075,
+      "seed": 61140271156675,
       "steps": 20,
       "cfg": 5,
       "sampler_name": "dpmpp_2m_sde",
@@ -84,7 +84,7 @@
   },
   "58": {
     "inputs": {
-      "ckpt_name": "sd_xl_base_1.0.safetensors"
+      "ckpt_name": "DreamShaperXL_Turbo_v2.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -102,6 +102,15 @@
     "class_type": "CLIPTextEncode",
     "_meta": {
       "title": "POSITIVE"
+    }
+  },
+  "96": {
+    "inputs": {
+      "image": "pasted/image.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
     }
   }
 }
