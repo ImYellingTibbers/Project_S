@@ -94,6 +94,11 @@ STEP_3_SCRIPTWRITER = {
     "script": "src/run_steps/scriptwriter.py",
 }
 
+STEP_3B_HOOKER = {
+    "label": "Step 3 - Hooker",
+    "script": "src/run_steps/hooker.py",
+}
+
 STEP_4_SCRIPT_EDITOR = {
     "label": "Step 4 - Script Editor",
     "script": "src/run_steps/script_editor.py",
@@ -179,13 +184,13 @@ def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
     return [
         # STEP_1_IDEA_GENERATOR,
         # STEP_2_IDEA_SELECTOR,
-        # STEP_3_SCRIPTWRITER, 
+        STEP_3_SCRIPTWRITER, 
         # STEP_5_VO_GENERATOR,
-        STEP_6_STORYBOARD_CREATOR,
-        STEP_6B_IMAGE_PROMPT_PLANNER,
-        STEP_6C_MIDWAY_SCORE,
-        STEP_7_METADATA_GENERATOR,
-        STEP_8_IMAGE_GENERATOR,
+        # STEP_6_STORYBOARD_CREATOR,
+        # STEP_6B_IMAGE_PROMPT_PLANNER,
+        # STEP_6C_MIDWAY_SCORE,
+        # STEP_7_METADATA_GENERATOR,
+        # STEP_8_IMAGE_GENERATOR,
         # STEP_9_TIMING_PLANNER,
         # STEP_10_VIDEO_ASSEMBLER,
         # STEP_10B_ADD_CAPTIONS,

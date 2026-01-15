@@ -27,13 +27,16 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def extract_json(text: str) -> dict:
-    if not text or not text.strip():
-        raise RuntimeError("Judge LLM returned empty response")
+def extract_json_strict(text: str) -> dict:
+    """
+    Extract JSON or raise immediately.
+    """
+    if not text:
+        raise RuntimeError("Empty LLM response")
 
     text = text.strip()
 
-    # Strip markdown fences if present
+    # Strip markdown
     if text.startswith("```"):
         lines = text.splitlines()
         if lines and lines[0].startswith("```"):
@@ -42,142 +45,134 @@ def extract_json(text: str) -> dict:
             lines = lines[:-1]
         text = "\n".join(lines).strip()
 
-    # Find first JSON object
-    first_brace = text.find("{")
-    if first_brace == -1:
-        raise RuntimeError(f"Judge LLM did not return JSON:\n{text[:300]}")
+    start = text.find("{")
+    end = text.rfind("}")
 
-    text = text[first_brace:]
+    if start == -1 or end == -1 or end <= start:
+        raise RuntimeError("No JSON object found")
+
+    candidate = text[start:end + 1]
 
     try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        # Attempt to auto-fix missing closing braces
-        open_braces = text.count("{")
-        close_braces = text.count("}")
-
-        if close_braces < open_braces:
-            text = text + ("}" * (open_braces - close_braces))
-
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError as e:
-            raise RuntimeError(
-                f"Invalid JSON from Judge LLM:\n{text[:500]}"
-            ) from e
+        return json.loads(candidate)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Invalid JSON:\n{candidate[:500]}") from e
 
 
 # ---------------------------
-# Judge Prompt
+# Scoring
+# ---------------------------
+
+SCORE_KEYS = {
+    "hook_strength",
+    "anchor_clarity",
+    "escalation_quality",
+    "boundary_violation",
+    "public_relatability",
+    "ending_inevitability",
+}
+
+
+def normalize_judge_output(judged: dict) -> dict:
+    if "scores" in judged and isinstance(judged["scores"], dict):
+        return judged
+
+    if SCORE_KEYS.issubset(judged.keys()):
+        return {
+            "scores": {k: judged[k] for k in SCORE_KEYS},
+            "likely_view_tier": judged.get("likely_view_tier"),
+            "confidence": judged.get("confidence"),
+        }
+
+    for key in ("evaluation", "result", "output"):
+        if key in judged and isinstance(judged[key], dict):
+            return normalize_judge_output(judged[key])
+
+    raise RuntimeError("No recoverable score structure")
+
+
+def coerce_scores(scores: dict) -> dict:
+    cleaned = {}
+    for k in SCORE_KEYS:
+        try:
+            cleaned[k] = float(scores.get(k, 0.0))
+        except (TypeError, ValueError):
+            cleaned[k] = 0.0
+
+        cleaned[k] = max(0.0, min(10.0, cleaned[k]))
+
+    if all(v == 0.0 for v in cleaned.values()):
+        raise RuntimeError("All scores zero after coercion")
+
+    return cleaned
+
+
+def compute_overall_score(scores: dict) -> float:
+    weights = {
+        "hook_strength": 0.20,
+        "anchor_clarity": 0.15,
+        "escalation_quality": 0.20,
+        "boundary_violation": 0.15,
+        "public_relatability": 0.15,
+        "ending_inevitability": 0.15,
+    }
+
+    total = sum(scores[k] * weights[k] for k in weights)
+    return round(total, 2)
+
+
+# ---------------------------
+# Prompts
 # ---------------------------
 
 JUDGE_PROMPT = """
-You are a STRICT EVALUATION SYSTEM for YouTube Shorts confessional horror, you specialize in creating and judging youtube shorts that get millions of views with high retention, specifically in the confessional horror stories genre. 
+You are a STRICT EVALUATION SYSTEM for YouTube Shorts confessional horror.
 
-You are NOT allowed to:
-- explain
-- suggest improvements
-- rewrite content
-- summarize creatively
-- add commentary
+You MUST output ONLY valid JSON in the exact structure provided.
+Do NOT explain. Do NOT comment.
 
-You MUST:
-- evaluate ONLY structure and virality-relevant signals
-- output ONLY valid JSON in the exact format below
-
---------------------------------
-EVALUATION GOAL
---------------------------------
-Assess how likely this content is to achieve:
-- high retention
-- strong algorithmic distribution
-- large view counts (hundreds of thousands to millions)
-
-You are NOT predicting exact views.
-You are classifying QUALITY and VIRAL POTENTIAL.
-
---------------------------------
-WHAT YOU ARE GIVEN
---------------------------------
-1. A spoken horror script
-2. A visual storyboard that follows the script
-3. AI image generation prompts that follow the storyboard
-
-They represent a single YouTube Shorts video concept.
-
---------------------------------
-SCORING RULES
---------------------------------
-Score each category from 0.0 to 10.0
-
-Use the FULL range.
-Do NOT cluster everything around 7–8.
-Weak content must score low.
-
-Definitions:
-
-- hook_strength:
-  Does the first line force a scroll-stop via immediacy or violation?
-
-- anchor_clarity:
-  Is there a single repeating concrete element the viewer can track?
-
-- escalation_quality:
-  Does the threat clearly intensify in proximity, frequency, or consequence?
-
-- boundary_violation:
-  Does the threat cross into personal, private, or safe spaces?
-
-- public_relatability:
-  Does the story move beyond private isolation into shared or public contexts?
-
-- ending_inevitability:
-  Does the ending imply unavoidable danger without explanation?
-
---------------------------------
-OVERALL SCORE
---------------------------------
-overall_score is the weighted average:
-- hook_strength (20%)
-- anchor_clarity (15%)
-- escalation_quality (20%)
-- boundary_violation (15%)
-- public_relatability (15%)
-- ending_inevitability (15%)
-
---------------------------------
-VIEW TIER CLASSIFICATION
---------------------------------
-Assign ONE tier:
-
-- "under_100k"
-- "100k_500k"
-- "500k_1M"
-- "1M_2M"
-- "2M_plus"
-
-This is a qualitative tier, not a prediction.
-
---------------------------------
-OUTPUT FORMAT (STRICT)
---------------------------------
+OUTPUT JSON:
 {
-  "overall_score": number,
   "scores": {
-    "hook_strength": number,
-    "anchor_clarity": number,
-    "escalation_quality": number,
-    "boundary_violation": number,
-    "public_relatability": number,
-    "ending_inevitability": number
+    "hook_strength": 0.0,
+    "anchor_clarity": 0.0,
+    "escalation_quality": 0.0,
+    "boundary_violation": 0.0,
+    "public_relatability": 0.0,
+    "ending_inevitability": 0.0
   },
-  "likely_view_tier": string,
-  "confidence": "low" | "medium" | "high"
+  "likely_view_tier": "under_100k",
+  "confidence": "low"
+}
+""".strip()
+
+
+REPAIR_PROMPT = """
+You previously failed to output valid JSON.
+
+TASK:
+Convert the following evaluation into VALID JSON ONLY.
+
+RULES:
+- Output ONLY JSON
+- Match this EXACT schema
+- Use numeric scores 0.0–10.0
+
+SCHEMA:
+{
+  "scores": {
+    "hook_strength": 0.0,
+    "anchor_clarity": 0.0,
+    "escalation_quality": 0.0,
+    "boundary_violation": 0.0,
+    "public_relatability": 0.0,
+    "ending_inevitability": 0.0
+  },
+  "likely_view_tier": "under_100k",
+  "confidence": "low"
 }
 
---------------------------------
-BEGIN EVALUATION
---------------------------------
+FAILED RESPONSE:
 """.strip()
 
 
@@ -199,41 +194,38 @@ def main():
     }
 
     prompt = (
-      "SYSTEM:\n"
-      "You are a JSON-only evaluation engine.\n"
-      "You MUST output ONLY valid JSON.\n"
-      "DO NOT include explanations, analysis, summaries, or text.\n"
-      "If you include anything outside JSON, the output is invalid.\n\n"
-      + JUDGE_PROMPT
-      + "\n\nINPUT:\n"
-      + json.dumps(judge_input, indent=2)
-      + "\n\nOUTPUT (JSON ONLY):\n"
-  )
+        "SYSTEM:\nJSON ONLY.\n\n"
+        + JUDGE_PROMPT
+        + "\n\nINPUT:\n"
+        + json.dumps(judge_input, indent=2)
+    )
 
     raw = call_llm(prompt)
 
     try:
-        judged = extract_json(raw)
+        judged_raw = extract_json_strict(raw)
     except RuntimeError:
-        # One forced retry with hard JSON constraint
-        retry_prompt = (
-            "SYSTEM:\n"
-            "OUTPUT ONLY JSON.\n"
-            "NO TEXT.\n"
-            "NO EXPLANATIONS.\n"
-            "NO ANALYSIS.\n"
-            "JSON ONLY.\n\n"
-            + prompt
+        repair_raw = call_llm(
+            REPAIR_PROMPT + "\n\n" + raw.strip()
         )
-        raw = call_llm(retry_prompt)
-        judged = extract_json(raw)
+        judged_raw = extract_json_strict(repair_raw)
+
+    judged_norm = normalize_judge_output(judged_raw)
+    scores = coerce_scores(judged_norm["scores"])
+
+    judgement = {
+        "scores": scores,
+        "likely_view_tier": judged_norm.get("likely_view_tier", "under_100k"),
+        "confidence": judged_norm.get("confidence", "low"),
+        "overall_score": compute_overall_score(scores),
+    }
 
     output = {
         "schema": {"name": "midway_score", "version": "1.0"},
         "run_id": script_json.get("run_id"),
         "created_at": utc_now_iso(),
         "input": judge_input,
-        "judgement": judged,
+        "judgement": judgement,
     }
 
     out_path = run_folder / "midway_score.json"

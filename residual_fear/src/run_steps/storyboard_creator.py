@@ -107,21 +107,36 @@ You are a YouTube Shorts professional who specializes in creating visually inter
 
 Your task is to create approximately {min_scenes} short visual scenes that follow the narrative flow of the provided script.
 
+The first scene must:
+- Be visually scroll-stopping on its own at phone size
+- Show a single, unmistakable anomaly happening right now
+- Show a completed or irreversible physical change (a lock already open, an object already displaced, a barrier already breached)
+- NOT rely on flickering alone as the anomaly
+
 Each scene should:
-- Show something visually interesting or changing in the story
-- Feel like a frozen moment from a video (not a sentence being acted out)
-- Help the viewer understand or feel progression in the story
+- Show something visually interesting or changed in the story
+- Feel like a frozen moment from a video (a clear visual state)
+In the first 3 scenes, at least ONE anomaly must already be completed or irreversible rather than merely in progress
+
+Visual impact requirements:
+- Each scene should feel unsettling or tense on sight
+- Prefer moments that imply danger, intrusion, or loss of control
+- Favor images that raise a question (“what’s about to happen?”) rather than explain it
 
 Guidelines:
 - You will need MANY scenes to maintain retention
 - Scenes should escalate visually over time
-- Focus on environments, objects, and visible outcomes
+- Focus on environments, objects, reflections, and physical outcomes
 - The narrator may appear, but should not dominate every scene
 - Describe each scene purely visually (assume audio may be muted)
+- Avoid slapstick, sudden forceful motion, or physically implausible interactions
+- When people appear, show only physical posture, position, or interaction with objects; avoid naming emotions.
 
 For each scene:
 - Write a concise visual description
 - Indicate whether the narrator is visible in the scene
+
+In the final third of scenes, favor interior or close-proximity anomalies over distant exterior sources.
 
 FULL SCRIPT (for reference only):
 \"\"\"{script_text}\"\"\"

@@ -2,7 +2,7 @@ import subprocess
 import sys
 import os
 
-RUNS = 5
+RUNS = 3
 
 env = os.environ.copy()
 env["PYTHONUNBUFFERED"] = "1"
