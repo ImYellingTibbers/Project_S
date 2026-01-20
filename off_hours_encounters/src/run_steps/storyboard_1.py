@@ -21,21 +21,25 @@ from src.run_steps._common_utils import (
 
 SCHEMA_NAME = "storyboard_1"
 
-
 def build_prompt(script_text: str) -> str:
     return f"""
-You are creating a rough storyboard for a youtube shorts channel that makes viral confessional horror stories.
+You are a lead Cinematographer for a viral horror YouTube channel. 
+Your task is to identify the 6 most visually distinct "Anchor Moments" from this script.
 
-Your task is to read the script, and create a visual storyboard based on the script that follows the narrative and will eventually be used to create images that will go along with the story. 
+An Anchor Moment is a scene that defines a major turning point or a high-scare moment in the story. 
 
-Please return with 5-6 main story scenes that can be derived from the script. Do not worry about consistency, style, camera, or structure.
+GUIDELINES:
+1. Spread the moments evenly across the entire script (Intro, Rising Tension, Climax, Aftermath).
+2. Each moment should be visually unique from the others (e.g., don't pick two scenes of a person just standing in a room).
+3. Focus on objects, entities, and atmospheric changes that represent the core of the horror.
 
 RETURN FORMAT:
 {{
   "scenes": [
     {{
       "scene_index": 0,
-      "description": "Short description of a main visual scene."
+      "moment_title": "The Discovery",
+      "description": "A detailed summary of the primary visual event."
     }}
   ]
 }}
@@ -43,7 +47,6 @@ RETURN FORMAT:
 SCRIPT:
 {script_text}
 """.strip()
-
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -60,6 +63,7 @@ def main() -> None:
     if not script_text:
         raise RuntimeError("script.json missing script text")
 
+    # We now use the improved "Cinematographer" prompt
     resp = call_llm(build_prompt(script_text))
     payload = extract_json_from_llm(resp)
 
@@ -71,8 +75,7 @@ def main() -> None:
     }
 
     write_json(run_folder / "storyboard_1.json", out)
-    print(f"[SUCCESS] storyboard_1.json saved | run={args.run_id}")
-
+    print(f"[SUCCESS] storyboard_1.json (Anchor Moments) saved | run={args.run_id}")
 
 if __name__ == "__main__":
     main()

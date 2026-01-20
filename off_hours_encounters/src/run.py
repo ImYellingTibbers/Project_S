@@ -128,12 +128,12 @@ def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
     return [
         # STEP_1_SCRIPTWRITER,
         # STEP_2_VO_GENERATOR,
-        # STEP_3_STORYBOARD_1,
-        # STEP_4_VISUAL_CANON,
-        # STEP_5_STORYBOARD_2,
-        # STEP_6_STORYBOARD_3,
+        STEP_3_STORYBOARD_1,
+        STEP_4_VISUAL_CANON,
+        STEP_5_STORYBOARD_2,
+        STEP_6_STORYBOARD_3,
         STEP_7_STORYBOARD_4,
-        # STEP_8_IMAGE_PROMPT_GENERATOR,
+        STEP_8_IMAGE_PROMPT_GENERATOR,
     ]
 
 # -------------------------

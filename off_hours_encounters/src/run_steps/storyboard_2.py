@@ -20,22 +20,33 @@ from src.run_steps._common_utils import (
 
 SCHEMA_NAME = "storyboard_2"
 
-
 def build_prompt(script_text: str, storyboard_1: Dict[str, Any]) -> str:
+    # CALCULATION: For a ~100s script, we want a cut every 3-4 seconds.
+    # 100 / 3.5 = ~28 scenes. 
+    target_total_scenes = 28 
+    
     return f"""
-You are a master storyboard creator for a YouTube Shorts channel that specializes in confessional horror shorts.
+You are a master structural pacing architect for YouTube Shorts. 
 
-Your job is to create storyboard step 2.
+Your goal is to take a 100-second horror script and break it into a high-retention pacing map.
 
-You are given a script and a storyboard_1. Storyboard_1 already defines the major visual moments that must exist in the video. For this step, your task is to turn each storyboard_1 scene into a chapter that represents a section of the visual narrative.
+CRITICAL PACING RULE:
+To keep viewers engaged, we need frequent visual cuts. For this 100-second script, you MUST distribute exactly {target_total_scenes} scenes across the narrative. 
 
-Each chapter exists only to determine pacing. Chapters do not add new story events and do not invent new visuals. They simply decide how many short scenes should exist within that chapter.
+INPUTS:
+1. SCRIPT: {script_text}
+2. STORYBOARD_1 (Major Anchors): {storyboard_1}
 
-Assume that one visual scene lasts between 2 and 5 seconds. Use the length and pacing of the script to determine how many total scenes are needed for the entire video, then distribute those scenes across the chapters. Every chapter must contain at least two scenes, and some chapters may contain more depending on how much visual material can reasonably be derived from the corresponding storyboard_1 scene.
+YOUR TASK:
+1. Divide the script into Chapters based on the {len(storyboard_1['scenes'])} Anchor Scenes in Storyboard_1.
+2. Assign a 'scene_count' to each chapter. 
+3. The total sum of all 'scene_count' values MUST be exactly {target_total_scenes}.
+4. Most chapters should have 5-7 scenes to ensure the visual moves every 3 seconds.
 
-Use the storyboard_1 scenes as guidance for how dense or sparse each chapter should be, but do not describe visuals, camera angles, styles, or consistency. This step is purely structural.
-
-Your output should only list the chapters, their index, which storyboard_1 scene they came from, a short functional description of the chapter’s purpose, and how many scenes belong to that chapter.
+STRICT RULES:
+- Do not describe visuals.
+- Do not add camera angles.
+- Only output the numerical structure and the purpose of the chapter.
 
 RETURN FORMAT:
 {{
@@ -43,19 +54,12 @@ RETURN FORMAT:
     {{
       "chapter_index": 0,
       "source_scene_index": 0,
-      "chapter_purpose": "Short functional purpose",
-      "scene_count": 3
+      "chapter_purpose": "Intro: Establishing the cursed cabinet",
+      "scene_count": 6
     }}
   ]
 }}
-
-SCRIPT:
-{script_text}
-
-STORYBOARD_1:
-{storyboard_1}
 """.strip()
-
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -72,6 +76,7 @@ def main() -> None:
     if not script_text:
         raise RuntimeError("script.json missing script text")
 
+    # The prompt now forces the LLM to aim for ~28 scenes total
     resp = call_llm(build_prompt(script_text, storyboard_1))
     payload = extract_json_from_llm(resp)
 
@@ -79,12 +84,12 @@ def main() -> None:
         "schema": SCHEMA_NAME,
         "run_id": args.run_id,
         "created_at": utc_now_iso(),
+        "total_target_scenes": 28,
         "chapters": payload.get("chapters", []),
     }
 
     write_json(run_folder / "storyboard_2.json", out)
-    print(f"[SUCCESS] storyboard_2.json saved | run={args.run_id}")
-
+    print(f"[SUCCESS] storyboard_2.json (High-Retention Pacing) saved | run={args.run_id}")
 
 if __name__ == "__main__":
     main()
