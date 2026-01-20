@@ -20,8 +20,10 @@ RUNS_DIR = Path("runs")
 
 IDEA_GENERATOR_LLM_MODEL = "gpt-4o-mini"
 IDEA_SELECTOR_LLM_MODEL = "gpt-4o"
-SCRIPTWRITER_LLM_MODEL = "gpt-4.1"
-IMAGE_PLANNER_LLM_MODEL = "gpt-4o"
+SCRIPTWRITER_LLM_MODEL = "gpt-4o"
+STORYBOARD_LLM_MODEL = "gpt-4o"
+MICROBEAT_LLM_MODEL = "local-qwen" # Variable not used
+PROMPT_PLANNER_LLM_MODEL = "local-qwen" # Variable not used
 
 # Future:
 # TIMING_PLANNER_LLM_MODEL = "gpt-5-mini"
@@ -43,6 +45,9 @@ VO_SAMPLE_RATE_HZ = 24000
 # Timing defaults
 DEFAULT_VO_BUFFER_PRE = 0.15
 DEFAULT_VO_BUFFER_POST = 0.15
+
+# Microbeat Generator Switch
+USE_MICROBEATS = True
 
 # Image defaults
 DEFAULT_ASPECT_RATIO = "9:16"

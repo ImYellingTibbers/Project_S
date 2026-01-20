@@ -9,65 +9,62 @@ INDEX_RE = re.compile(r"(\d{3})_final_vid\.mp4")
 
 ROOT = Path(__file__).resolve().parents[2]
 AWAITING = ROOT / "awaiting_upload"
-TEMP_RUN = ROOT / "_upload_tmp_run"
+UPLOADER = ROOT / "src" / "uploader" / "youtube_uploader.py"
+
+print("[uploader] queued_youtube_uploader.py STARTED")
 
 def find_next_item():
-    if not AWAITING.exists():
+    vids = sorted(AWAITING.glob("*_final_vid.mp4"))
+    if not vids:
         return None, None
 
-    items = []
-    for f in AWAITING.glob("*_final_vid.mp4"):
-        m = INDEX_RE.match(f.name)
-        if m:
-            items.append((int(m.group(1)), f))
+    vid = vids[0]
+    meta = vid.with_name(vid.name.replace("_final_vid.mp4", "_meta.json"))
 
-    if not items:
-        return None, None
+    if not meta.exists():
+        raise RuntimeError(f"Missing metadata for {vid.name}")
 
-    items.sort()
-    idx, video_path = items[0]
-    meta_path = AWAITING / f"{idx:03d}_final_metadata.json"
-
-    if not meta_path.exists():
-        raise RuntimeError(f"Metadata missing for {video_path.name}")
-
-    return video_path, meta_path
+    return vid, meta
 
 def main():
     video_path, meta_path = find_next_item()
+
     if not video_path:
-        print("[queue] No videos awaiting upload")
+        print("[uploader] Queue empty")
         return
 
-    print(f"[queue] Uploading {video_path.name}")
-
-    # Prepare temp run folder
-    if TEMP_RUN.exists():
-        shutil.rmtree(TEMP_RUN)
-    (TEMP_RUN / "render").mkdir(parents=True)
-
-    shutil.copy2(video_path, TEMP_RUN / "render" / "final_short.mp4")
-    shutil.copy2(meta_path, TEMP_RUN / "idea.json")
+    print("[uploader] video:", video_path)
+    print("[uploader] meta :", meta_path)
 
     cmd = [
-        sys.executable,
-        str(ROOT / "src" / "youtube_uploader.py"),
-        "--run", str(TEMP_RUN),
-        "--privacy", "public",
+        "python3",
+        str(UPLOADER),
+        "--video", str(video_path),
+        "--meta", str(meta_path),
     ]
 
-    print("$ " + " ".join(cmd))
-    proc = subprocess.run(cmd, cwd=str(ROOT))
+    proc = subprocess.run(
+        cmd,
+        cwd=str(ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    print("[uploader] stdout:")
+    print(proc.stdout)
+
+    print("[uploader] stderr:")
+    print(proc.stderr)
 
     if proc.returncode != 0:
         raise RuntimeError("Upload failed; queued files preserved")
 
-    # Cleanup queue + temp
     video_path.unlink()
     meta_path.unlink()
-    shutil.rmtree(TEMP_RUN)
 
-    print("[queue] Upload successful; item removed from queue")
+    print("[uploader] Upload successful; item removed from queue")
+
 
 if __name__ == "__main__":
     main()

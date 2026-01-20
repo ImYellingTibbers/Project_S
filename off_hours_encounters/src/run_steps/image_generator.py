@@ -4,12 +4,11 @@ import json
 import os
 import sys
 import time
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-import random
 
-from face_gate import FaceGate, gate_images
 
 # ----------------------------
 # Optional dependency bootstrap
@@ -38,33 +37,45 @@ class ComfyConfig:
     base_url: str = os.getenv("COMFY_URL", "http://127.0.0.1:8188")
     client_id: str = os.getenv("COMFY_CLIENT_ID", "project_s_image_generator")
     input_subfolder_root: str = os.getenv("COMFY_INPUT_SUBFOLDER_ROOT", "project_s")
-
-# ----------------------------
-# Constants
-# ----------------------------
-ID_MATCH_POSITIVE = (
-    "same person as reference image, "
-    "preserve original scene and composition, "
-    "preserve lighting and camera angle, "
-    "preserve clothing and body proportions, "
-    "subtle correction only, "
-    "photorealistic, "
-    "natural skin texture, "
-    "no beautification"
+    
+    
+HORROR_VISUAL_BIAS = (
+    "ominous, oppressive atmosphere, "
+    "deep shadow dominance, limited visibility, "
+    "dense fog or haze obscuring distance, "
+    "isolated subject or silhouette within the frame, "
+    "strong negative space, "
+    "threat implied but not shown, "
+    "psychological horror tone, "
+    "moody cinematic lighting, uneven illumination, "
+    "silhouettes emphasized over detail, "
+    "grim, unsettling composition, "
+    "single cinematic frame, one shot only, no panels, no split frame, "
+    "no collage, no triptych, no film strip, no storyboard layout"
 )
 
-ID_MATCH_NEGATIVE = (
-    "different person, face mismatch, identity change, face swap,"
-    "incorrect face, altered identity,"
-    "beauty retouching, model-like appearance, idealized features,"
-    "plastic skin, overly smooth skin, airbrushed face,"
-    "exaggerated facial features, stylized face, cartoon face,"
-    "cgi face, digital face,"
-    "distorted face, warped face, melted face,"
-    "duplicated face, asymmetrical eyes,"
-    "misaligned pupils, extra eyes, extra ears,"
-    "blurry face, low detail face, out of focus face"
+NEGATIVE_PROMPT = (
+    "anime, cartoon, chibi, "
+    "bright cheerful lighting, "
+    "neon colors, oversaturated colors, "
+    "extreme HDR, glowing outlines, "
+    "fantasy magic effects, supernatural glow, "
+    "cgi, plastic skin, video game graphics, "
+    "fisheye lens, ultra wide distortion, "
+    "dutch angle, tilted horizon, "
+    "impossible geometry, warped architecture, "
+    "low resolution, jpeg artifacts, compression artifacts, "
+    "motion blur, streaking, smear, "
+    "extra people, crowd, "
+    "duplicate heads, extra limbs, missing limbs, "
+    "malformed hands, distorted anatomy, "
+    "text, watermark, logo, subtitles, captions, "
+    "UI elements, branded signage, readable labels, "
+    "graphic gore, exposed organs, torture, dismemberment, "
+    "multiple frames, split screen, diptych, triptych, collage, "
+    "storyboard, comic panel, film strip, contact sheet, montage"
 )
+
 
 # ----------------------------
 # Helpers
@@ -77,29 +88,6 @@ def load_json(p: Path) -> dict:
 
 def save_json(p: Path, d: dict):
     p.write_text(json.dumps(d, indent=2), encoding="utf-8")
-
-def stable_seed(run_id: str | None, run_dir: Path | None = None) -> int:
-    """
-    Generate a stable numeric seed.
-    Priority:
-    1) run_id string (preferred)
-    2) run_dir name
-    3) hard fallback
-    """
-    source = None
-
-    if isinstance(run_id, str) and run_id:
-        source = run_id
-    elif run_dir is not None:
-        source = run_dir.name
-    else:
-        source = "fallback"
-
-    try:
-        return int(source.split("__")[0].replace("_", ""))
-    except Exception:
-        return sum(ord(c) for c in source) * 1000
-
 
 # ----------------------------
 # ComfyUI plumbing
@@ -158,17 +146,6 @@ def download_image(cfg: ComfyConfig, info: dict) -> bytes:
     r.raise_for_status()
     return r.content
 
-def upload_input_image(cfg: ComfyConfig, path: Path, subfolder: str) -> str:
-    with path.open("rb") as f:
-        r = requests.post(
-            f"{cfg.base_url}/upload/image",
-            files={"image": (path.name, f, "image/png")},
-            data={"subfolder": subfolder, "type": "input", "overwrite": "true"},
-            timeout=120,
-        )
-    r.raise_for_status()
-    return f"{subfolder}/{path.name}".replace("\\", "/")
-
 # ----------------------------
 # Workflow patching
 # ----------------------------
@@ -189,14 +166,6 @@ def patch_prompt(wf: dict, *, positive: str, negative: Optional[str], seed: int,
             node["inputs"]["filename_prefix"] = filename
     return wf
 
-def patch_loadimage(wf: dict, image_path: str) -> dict:
-    wf = json.loads(json.dumps(wf))
-    for node in wf.values():
-        if node.get("class_type") == "LoadImage":
-            if "Beat" in node.get("_meta", {}).get("title", ""):
-                node["inputs"]["image"] = image_path
-    return wf
-
 # ----------------------------
 # Main
 # ----------------------------
@@ -204,49 +173,36 @@ def main():
     cfg = ComfyConfig()
     run = latest_run_dir()
     image_plan = load_json(run / "image_plan.json")
+    visual_canon = load_json(run / "visual_canon.json")
+    CHARACTER_CANON = visual_canon["character_description"]
+    STYLE_CANON = visual_canon["style"]
     run_id = image_plan["run_id"]
-    canon_seed = random.randint(0, 2**32 - 1)
-    print(f"canon seed: {canon_seed}")
-    image_plan["canon"]["seed"] = canon_seed
-    save_json(run / "image_plan.json", image_plan)
-    seed0 = stable_seed(run_id, run)
+    seed = random.randint(100000, 1000000)
 
     images_dir = run / "images"
     images_dir.mkdir(exist_ok=True)
 
     workflows = {
-        "canon": load_json(ROOT / "src/image_generation/horror_shorts_txt2img_canon.json"),
-        "beats": load_json(ROOT / "src/image_generation/horror_shorts_txt2img_beat_workflow.json"),
-        "id_match": load_json(ROOT / "src/image_generation/horror_shorts_img2img_ID_match_workflow.json"),
+        "scenes": load_json(ROOT / "src/image_generation/horror_shorts_txt2img_beat_workflow.json"),
     }
 
-    # ---- Canon
-    canon_wf = patch_prompt(
-        workflows["canon"],
-        positive=image_plan["canon"]["image_prompt_body"],
-        negative=None,
-        seed=canon_seed,
-        filename="project_s/canon",
-    )
-    pid = queue_prompt(cfg, canon_wf)
-    wait_for_completion(cfg, pid)
-    canon_info = extract_image(get_history(cfg, pid))
-    canon_path = images_dir / "canon.png"
-    canon_path.write_bytes(download_image(cfg, canon_info))
     
-    # ---- Pass 1: Beats
-    face_gate = FaceGate()
-    protagonist_images = []
-    for beat in image_plan["beats"]:
-        fname = f"beat_{beat['beat_id']:03d}"
-        is_p = beat["protagonist_visible"]
-        out_name = f"{fname}{'_p' if is_p else ''}"
+    # ---- Pass 1: scenes
+    for scene in image_plan["scenes"]:
+        scene_index = scene["scene_index"]
+
+        out_name = f"scene_{scene_index:03d}"
 
         wf = patch_prompt(
-            workflows["beats"],
-            positive=beat["image_prompt_body"],
-            negative=None,
-            seed=seed0 + beat["beat_id"],
+            workflows["scenes"],
+            positive=(
+                f"{CHARACTER_CANON}. "
+                f"{STYLE_CANON}. "
+                f"{HORROR_VISUAL_BIAS}. "
+                f"{scene['image_prompt_body']}"
+            ),
+            negative=NEGATIVE_PROMPT,
+            seed=seed + scene_index * 1000,
             filename=f"project_s/{out_name}",
         )
 
@@ -255,43 +211,6 @@ def main():
         info = extract_image(get_history(cfg, pid))
         img_path = images_dir / f"{out_name}.png"
         img_path.write_bytes(download_image(cfg, info))
-
-        if is_p:
-            protagonist_images.append(img_path)
-
-    # ---- Gate + Pass 2
-    gate_results = gate_images(face_gate, protagonist_images)
-
-    for img_path, result in gate_results.items():
-        final_path = img_path.with_name(img_path.name.replace("_p", ""))
-
-        if not result.should_refine:
-            img_path.rename(final_path)
-            continue
-
-        unique_subfolder = f"{cfg.input_subfolder_root}/{run_id}/{img_path.stem}"
-
-        uploaded_path = upload_input_image(
-            cfg,
-            img_path,
-            subfolder=unique_subfolder
-        )
-
-
-        wf = patch_loadimage(workflows["id_match"], uploaded_path)
-        wf = patch_prompt(
-            wf,
-            positive=ID_MATCH_POSITIVE,
-            negative=ID_MATCH_NEGATIVE,
-            seed=seed0,
-            filename=f"project_s/{final_path.stem}",
-        )
-
-        pid = queue_prompt(cfg, wf)
-        wait_for_completion(cfg, pid)
-        info = extract_image(get_history(cfg, pid))
-        final_path.write_bytes(download_image(cfg, info))
-        img_path.unlink()
 
     print("Image generation complete.")
 

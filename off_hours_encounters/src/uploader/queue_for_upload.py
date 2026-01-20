@@ -1,8 +1,10 @@
-import json
-import shutil
 import argparse
 from pathlib import Path
 import re
+import random
+import subprocess
+import shutil
+import json
 
 INDEX_RE = re.compile(r"(\d{3})_final_vid\.mp4")
 
@@ -14,59 +16,54 @@ def get_next_index(awaiting_dir: Path) -> int:
             max_idx = max(max_idx, int(m.group(1)))
     return max_idx + 1
 
-def main(run_id: str, channel_root: Path):
-    # Resolve paths relative to channel root
-    run_dir = channel_root / "runs" / run_id
-    final_video = run_dir / "render" / "final_short.mp4"
-    idea_json = run_dir / "idea.json"
 
-    if not final_video.exists():
-        raise FileNotFoundError(f"Final video not found: {final_video}")
-    if not idea_json.exists():
-        raise FileNotFoundError(f"idea.json not found: {idea_json}")
-
-    awaiting_dir = channel_root / "awaiting_upload"
-    awaiting_dir.mkdir(parents=True, exist_ok=True)
-
-    next_idx = get_next_index(awaiting_dir)
-    idx_str = f"{next_idx:03d}"
-
-    vid_out = awaiting_dir / f"{idx_str}_final_vid.mp4"
-    meta_out = awaiting_dir / f"{idx_str}_final_metadata.json"
-
-    # Copy video
-    shutil.copy2(final_video, vid_out)
-
-    # Load idea.json
-    with idea_json.open("r", encoding="utf-8") as f:
-        idea = json.load(f)
-
-    yt = idea["data"]["youtube"]
-
-    upload_metadata = {
-        "run_id": idea.get("run_id"),
-        "title": yt["title"],
-        "description": "\n".join(yt.get("description_lines", [])),
-        "tags": yt.get("tags", []),
-        "language": yt.get("language", "en"),
-        "made_for_kids": yt.get("made_for_kids", False),
-        "content_flags": yt.get("content_flags", {})
-    }
-
-    with meta_out.open("w", encoding="utf-8") as f:
-        json.dump(upload_metadata, f, indent=2)
-
-    print(f"[queue] Queued run {run_id} as {idx_str}")
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run-id", required=True)
-    parser.add_argument(
-        "--channel-root",
-        required=True,
-        type=Path,
-        help="Path to channel root (e.g. residual_fear/)"
-    )
+    parser.add_argument("--run_id", "--run-id", dest="run_id", required=True)
     args = parser.parse_args()
 
-    main(args.run_id, args.channel_root)
+    ROOT = Path(__file__).resolve().parents[2]
+    RUNS_DIR = ROOT / "runs"
+    AWAITING_DIR = ROOT / "awaiting_upload"
+    TEMP_DIR = ROOT / "_tmp_queue"
+
+    AWAITING_DIR.mkdir(exist_ok=True)
+    TEMP_DIR.mkdir(exist_ok=True)
+
+    run_dir = RUNS_DIR / args.run_id
+    story_vid = run_dir / "render" / "final_with_cta.mp4"
+
+    if not story_vid.exists():
+        raise FileNotFoundError(f"Missing story_only.mp4 in {run_dir}")
+
+    idx = get_next_index(AWAITING_DIR)
+    idx_str = f"{idx:03d}"
+
+    temp_out = TEMP_DIR / f"{idx_str}_concat.mp4"
+    final_out = AWAITING_DIR / f"{idx_str}_final_vid.mp4"
+    meta_out = AWAITING_DIR / f"{idx_str}_meta.json"
+    shutil.copy(story_vid, final_out)
+
+    meta_src = run_dir / "metadata.json"
+    if not meta_src.exists():
+        raise FileNotFoundError("metadata.json missing in run dir")
+
+    metadata = json.loads(meta_src.read_text(encoding="utf-8"))
+
+    upload_payload = {
+        "run_id": args.run_id,
+        "video_file": final_out.name,
+        "created_at": metadata.get("created_at"),
+        "metadata": metadata.get("data"),
+    }
+
+    meta_out.write_text(
+        json.dumps(upload_payload, indent=2),
+        encoding="utf-8"
+    )
+
+
+    print(f"[queue] Queued run {args.run_id} as {idx_str}")
+
+if __name__ == "__main__":
+    main()

@@ -1,24 +1,23 @@
 import json
 import math
 import os
-import re
-import whisper
+import sys
 import shutil
 import subprocess
 import random
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List
 
 # -------------------------
 # Config
 # -------------------------
 RUNS_DIR = Path("runs")
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Output
 OUT_DIRNAME = "render"
 TMP_DIRNAME = "tmp"
-FINAL_NAME = "final_short.mp4"
+FINAL_NAME = "story_only.mp4"
 
 # Target format
 TARGET_W = int(os.getenv("RENDER_W", "1080"))
@@ -30,9 +29,24 @@ XFADE_FRAMES = int(os.getenv("RENDER_XFADE_FRAMES", "2"))
 XFADE_DUR = float(os.getenv("RENDER_XFADE_DUR", str(XFADE_FRAMES / TARGET_FPS)))
 
 # Effects intensity
-GRAIN_STRENGTH = float(os.getenv("RENDER_GRAIN", "0.08"))
-VIGNETTE = os.getenv("RENDER_VIGNETTE", "1").strip() == "1"
-HANDHELD = os.getenv("RENDER_HANDHELD", "1").strip() == "1"
+GRAIN_STRENGTH = 0.08          # 0.0 disables
+ENABLE_VIGNETTE = True
+ENABLE_HANDHELD = True
+ENABLE_COLOR_GRADE = True      # mild contrast/saturation shift
+ENABLE_TRANSITIONS = True      # varied xfade transitions (micro + beat stitching)
+
+# xfade transition pools (safe, FFmpeg xfade transitions)
+MICRO_XFADE_TRANSITIONS = [
+    "fade", "dissolve",
+    "wipeleft", "wiperight", "wipeup", "wipedown",
+    "slideleft", "slideright", "slideup", "slidedown",
+]
+BEAT_XFADE_TRANSITIONS = [
+    "fade", "dissolve",
+    "circleopen", "circleclose",
+    "horzopen", "horzclose", "vertopen", "vertclose",
+    "pixelize",
+]
 
 # Ken Burns for stills
 KB_ZOOM_PER_SEC = float(os.getenv("RENDER_KB_ZOOM_PER_SEC", "0.010"))
@@ -50,22 +64,7 @@ MUSIC_HP_HZ = int(os.getenv("RENDER_MUSIC_HP_HZ", "100"))
 MUSIC_LP_HZ = int(os.getenv("RENDER_MUSIC_LP_HZ", "7000"))
 MUSIC_SEED = os.getenv("RENDER_MUSIC_SEED", "").strip()  # optional deterministic selection
 
-# -------------------------
-# Captions
-# -------------------------
-CAPTIONS_ENABLED = os.getenv("RENDER_CAPTIONS_ENABLED", "1").strip() == "1"
-CAPTIONS_MODEL = os.getenv("RENDER_CAPTIONS_MODEL", "base").strip()  # tiny/base/small
-CAPTIONS_WORDS_PER_CAPTION = int(os.getenv("RENDER_CAPTIONS_WORDS_PER_CAPTION", "4"))
-# Caption styling
-CAPTIONS_FONT = os.getenv("RENDER_CAPTIONS_FONT", "Bebas Neue").strip()
-CAPTIONS_FONT_SIZE = int(os.getenv("RENDER_CAPTIONS_FONT_SIZE", "200"))
-CAPTIONS_ALIGN = int(os.getenv("RENDER_CAPTIONS_ALIGN", "5"))  # 5 = center screen
-CAPTIONS_MARGIN_V = int(os.getenv("RENDER_CAPTIONS_MARGIN_V", "0"))
-CAPTIONS_OUTLINE = int(os.getenv("RENDER_CAPTIONS_OUTLINE", "6"))
-CAPTIONS_SHADOW = int(os.getenv("RENDER_CAPTIONS_SHADOW", "6"))
-
-# Prefer i2v if present
-I2V_DIRNAME = "i2v"
+# Images only (i2v disabled)
 IMAGES_DIRNAME = "images"
 TIMING_PLAN = "timing_plan.json"
 
@@ -97,93 +96,6 @@ def _ffprobe_duration(path: Path) -> float:
     s = p.stdout.strip()
     return float(s) if s else 0.0
 
-
-def _transcribe_with_whisper(audio_path: Path) -> List[Dict[str, Any]]:
-    """
-    Returns word-level timestamps:
-    [
-      {"word": "hello", "start": 0.12, "end": 0.45},
-      ...
-    ]
-    """
-    model = whisper.load_model(CAPTIONS_MODEL)
-    result = model.transcribe(
-        str(audio_path),
-        word_timestamps=True,
-        verbose=False,
-    )
-
-    words = []
-    for seg in result.get("segments", []):
-        for w in seg.get("words", []):
-            words.append({
-                "word": w["word"].strip(),
-                "start": float(w["start"]),
-                "end": float(w["end"]),
-            })
-
-    return words
-
-
-def _build_caption_events(words: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Groups words into 2–4 word captions with accurate timing.
-    """
-    captions = []
-    buf = []
-
-    for w in words:
-        buf.append(w)
-
-        if len(buf) >= CAPTIONS_WORDS_PER_CAPTION:
-            captions.append({
-                "text": " ".join(x["word"] for x in buf),
-                "start": buf[0]["start"],
-                "end": buf[-1]["end"],
-            })
-            buf = []
-
-    if buf:
-        captions.append({
-            "text": " ".join(x["word"] for x in buf),
-            "start": buf[0]["start"],
-            "end": buf[-1]["end"],
-        })
-
-    return captions
-
-
-def _write_ass_captions(captions: List[Dict[str, Any]], ass_path: Path) -> None:
-    """
-    Writes stylized ASS subtitles for Shorts-style captions.
-    """
-    def ts(t):
-        h = int(t // 3600)
-        m = int((t % 3600) // 60)
-        s = t % 60
-        return f"{h}:{m:02d}:{s:05.2f}"
-
-    header = f"""[Script Info]
-    ScriptType: v4.00+
-    PlayResX: 1080
-    PlayResY: 1920
-
-    [V4+ Styles]
-    Style: Default,{CAPTIONS_FONT},{CAPTIONS_FONT_SIZE},&H00FFFFFF,&H00000000,&H80000000,&H80000000,1,0,0,0,100,100,0,0,1,{CAPTIONS_OUTLINE},{CAPTIONS_SHADOW},{CAPTIONS_ALIGN},10,10,{CAPTIONS_MARGIN_V},1
-
-    [Events]
-    """
-
-
-    lines = []
-    for c in captions:
-        lines.append(
-            f"Dialogue: 0,{ts(c['start'])},{ts(c['end'])},Default,,0,0,0,,{c['text'].upper()}"
-        )
-
-    ass_path.write_text(header + "\n".join(lines), encoding="utf-8")
-
-
 def _latest_run_dir() -> Path:
     if not RUNS_DIR.exists():
         raise RuntimeError("runs/ folder not found")
@@ -207,55 +119,35 @@ def _safe_float(x: Any, default: float = 0.0) -> float:
 def _beat_id_to_name(beat_id: int) -> str:
     return f"beat_{beat_id:03d}"
 
-def _find_i2v_segments(i2v_dir: Path, beat_id: int) -> List[Path]:
-    base = _beat_id_to_name(beat_id)
 
-    exact = i2v_dir / f"{base}.mp4"
-    if exact.exists():
-        return [exact]
+def _list_micro_images(images_dir: Path, beat_id: int) -> List[Path]:
+    prefix = f"beat_{beat_id:03d}_micro_"
+    files = [
+        p for p in images_dir.iterdir()
+        if p.is_file() and p.name.startswith(prefix) and p.suffix.lower() == ".png"
+    ]
 
-    rx = re.compile(rf"^{re.escape(base)}_seg(\d+)\.mp4$", re.IGNORECASE)
-    segs: List[Tuple[int, Path]] = []
-    if i2v_dir.exists():
-        for p in i2v_dir.iterdir():
-            m = rx.match(p.name)
-            if m:
-                segs.append((int(m.group(1)), p))
-    segs.sort(key=lambda t: t[0])
-    return [p for _, p in segs]
+    if not files:
+        raise RuntimeError(f"No micro images found for beat {beat_id:03d}")
 
-def _video_effects_filter() -> str:
-    filters = []
-    filters.append(f"scale={TARGET_W}:{TARGET_H}:force_original_aspect_ratio=increase")
-    filters.append(f"crop={TARGET_W}:{TARGET_H}")
+    # Sort by micro index
+    def _micro_index(p: Path) -> int:
+        # beat_001_micro_003.png -> 3
+        return int(p.stem.split("_")[-1])
 
-    if HANDHELD:
-        filters.append("rotate=0.0015*sin(2*PI*t/4):c=black@0:ow=iw:oh=ih")
-        filters.append(
-            "crop=iw-8:ih-8:"
-            "x=4+2*sin(2*PI*t/5):"
-            "y=4+2*cos(2*PI*t/6)"
-        )
+    return sorted(files, key=_micro_index)
 
-
-    if GRAIN_STRENGTH > 0:
-        alls = max(1, min(30, int(GRAIN_STRENGTH * 120)))
-        filters.append(f"noise=alls={alls}:allf=t+u")
-
-    if VIGNETTE:
-        filters.append("vignette=PI/4")
-
-    filters.append(f"fps={TARGET_FPS}")
-    filters.append(f"scale={TARGET_W}:{TARGET_H}")
-    filters.append("format=yuv420p")
-    return ",".join(filters)
 
 def _ken_burns_filter(duration_s: float) -> str:
     frames = max(1, int(math.ceil(duration_s * TARGET_FPS)))
     inc = KB_ZOOM_PER_SEC / TARGET_FPS
     z = f"min(zoom+{inc:.8f},{KB_MAX_ZOOM})"
-    x = "iw/2-(iw/zoom/2)+10*sin(2*PI*on/240)"
-    y = "ih/2-(ih/zoom/2)+10*cos(2*PI*on/300)"
+    if ENABLE_HANDHELD:
+        x = "iw/2-(iw/zoom/2)+12*sin(2*PI*on/120)"
+        y = "ih/2-(ih/zoom/2)+12*cos(2*PI*on/180)"
+    else:
+        x = "iw/2-(iw/zoom/2)"
+        y = "ih/2-(ih/zoom/2)"
 
     filt = []
     filt.append(f"scale={TARGET_W}:{TARGET_H}:force_original_aspect_ratio=increase")
@@ -264,10 +156,12 @@ def _ken_burns_filter(duration_s: float) -> str:
     filt.append("format=yuv420p")
 
     post = []
+    if ENABLE_COLOR_GRADE:
+        post.append("eq=contrast=1.08:saturation=1.12:brightness=-0.02")
     if GRAIN_STRENGTH > 0:
         alls = max(1, min(30, int(GRAIN_STRENGTH * 120)))
         post.append(f"noise=alls={alls}:allf=t+u")
-    if VIGNETTE:
+    if ENABLE_VIGNETTE:
         post.append("vignette=PI/4")
     if post:
         filt.append(",".join(post))
@@ -358,70 +252,42 @@ def _build_bed_audio(tmp_dir: Path, bed_path: Path, target_duration: float) -> P
 # -------------------------
 def _render_beat_clip(run_dir: Path, tmp_dir: Path, beat_id: int, beat_duration: float) -> Path:
     images_dir = run_dir / IMAGES_DIRNAME
-    i2v_dir = run_dir / I2V_DIRNAME
+    out_path = tmp_dir / f"beat_{beat_id:03d}_final.mp4"
 
-    base = _beat_id_to_name(beat_id)
-    out_path = tmp_dir / f"{base}_final.mp4"
+    micro_images = _list_micro_images(images_dir, beat_id)
 
-    img_path = images_dir / f"{base}.png"
-    if not img_path.exists():
-        raise RuntimeError(f"Missing still image for beat {beat_id}: {img_path}")
+    micro_dur = beat_duration / len(micro_images)
+    if micro_dur <= 0:
+        raise RuntimeError(f"Invalid micro duration for beat {beat_id}")
 
-    segs = _find_i2v_segments(i2v_dir, beat_id)
-    if segs:
-        src = segs[0]
+    micro_clips: List[Path] = []
 
-        normalized = tmp_dir / f"{base}_i2v_normalized.mp4"
-        src_dur = _ffprobe_duration(src)
-
-        vf = [
-            f"fps={TARGET_FPS}",
-            "setpts=PTS-STARTPTS",
-        ]
-
-        if src_dur < beat_duration:
-            pad = beat_duration - src_dur
-            vf.append(f"tpad=stop_mode=clone:stop_duration={pad:.6f}")
-
-        vf.append(f"trim=duration={beat_duration:.6f}")
+    for i, img_path in enumerate(micro_images, start=1):
+        micro_out = tmp_dir / f"beat_{beat_id:03d}_micro_{i:03d}_{img_path.stem}.mp4"
 
         _run([
             "ffmpeg", "-y",
-            "-i", str(src),
-            "-vf", ",".join(vf),
+            "-loop", "1",
+            "-i", str(img_path),
+            "-vf",
+            f"{_ken_burns_filter(micro_dur)},"
+            f"trim=duration={micro_dur:.6f},setpts=PTS-STARTPTS",
             "-an",
             "-c:v", "libx264",
             "-pix_fmt", "yuv420p",
-            str(normalized),
+            "-movflags", "+faststart",
+            str(micro_out),
         ])
 
+        micro_clips.append(micro_out)
 
-        fx = tmp_dir / f"{base}_fx.mp4"
-        _run([
-            "ffmpeg", "-y",
-            "-i", str(normalized),
-            "-vf", _video_effects_filter(),
-            "-an",
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            str(fx),
-        ])
+    # Crossfade micros into one beat clip
+    _xfade_chain(micro_clips, XFADE_DUR, out_path, MICRO_XFADE_TRANSITIONS, f"{run_dir.name}|beat{beat_id}|micro")
 
-        return fx
-
-    _run([
-        "ffmpeg", "-y",
-        "-loop", "1",
-        "-t", f"{beat_duration:.6f}",
-        "-i", str(img_path),
-        "-vf", _ken_burns_filter(beat_duration),
-        "-an",
-        "-movflags", "+faststart",
-        str(out_path),
-    ])
     return out_path
 
-def _xfade_chain(clips: List[Path], xfade_dur: float, out_path: Path) -> float:
+
+def _xfade_chain(clips: List[Path], xfade_dur: float, out_path: Path, transition_pool: List[str], seed: str) -> float:
     if len(clips) == 1:
         _run(["ffmpeg", "-y", "-i", str(clips[0]), "-c", "copy", str(out_path)])
         return _ffprobe_duration(out_path)
@@ -432,6 +298,9 @@ def _xfade_chain(clips: List[Path], xfade_dur: float, out_path: Path) -> float:
         if d <= 0:
             raise RuntimeError(f"Invalid clip duration: {p}")
         durs.append(d)
+        
+    pool = transition_pool if ENABLE_TRANSITIONS else ["fade"]
+    rng = random.Random(seed)
 
     inputs = []
     for p in clips:
@@ -447,10 +316,12 @@ def _xfade_chain(clips: List[Path], xfade_dur: float, out_path: Path) -> float:
     for i in range(1, len(clips)):
         offset = max(0.0, timeline - xfade_dur)
         out_label = f"vx{i}"
+        
+        transition = rng.choice(pool)
 
         fc_parts.append(
             f"[{current}][v{i}]"
-            f"xfade=transition=fade:"
+            f"xfade=transition={transition}:"
             f"duration={xfade_dur:.6f}:"
             f"offset={offset:.6f}"
             f"[{out_label}]"
@@ -501,28 +372,9 @@ def main() -> int:
         shutil.rmtree(tmp_dir)
     _ensure_dir(tmp_dir)
 
-    
-    # --- Auto captions ---
-    ass_path = tmp_dir / "captions.ass"
-
-    captions_ok = False
-
-    if CAPTIONS_ENABLED:
-        try:
-            print("[caption] transcribing VO...")
-            words = _transcribe_with_whisper(audio_path)
-            captions = _build_caption_events(words)
-            _write_ass_captions(captions, ass_path)
-            shutil.copyfile(ass_path, out_dir / "captions.ass")
-            captions_ok = True
-            print(f"[caption] captions -> {ass_path.name}")
-        except Exception as e:
-            print(f"[caption] disabled (reason: {e})")
-
-
     # 1) Render each beat final clip
     beat_clips: List[Path] = []
-    for b in beats:
+    for b in sorted(beats, key=lambda x: int(x["beat_id"])):
         beat_id = int(b["beat_id"])
         dur = _safe_float(b.get("duration_seconds"), 0.0)
         if dur <= 0:
@@ -533,7 +385,7 @@ def main() -> int:
 
     # 2) Crossfade stitch all beats
     stitched_path = out_dir / "stitched_video.mp4"
-    stitched_dur = _xfade_chain(beat_clips, XFADE_DUR, stitched_path)
+    stitched_dur = _xfade_chain(beat_clips, XFADE_DUR, stitched_path, BEAT_XFADE_TRANSITIONS, f"{run_dir.name}|stitch")
     print(f"[render] stitched -> {stitched_path.name} ({stitched_dur:.3f}s)")
 
     # 3) Optional music bed (loop/trim -> normalize -> filter -> gain)
@@ -554,12 +406,8 @@ def main() -> int:
     vf = []
     if pad > 0.02:
         vf.append(f"tpad=stop_mode=clone:stop_duration={pad:.6f}")
-    if captions_ok and (out_dir / "captions.ass").exists():
-        vf.append(
-            f"subtitles=captions.ass:original_size={TARGET_W}x{TARGET_H}"
-        )
-
     vf.append(f"trim=duration={audio_dur:.6f},setpts=PTS-STARTPTS")
+
     vf_str = ",".join(vf)
 
     if bed_path and bed_path.exists():
@@ -589,10 +437,11 @@ def main() -> int:
             "-movflags", "+faststart",
             FINAL_NAME,
         ], cwd=out_dir)
+        mixed_final_path = out_dir / FINAL_NAME
     else:
         _run([
             "ffmpeg", "-y",
-            "-i", "stitched_video.mp4",
+            "-i", _ffmpeg_path(stitched_path),
             "-i", _ffmpeg_path(audio_path),
             "-vf", vf_str,
             "-map", "0:v:0",
@@ -606,10 +455,9 @@ def main() -> int:
             "-movflags", "+faststart",
             FINAL_NAME,
         ], cwd=out_dir)
-
-
-    print(f"[render] FINAL -> {final_path}")
-    return 0
-
+        mixed_final_path = out_dir / FINAL_NAME
+        
+        return 0
+        
 if __name__ == "__main__":
     raise SystemExit(main())

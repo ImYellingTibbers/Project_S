@@ -1,5 +1,6 @@
 from __future__ import annotations
-
+import sys
+from pathlib import Path
 import argparse
 import json
 import sqlite3
@@ -7,9 +8,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT))
+
 # Shared intelligence lives at project root: Project_S_v1.0/core/...
 from core.ideas.idea_fingerprint import canonicalize_idea, signature_hash
-from core.ideas.embeddings import embed_text
 
 
 def utc_now() -> str:
@@ -109,18 +112,16 @@ def promote_winner_and_fingerprint(
         mechanism=None,
     )
     sig = signature_hash({"canonical": canonical})
-    emb = embed_text(canonical)
 
     cur.execute(
         """
         UPDATE ideas
         SET is_winner = 1,
             idea_canonical = ?,
-            idea_embedding = ?,
             idea_signature_hash = ?
         WHERE id = ?
         """,
-        (canonical, json.dumps(emb), sig, idea_row_id),
+        (canonical, sig, idea_row_id),
     )
 
 

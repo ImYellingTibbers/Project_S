@@ -1,32 +1,36 @@
 import subprocess
 import sys
 import os
+import time
+import json
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Dict, Any, Callable
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.tools.kill_gpu_users import kill_comfyui, kill_ollama
+from src.tools.start_comfyui import start as start_comfyui
 
-ROOT = Path(__file__).resolve().parents[1]
-
-
-def _assert_exists(label: str, path: Path) -> None:
-    if not path.exists():
-        raise FileNotFoundError(f"{label}: missing {path.relative_to(ROOT)} ({path})")
-
-
-def _latest_run_dir(runs_dir: Path) -> Path:
-    _assert_exists("runs dir", runs_dir)
-    run_dirs = sorted([p for p in runs_dir.iterdir() if p.is_dir()])
-    if not run_dirs:
-        raise RuntimeError("No run folders found in runs/")
-    return run_dirs[-1]
+ROOT = PROJECT_ROOT
+MAX_RUN_RETRIES = 5
+SCRIPT_RETRY_START_LABEL = "Step 1 - Idea generator"
 
 
-def run_step(label: str, script_rel_path: str, extra_args: List[str] | None = None) -> None:
+# -------------------------
+# Utilities
+# -------------------------
+
+def kill_gpu_stack():
+    print("[runner] Killing GPU / LLM processes")
+    kill_gpu_users()
+    time.sleep(3)
+
+
+def run_step(label: str, script_rel_path: str, extra_args: List[str] | None = None) -> int:
     script_path = (ROOT / script_rel_path).resolve()
-    _assert_exists(label, script_path)
+    if not script_path.exists():
+        raise FileNotFoundError(f"{label}: missing {script_path}")
 
     cmd = [sys.executable, str(script_path)]
     if extra_args:
@@ -37,76 +41,178 @@ def run_step(label: str, script_rel_path: str, extra_args: List[str] | None = No
 
     env = os.environ.copy()
     env["PYTHONPATH"] = str(PROJECT_ROOT)
+    env["PYTHONUNBUFFERED"] = "1"   # ensure child scripts flush
 
-    proc = subprocess.run(
+    proc = subprocess.Popen(
         cmd,
         cwd=str(ROOT),
         env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
-        check=False,
+        bufsize=1,  # line-buffered
     )
-    if proc.returncode != 0:
-        raise SystemExit(f"\nFAILED: {label} (exit {proc.returncode})")
 
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        print(line, end="")
+
+    return proc.wait()
+
+
+def latest_run_dir(runs_dir: Path) -> Path:
+    run_dirs = sorted(p for p in runs_dir.iterdir() if p.is_dir())
+    if not run_dirs:
+        raise RuntimeError("No run folders found in runs/")
+    return run_dirs[-1]
+
+
+OLLAMA_LIVE_LOG = ROOT / "ollama_live.log"
+
+def clear_ollama_log():
+    if OLLAMA_LIVE_LOG.exists():
+        print("[runner] Clearing ollama_live.log")
+        OLLAMA_LIVE_LOG.write_text("")
+
+
+# -------------------------
+# Pipeline Step Definitions
+# -------------------------
+
+STEP_1_SCRIPTWRITER = {
+    "label": "Step 1 - Scriptwriter",
+    "script": "src/run_steps/scriptwriter.py",
+}
+
+STEP_2_VO_GENERATOR = {
+    "label": "Step 2 - VO Generation",
+    "script": "src/run_steps/scriptwriter.py",
+}
+
+STEP_3_STORYBOARD_1 = {
+    "label": "Step 3 - Storyboard 1",
+    "script": "src/run_steps/storyboard_1.py",
+}
+
+STEP_4_VISUAL_CANON = {
+    "label": "Step 4 - Visual Canon",
+    "script": "src/run_steps/visual_canon.py",
+}
+
+STEP_5_STORYBOARD_2 = {
+    "label": "Step 5 - Storyboard 2",
+    "script": "src/run_steps/storyboard_2.py",
+}
+
+STEP_6_STORYBOARD_3 = {
+    "label": "Step 6 - Storyboard 3",
+    "script": "src/run_steps/storyboard_3.py",
+}
+
+STEP_7_STORYBOARD_4 = {
+    "label": "Step 7 - Storyboard 4",
+    "script": "src/run_steps/storyboard_4.py",
+}
+
+STEP_8_IMAGE_PROMPT_GENERATOR = {
+    "label": "Step 8 - Image Prompt Generator",
+    "script": "src/run_steps/image_prompt_generator.py",
+}
+
+# -------------------------
+# Pipeline Assembly
+# -------------------------
+
+def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
+
+    return [
+        # STEP_1_SCRIPTWRITER,
+        # STEP_2_VO_GENERATOR,
+        # STEP_3_STORYBOARD_1,
+        # STEP_4_VISUAL_CANON,
+        STEP_5_STORYBOARD_2,
+        # STEP_6_STORYBOARD_3,
+        # STEP_7_STORYBOARD_4,
+        # STEP_8_IMAGE_PROMPT_GENERATOR,
+    ]
+
+# -------------------------
+# Runner
+# -------------------------
 
 def main() -> int:
     runs_dir = ROOT / "runs"
     runs_dir.mkdir(exist_ok=True)
+    log_file = ROOT / "runs" / "pipeline_log.jsonl"
 
-    # Snapshot latest run BEFORE starting (helps detect whether a step created a new run folder)
-    before = None
-    try:
-        before = _latest_run_dir(runs_dir)
-    except Exception:
-        before = None
+    for attempt in range(1, MAX_RUN_RETRIES + 1):
+        with log_file.open("a", encoding="utf-8") as lf:
+            lf.write(json.dumps({
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "attempt": attempt,
+                "event": "pipeline_start"
+            }) + "\n")
 
-    steps: List[Tuple[str, str]] = [
-        ("Step 1 - Idea generator", "src/run_steps/idea_generator.py"),
-        ("Step 2 - Idea selector", "src/run_steps/idea_selector.py"),
-        ("Step 3 - Scriptwriter", "src/run_steps/scriptwriter.py"),
-        ("Step 4 - Image prompt planner", "src/run_steps/image_prompt_planner.py"),
-        ("Step 5 - VO generator", "src/run_steps/vo_generator.py"),
-        ("Step 6 - Timing planner", "src/run_steps/timing_planner.py"),
-        ("Step 7 - Image generator (ComfyUI)", "src/run_steps/image_generator.py"),
-        ("Step 8 - I2V generator (ComfyUI)", "src/run_steps/i2v_generator.py"),
-        ("Step 9 - Video Assembly", "src/run_steps/video_assembler.py"),
-    ]
+        print(f"\n=== PIPELINE RUN ATTEMPT {attempt} ===")
+        print("[runner] Ensuring ComfyUI is not running at pipeline start")
+        kill_comfyui()
+        retry_from_script = False
 
-    for label, rel in steps:
-        run_step(label, rel)
-        
-    # Resolve latest run AFTER pipeline completes
-    after = _latest_run_dir(runs_dir)
-    
-    # Step 10 - Ingest Run (DB write, final)
-    run_step(
-        "Step 10 - Ingest Run",
-        "src/run_steps/ingest_run.py",
-        extra_args=[
-            "--run-id", after.name,
-        ],
-    )
+        # clear_ollama_log()
+
+        steps = build_steps()
+
+        for step in steps:        
+            label = step["label"]
+            script = step["script"]
+
+            if step.get("needs_gpu_clean"):
+                kill_gpu_stack()
+
+            if step.get("start_comfyui"):
+                print("[runner] Starting ComfyUI")
+                start_comfyui()
+
+            extra_args = None
+            if "extra_args" in step:
+                run_id = latest_run_dir(runs_dir).name
+                extra_args = step["extra_args"](run_id)
+                
+            with log_file.open("a", encoding="utf-8") as lf:
+                lf.write(json.dumps({
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "attempt": attempt,
+                    "event": "step_start",
+                    "step": label,
+                }) + "\n")
+
+            code = run_step(label, script, extra_args)
+            if label == "Step 8 - Image generator (ComfyUI)":
+                print("[runner] Image generation complete — killing ComfyUI to free GPU")
+                kill_comfyui()
+
+            if label == "Step 1 - Idea generator":
+                run_dir_for_attempt = latest_run_dir(runs_dir)
+                run_id = run_dir_for_attempt.name
+
+            with log_file.open("a", encoding="utf-8") as lf:
+                lf.write(json.dumps({
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "attempt": attempt,
+                    "event": "step_end",
+                    "step": label,
+                    "exit_code": code,
+                }) + "\n")
+
+            if code != 0:
+                raise SystemExit(f"\nFAILED: {label} (exit {code})")
+
+        print("[runner] Pipeline completed successfully.")
+        break
 
 
-    # Step 11 - Queue for Upload (requires --run)
-    run_step(
-        "Step 10 - Queue for Upload",
-        "src/uploader/queue_for_upload.py",
-        extra_args=[
-            "--run-id", after.name,
-            "--channel-root", ".",
-        ],
-    )
-
-
-    # Resolve latest run AFTER all steps
-    after = _latest_run_dir(runs_dir)
-
-    # If nothing changed, still print it, but call it out
-    if before and after == before:
-        print(f"\nDONE: Run complete. Latest run folder (unchanged): {after}")
     else:
-        print(f"\nDONE: Run complete. Latest run folder: {after}")
+        raise SystemExit("[runner] Max pipeline retries exceeded.")
 
     return 0
 

@@ -1,151 +1,86 @@
 {
   "schema": {
     "name": "idea_seed_library",
-    "version": "1.0",
-    "intended_use": "youtube_horror_shorts"
+    "version": "3.1",
+    "intended_use": "youtube_horror_shorts_high_stakes_supernatural"
   },
-
-  "global_guidance": {
-    "creative_goal": "Generate horror ideas that feel grounded, human, and unsettling through subtle wrongness rather than spectacle.",
-    "narrative_bias": "Ideas should naturally lead to first-person, spoken recollections that escalate through observation and repetition.",
-    "shorts_fit": "Ideas must be understandable quickly, visually feasible, and capable of hooking within the first sentence of narration.",
-    "avoidance": [
-      "explicit monsters or entities",
-      "lore or backstory",
-      "complex transformations",
-      "crowds or many characters",
-      "resolution or explanation"
-    ]
+  "global_rules": {
+    "supernatural_allowed": true,
+    "supernatural_style": "implied or observed only",
+    "avoid_named_lore": true,
+    "avoid_graphic_content": true,
+    "first_person_required": true
   },
-
   "seeds": [
     {
-      "id": "subtle_presence",
-      "theme": "the quiet sense that something is present without ever being seen",
-      "fear_axis": "being accompanied or noticed",
-      "perceptual_focus": "absence of evidence rather than visible threat",
-      "tone": "restrained, conversational",
-      "end_state": "lingering unease"
+      "id": "unacknowledged_person",
+      "mechanism": "a person or human-like presence appears in the narrator’s life or records that no one else recognizes",
+      "escalation": "the presence becomes more involved, closer, or more aware of the narrator",
+      "consequence": "the narrator suspects the presence is replacing or erasing them",
+      "supernatural_allowance": "the presence may not be human, but behaves as if it is learning how to be one"
     },
     {
-      "id": "reactive_space",
-      "theme": "an ordinary environment subtly reacts to the protagonist’s movement or attention",
-      "fear_axis": "loss of control",
-      "perceptual_focus": "cause-and-effect that shouldn’t exist",
-      "tone": "matter-of-fact rationalization",
-      "end_state": "avoidance"
+      "id": "contaminated_records",
+      "mechanism": "photos, videos, or records reveal an impossible figure, shape, or shadow that was never there",
+      "escalation": "the anomaly appears more frequently and in newer, more personal records",
+      "consequence": "the narrator believes something is entering reality through the records",
+      "supernatural_allowance": "the figure may be an entity that can only appear indirectly"
     },
     {
-      "id": "timing_error",
-      "theme": "normal timing feels slightly wrong or out of sync",
-      "fear_axis": "anticipation and dread",
-      "perceptual_focus": "small temporal inconsistencies",
-      "tone": "observational",
-      "end_state": "heightened vigilance"
+      "id": "inherited_threat",
+      "mechanism": "a disturbing presence or phenomenon affects the narrator, then begins appearing around someone dependent on them",
+      "escalation": "the second person shows signs of being noticed or followed",
+      "consequence": "the narrator realizes the presence spreads through proximity or care",
+      "supernatural_allowance": "the presence behaves like a parasitic or predatory intelligence"
     },
     {
-      "id": "new_object",
-      "theme": "something exists that the protagonist is certain was not there before",
-      "fear_axis": "certainty breaking down",
-      "perceptual_focus": "memory versus reality",
-      "tone": "controlled disbelief",
-      "end_state": "fixation"
+      "id": "private_space_violation",
+      "mechanism": "something unseen occupies the narrator’s most private or protected space",
+      "escalation": "physical signs suggest awareness of being observed",
+      "consequence": "the narrator avoids being alone or sleeping normally",
+      "supernatural_allowance": "the presence may exist only when unobserved"
     },
     {
-      "id": "wrong_familiar",
-      "theme": "a familiar place suddenly feels subtly wrong",
-      "fear_axis": "uncanny familiarity",
-      "perceptual_focus": "emotional mismatch with surroundings",
-      "tone": "quiet unease",
-      "end_state": "avoidance or discomfort"
+      "id": "rule_learned_too_late",
+      "mechanism": "a subtle rule governs a place, object, or behavior",
+      "escalation": "each violation triggers a more severe reaction",
+      "consequence": "the narrator realizes the rule is enforced by something watching",
+      "supernatural_allowance": "the enforcement may come from an unseen entity tied to the environment"
     },
     {
-      "id": "pattern_emerging",
-      "theme": "a small repeating detail begins to feel intentional",
-      "fear_axis": "implication",
-      "perceptual_focus": "recognition of a rule",
-      "tone": "analytical then unsettled",
-      "end_state": "compulsion to notice"
+      "id": "false_memory_anchor",
+      "mechanism": "the narrator remembers a person or event that no longer exists in reality",
+      "escalation": "evidence increasingly contradicts the memory",
+      "consequence": "the narrator wonders if something altered reality or their mind",
+      "supernatural_allowance": "the discrepancy may be caused by a non-human intelligence altering perception"
     },
     {
-      "id": "sound_without_source",
-      "theme": "a persistent sound with no clear physical origin",
-      "fear_axis": "invisible cause",
-      "perceptual_focus": "listening and silence",
-      "tone": "restrained concern",
-      "end_state": "heightened awareness"
+      "id": "growing_proximity",
+      "mechanism": "a shape, sound, or presence is always nearby but never fully visible",
+      "escalation": "the distance between it and the narrator steadily decreases",
+      "consequence": "the narrator restructures their life to avoid confined or dark spaces",
+      "supernatural_allowance": "the presence may be hunting or approaching without physical form"
     },
     {
-      "id": "distance_closing",
-      "theme": "something consistently feels closer than it should be",
-      "fear_axis": "approach without contact",
-      "perceptual_focus": "shrinking space",
-      "tone": "quiet tension",
-      "end_state": "avoidance behavior"
+      "id": "attention_feeds_it",
+      "mechanism": "acknowledging or observing the phenomenon makes it stronger",
+      "escalation": "attempts to ignore it fail and increase its activity",
+      "consequence": "the narrator becomes hyper-aware of their own thoughts and reactions",
+      "supernatural_allowance": "the phenomenon may be sentient and responsive to awareness"
     },
     {
-      "id": "missing_expected",
-      "theme": "something expected is missing, and its absence feels wrong",
-      "fear_axis": "negative space",
-      "perceptual_focus": "what is not there",
-      "tone": "subdued confusion",
-      "end_state": "unease"
+      "id": "environmental_memory",
+      "mechanism": "a location reacts as if it remembers the narrator’s past actions",
+      "escalation": "responses become specific and intentional",
+      "consequence": "the narrator avoids places that feel aware of them",
+      "supernatural_allowance": "the environment may be influenced by an inhabiting presence"
     },
     {
-      "id": "rules_noticed",
-      "theme": "something follows a simple rule the protagonist slowly notices",
-      "fear_axis": "implication without understanding",
-      "perceptual_focus": "pattern recognition",
-      "tone": "matter-of-fact",
-      "end_state": "behavior change"
-    },
-    {
-      "id": "peripheral_motion",
-      "theme": "movement is only noticed indirectly or at the edge of awareness",
-      "fear_axis": "unreliable perception",
-      "perceptual_focus": "peripheral vision",
-      "tone": "controlled unease",
-      "end_state": "hyper-awareness"
-    },
-    {
-      "id": "inconsistent_detail",
-      "theme": "small details fail to remain consistent",
-      "fear_axis": "loss of certainty",
-      "perceptual_focus": "micro-changes",
-      "tone": "quiet disbelief",
-      "end_state": "fixation"
-    },
-    {
-      "id": "silent_observer",
-      "theme": "the feeling of being observed without any proof",
-      "fear_axis": "intimacy invasion",
-      "perceptual_focus": "attention without presence",
-      "tone": "subdued tension",
-      "end_state": "habit change"
-    },
-    {
-      "id": "object_behaving_wrong",
-      "theme": "a common object behaves slightly incorrectly",
-      "fear_axis": "broken expectations",
-      "perceptual_focus": "ordinary objects",
-      "tone": "casual rationalization",
-      "end_state": "avoidance"
-    },
-    {
-      "id": "space_inconsistent",
-      "theme": "a small space feels different depending on where the protagonist stands",
-      "fear_axis": "environmental inconsistency",
-      "perceptual_focus": "positional awareness",
-      "tone": "observational",
-      "end_state": "unease"
-    },
-    {
-      "id": "unexplained_repetition",
-      "theme": "something repeats without a clear reason",
-      "fear_axis": "implication",
-      "perceptual_focus": "repetition",
-      "tone": "restrained concern",
-      "end_state": "persistent discomfort"
+      "id": "delayed_consequence",
+      "mechanism": "a brief encounter with something unnatural seems harmless at first",
+      "escalation": "effects appear later in unrelated places or times",
+      "consequence": "the narrator realizes the encounter marked them",
+      "supernatural_allowance": "the entity may have attached itself without immediate effect"
     }
   ]
 }

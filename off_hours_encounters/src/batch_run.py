@@ -1,25 +1,29 @@
 import subprocess
-import time
 import sys
+import os
 
-RUNS = 4
-DELAY_SECONDS = 1200  # 20 minutes
+RUNS = 3
+
+env = os.environ.copy()
+env["PYTHONUNBUFFERED"] = "1"
 
 for i in range(1, RUNS + 1):
     print(f"\n=== Batch run {i}/{RUNS} ===")
 
-    result = subprocess.run(
+    proc = subprocess.Popen(
         [sys.executable, "residual_fear/src/run.py"],
-        capture_output=True,
-        text=True
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        env=env,
     )
 
-    print(result.stdout)
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        print(line, end="")
 
-    if result.returncode != 0:
+    code = proc.wait()
+    if code != 0:
         print("ERROR detected. Stopping batch.")
-        print(result.stderr)
         break
-
-    # if i < RUNS:
-    #     time.sleep(DELAY_SECONDS)

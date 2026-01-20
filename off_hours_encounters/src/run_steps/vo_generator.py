@@ -1,364 +1,261 @@
 import os
 import json
+import math
+import wave
+import struct
+import requests
+import whisper
 from sys import path
 from pathlib import Path
 from datetime import datetime, timezone
-import wave
-import requests
-import math
-import struct
-import random
 
+# ---- project root bootstrap ----
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in path:
     path.insert(0, str(ROOT))
 
-from src.config import (
-    SCHEMA_VERSION,
-    RUNS_DIR,
-    ELEVENLABS_MODEL_ID,
-    VO_SAMPLE_RATE_HZ,
-)
+from src.config import SCHEMA_VERSION, VO_SAMPLE_RATE_HZ, ELEVENLABS_MODEL_ID
+
+RUNS_DIR = ROOT / "runs"
 
 from dotenv import load_dotenv
 load_dotenv()
 
-SCHEMA_NAME = "vo_generator"
-
-# We will request raw PCM and wrap it into WAV ourselves.
-# This avoids "wrong file type" issues and keeps timing deterministic.
+SCHEMA_NAME = "vo_generator_simple"
 ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
 
+# -----------------------------
+# helpers
+# -----------------------------
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _read_json(p: Path) -> dict:
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def _write_json(p: Path, obj: dict) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(obj, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
 def find_latest_run_folder() -> Path:
-    if not RUNS_DIR.exists():
-        raise RuntimeError("runs/ folder not found")
-    run_folders = sorted([p for p in RUNS_DIR.iterdir() if p.is_dir()])
-    if not run_folders:
-        raise RuntimeError("No run folders found in runs/")
-    return run_folders[-1]
+    runs = sorted([p for p in RUNS_DIR.iterdir() if p.is_dir()])
+    if not runs:
+        raise RuntimeError("No runs found")
+    return runs[-1]
 
 
-def _read_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _write_json(path: Path, obj: dict) -> None:
-    path.write_text(json.dumps(obj, indent=2), encoding="utf-8")
-
-
-def _silence_bytes(sample_rate: int, seconds: float, sample_width: int = 2, channels: int = 1) -> bytes:
-    frames = int(round(sample_rate * max(0.0, seconds)))
-    # 16-bit little-endian PCM silence is just zero bytes.
-    return b"\x00" * frames * sample_width * channels
-
-
-def _pcm_to_wav_bytes(pcm: bytes, sample_rate: int, sample_width: int = 2, channels: int = 1) -> bytes:
-    # Write to an in-memory wav (bytes) by using wave over a BytesIO buffer.
-    # We avoid BytesIO import by writing to file directly in _write_wav_file().
-    raise NotImplementedError("Use _write_wav_file() to write directly to disk.")
-
-
-def _write_wav_file(path: Path, pcm_frames: bytes, sample_rate: int, sample_width: int = 2, channels: int = 1) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with wave.open(str(path), "wb") as wf:
-        wf.setnchannels(channels)
-        wf.setsampwidth(sample_width)
+def write_wav(path_out: Path, pcm: bytes, sample_rate: int) -> None:
+    path_out.parent.mkdir(parents=True, exist_ok=True)
+    with wave.open(str(path_out), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
         wf.setframerate(sample_rate)
-        wf.writeframes(pcm_frames)
+        wf.writeframes(pcm)
 
 
-def _wav_duration_seconds(path: Path) -> float:
-    with wave.open(str(path), "rb") as wf:
-        frames = wf.getnframes()
-        rate = wf.getframerate()
-        return frames / float(rate)
-
-
-def elevenlabs_tts_pcm(
-    api_key: str,
-    voice_id: str,
-    text: str,
-    model_id: str,
-    sample_rate: int = VO_SAMPLE_RATE_HZ,
-) -> bytes:
-    """
-    Returns raw 16-bit little-endian PCM audio at sample_rate.
-    """
+def elevenlabs_tts_pcm(api_key: str, voice_id: str, text: str, model_id: str, sample_rate: int) -> bytes:
     url = ELEVENLABS_TTS_URL.format(voice_id=voice_id)
-    params = {"output_format": f"pcm_{sample_rate}"}
     headers = {
         "xi-api-key": api_key,
         "Content-Type": "application/json",
         "Accept": "application/octet-stream",
     }
-    payload = {
-        "text": text,
-        "model_id": model_id,
-        # Keep it simple. You can add voice_settings later if needed.
-    }
+    params = {"output_format": f"pcm_{sample_rate}"}
+    payload = {"text": text, "model_id": model_id}
 
-    resp = requests.post(url, params=params, headers=headers, json=payload, timeout=120)
-    if resp.status_code != 200:
-        raise RuntimeError(f"ElevenLabs TTS failed ({resp.status_code}): {resp.text[:500]}")
-    return resp.content
+    r = requests.post(url, headers=headers, params=params, json=payload, timeout=180)
+    if r.status_code != 200:
+        raise RuntimeError(f"ElevenLabs failed: {r.text[:300]}")
+    return r.content
 
 
-def normalize_pcm_rms(
-    pcm: bytes,
-    target_rms_db: float = -18.0,
-    sample_width: int = 2
-) -> bytes:
-    """
-    Normalize 16-bit PCM audio to a target RMS level.
-    Returns new PCM bytes.
-    """
-    if sample_width != 2:
-        raise RuntimeError("Only 16-bit PCM supported for normalization")
-
-    # Unpack PCM into signed int16 samples
-    sample_count = len(pcm) // 2
-    if sample_count == 0:
+def normalize_pcm_rms(pcm: bytes, target_rms_db: float) -> bytes:
+    samples = struct.unpack("<" + "h" * (len(pcm) // 2), pcm)
+    if not samples:
         return pcm
 
-    samples = struct.unpack("<" + "h" * sample_count, pcm)
-
-    # Compute RMS
-    square_sum = sum(s * s for s in samples)
-    rms = math.sqrt(square_sum / sample_count)
-    if rms == 0:
+    sq = sum(s * s for s in samples)
+    rms = math.sqrt(sq / len(samples))
+    if rms <= 0:
         return pcm
 
-    # Convert target dBFS to linear RMS
-    target_rms = (10 ** (target_rms_db / 20.0)) * 32768.0
+    target = (10 ** (target_rms_db / 20.0)) * 32768.0
+    gain = target / rms
 
-    gain = target_rms / rms
-
-    # Apply gain with clipping protection
-    normalized = []
+    out = []
     for s in samples:
-        v = int(round(s * gain))
-        if v > 32767:
-            v = 32767
-        elif v < -32768:
-            v = -32768
-        normalized.append(v)
+        v = int(s * gain)
+        out.append(max(-32768, min(32767, v)))
 
-    return struct.pack("<" + "h" * sample_count, *normalized)
+    return struct.pack("<" + "h" * len(out), *out)
 
 
-def _read_wav_frames(path: Path) -> tuple[bytes, int, int, int]:
-    """
-    Returns (pcm_frames, sample_rate, sample_width, channels)
-    """
-    with wave.open(str(path), "rb") as wf:
-        return (
-            wf.readframes(wf.getnframes()),
-            wf.getframerate(),
-            wf.getsampwidth(),
-            wf.getnchannels(),
-        )
+def pcm_to_samples(pcm: bytes) -> list[int]:
+    return list(struct.unpack("<" + "h" * (len(pcm) // 2), pcm))
 
 
+def find_silence_runs(samples, sample_rate, silence_dbfs, min_silence_ms=100):
+    frame_len = int(sample_rate * 0.01)
+    thresh = (10 ** (silence_dbfs / 20.0)) * 32768
+    min_frames = max(1, int(min_silence_ms / 10))
+
+    silent = []
+    for i in range(0, len(samples), frame_len):
+        frame = samples[i:i + frame_len]
+        rms = math.sqrt(sum(s * s for s in frame) / max(1, len(frame)))
+        silent.append(rms < thresh)
+
+    runs = []
+    start = None
+    for i, is_silent in enumerate(silent):
+        if is_silent and start is None:
+            start = i
+        elif not is_silent and start is not None:
+            if i - start >= min_frames:
+                runs.append((start * frame_len, i * frame_len))
+            start = None
+
+    if start is not None and len(silent) - start >= min_frames:
+        runs.append((start * frame_len, len(samples)))
+
+    return runs
+
+
+def trim_silence_with_buffers(
+    pcm: bytes,
+    sample_rate: int,
+    silence_dbfs: float,
+    max_pause_sec: float,
+):
+    samples = pcm_to_samples(pcm)
+    runs = find_silence_runs(samples, sample_rate, silence_dbfs)
+
+    max_pause = int(max_pause_sec * sample_rate)
+
+    out = []
+    cursor = 0
+
+    for start, end in runs:
+        # voiced before silence
+        if start > cursor:
+            out.extend(samples[cursor:start])
+
+        silence_len = end - start
+        keep = min(silence_len, max_pause)
+
+        out.extend(samples[start : start + keep])
+        cursor = end
+
+    if cursor < len(samples):
+        out.extend(samples[cursor:])
+
+    return struct.pack("<" + "h" * len(out), *out)
+
+
+def whisper_align(audio_path: Path):
+    model = whisper.load_model("base")
+    result = model.transcribe(
+        str(audio_path),
+        word_timestamps=True,
+        condition_on_previous_text=False,
+        fp16=False,
+    )
+
+    words = []
+    sentences = []
+
+    for seg in result["segments"]:
+        sentences.append({
+            "text": seg["text"].strip(),
+            "start_time": round(seg["start"], 6),
+            "end_time": round(seg["end"], 6),
+            "duration": round(seg["end"] - seg["start"], 6),
+        })
+
+        for w in seg.get("words", []):
+            words.append({
+                "word": w["word"].strip(),
+                "start_time": round(w["start"], 6),
+                "end_time": round(w["end"], 6),
+                "duration": round(w["end"] - w["start"], 6),
+            })
+
+    return words, sentences
+
+
+# -----------------------------
+# main
+# -----------------------------
 def main() -> int:
-    load_dotenv() 
-    
-    # ---- env ----
-    api_key = os.getenv("ELEVENLABS_API_KEY", "").strip()
-    if not api_key:
-        raise RuntimeError("ELEVENLABS_API_KEY not found in environment (.env)")
+    api_key = os.getenv("ELEVENLABS_API_KEY")
+    voice_id = os.getenv("ELEVENLABS_VOICE_ID")
 
-    voice_id = os.getenv("SHORTS_HORROR_ELEVENLABS_VOICE_ID", "").strip()
-    if not voice_id:
-        raise RuntimeError("SHORTS_HORROR_ELEVENLABS_VOICE_ID not found in environment (.env)")
+    silence_dbfs = float(os.getenv("VO_SILENCE_THRESHOLD_DBFS", "-40"))
+    max_pause_sec = float(os.getenv("VO_MAX_PAUSE_SECONDS", "0.1"))
+    target_rms_db = float(os.getenv("VO_TARGET_RMS_DB", "-16"))
+    force_regen = False
 
-    model_id = os.getenv("SHORTS_HORROR_ELEVENLABS_MODEL_ID", ELEVENLABS_MODEL_ID).strip()
+    if not api_key or not voice_id:
+        raise RuntimeError("Missing ELEVENLABS env vars")
 
-    buffer_pre = float(os.getenv("VO_BUFFER_PRE_SECONDS", "0.25"))
-    buffer_post = float(os.getenv("VO_BUFFER_POST_SECONDS", "0.25"))
-    force_regen = os.getenv("VO_FORCE_REGEN", "0").strip() == "1"
-    generate_full_wav = os.getenv("VO_GENERATE_FULL_WAV", "1").strip() == "1"
-
-    # ---- find run + load script ----
-    run_folder = find_latest_run_folder()
-    script_path = run_folder / "script.json"
-    if not script_path.exists():
-        raise RuntimeError(f"script.json not found in {run_folder}")
-
-    script_json = _read_json(script_path)
-    script_text = (script_json.get("script") or "").strip()
+    run = find_latest_run_folder()
+    script_json = _read_json(run / "script.json")
+    script_text = script_json.get("script", "").strip()
     if not script_text:
-        raise RuntimeError("script.json missing 'script' text")
+        raise RuntimeError("Empty script")
 
-    lines = [ln.strip() for ln in script_text.splitlines() if ln.strip()]
-    if not lines:
-        raise RuntimeError("No non-empty lines found in script")
-
-    # ---- output dirs ----
-    vo_dir = run_folder / "vo"
+    vo_dir = run / "vo"
     vo_dir.mkdir(parents=True, exist_ok=True)
 
-    # ---- audio format ----
-    sample_rate = VO_SAMPLE_RATE_HZ
-    sample_width = 2  # 16-bit
-    channels = 1
-    
-    # ---- CTA assets ----
-    cta_dir = Path("src/assets/cta_vo")
-    cta_files = sorted(cta_dir.glob("*.wav")) if cta_dir.exists() else []
+    raw_path = vo_dir / "full_raw.wav"
+    clean_path = vo_dir / "vo_clean.wav"
 
-
-    pre_silence = _silence_bytes(sample_rate, buffer_pre, sample_width, channels)
-    post_silence = _silence_bytes(sample_rate, buffer_post, sample_width, channels)
-
-    timing_lines = []
-    combined_frames_parts: list[bytes] = []
-
-    current_t = 0.0
-
-    for i, text in enumerate(lines):
-        out_name = f"line_{i:03d}.wav"
-        out_path = vo_dir / out_name
-
-        if out_path.exists() and not force_regen:
-            # Reuse existing audio for deterministic runs.
-            seg_duration = _wav_duration_seconds(out_path)
-            # We don't know speech-only duration if reused; approximate by subtracting buffers (clamped).
-            speech_duration = max(0.0, seg_duration - (buffer_pre + buffer_post))
-            with wave.open(str(out_path), "rb") as wf:
-                combined_frames_parts.append(wf.readframes(wf.getnframes()))
-        else:
-            pcm = elevenlabs_tts_pcm(
-                api_key=api_key,
-                voice_id=voice_id,
-                text=text,
-                model_id=model_id,
-                sample_rate=sample_rate,
-            )
-            pcm = normalize_pcm_rms(
-                pcm,
-                target_rms_db=float(os.getenv("VO_TARGET_RMS_DB", "-18.0")),
-            )
-
-            # Wrap: [pre silence] + [speech pcm] + [post silence]
-            frames = pre_silence + pcm + post_silence
-            _write_wav_file(out_path, frames, sample_rate, sample_width, channels)
-
-            speech_duration = len(pcm) / float(sample_rate * sample_width * channels)
-            seg_duration = len(frames) / float(sample_rate * sample_width * channels)
-            combined_frames_parts.append(frames)
-
-        start_time = current_t
-        end_time = current_t + seg_duration
-        timing_lines.append(
-            {
-                "line_index": i,
-                "text": text,
-                "file": f"vo/{out_name}",
-                "speech_duration_seconds": round(speech_duration, 6),
-                "segment_duration_seconds": round(seg_duration, 6),
-                "start_time_seconds": round(start_time, 6),
-                "end_time_seconds": round(end_time, 6),
-                "buffer_pre_seconds": buffer_pre,
-                "buffer_post_seconds": buffer_post,
-            }
+    if not raw_path.exists() or force_regen:
+        pcm = elevenlabs_tts_pcm(
+            api_key,
+            voice_id,
+            script_text,
+            ELEVENLABS_MODEL_ID,
+            VO_SAMPLE_RATE_HZ,
         )
-        current_t = end_time
+        pcm = normalize_pcm_rms(pcm, target_rms_db)
+        write_wav(raw_path, pcm, VO_SAMPLE_RATE_HZ)
+    else:
+        with wave.open(str(raw_path), "rb") as wf:
+            pcm = wf.readframes(wf.getnframes())
 
-        print(f"[{i+1}/{len(lines)}] Wrote: {out_path}")
+    cleaned_pcm = trim_silence_with_buffers(
+        pcm,
+        VO_SAMPLE_RATE_HZ,
+        silence_dbfs,
+        max_pause_sec,
+    )
 
-    # ---- combined wav ----
-    combined_path = vo_dir / "combined.wav"
-    combined_frames = b"".join(combined_frames_parts)
-    _write_wav_file(combined_path, combined_frames, sample_rate, sample_width, channels)
-    total_duration = len(combined_frames) / float(sample_rate * sample_width * channels)
-    
-    # ---- optional: full-pass narration wav (single TTS call) ----
-    full_duration = None
-    full_rel_path = None
+    write_wav(clean_path, cleaned_pcm, VO_SAMPLE_RATE_HZ)
 
-    if generate_full_wav:
-        full_path = vo_dir / "full.wav"
-        full_text = " ".join(lines).strip()
-
-        if full_text:
-            pcm_full = elevenlabs_tts_pcm(
-                api_key=api_key,
-                voice_id=voice_id,
-                text=full_text,
-                model_id=model_id,
-                sample_rate=sample_rate,
-            )
-
-            pcm_full = normalize_pcm_rms(
-                pcm_full,
-                target_rms_db=float(os.getenv("VO_TARGET_RMS_DB", "-18.0")),
-            )
-
-            full_frames = pcm_full
-
-            # ---- append random CTA ----
-            if cta_files:
-                cta_path = random.choice(cta_files)
-                cta_frames, cta_rate, cta_width, cta_channels = _read_wav_frames(cta_path)
-
-                if (
-                    cta_rate == sample_rate
-                    and cta_width == sample_width
-                    and cta_channels == channels
-                ):
-                    full_frames += cta_frames
-                else:
-                    raise RuntimeError(
-                        f"CTA wav format mismatch: {cta_path.name}"
-                    )
-
-            _write_wav_file(full_path, full_frames, sample_rate, sample_width, channels)
-
-            full_duration = _wav_duration_seconds(full_path)
-            full_rel_path = "vo/full.wav"
-            print(f"Wrote: {full_path}")
-
-
+    words, sentences = whisper_align(clean_path)
 
     out = {
         "schema": {"name": SCHEMA_NAME, "version": SCHEMA_VERSION},
         "run_id": script_json.get("run_id"),
         "created_at": utc_now_iso(),
-        "source_script": "script.json",
-        "tts": {
-            "provider": "elevenlabs",
-            "voice_id_env": "SHORTS_HORROR_ELEVENLABS_VOICE_ID",
-            "model_id": model_id,
-            "sample_rate_hz": sample_rate,
-            "channels": channels,
-            "sample_width_bytes": sample_width,
-            "buffer_pre_seconds": buffer_pre,
-            "buffer_post_seconds": buffer_post,
-        },
         "artifacts": {
-            "combined_wav": "vo/combined.wav",
-            "segments_dir": "vo/",
-            **({"full_wav": full_rel_path} if full_rel_path else {}),
+            "full_raw_wav": "vo/full_raw.wav",
+            "cleaned_wav": "vo/vo_clean.wav",
         },
         "timing": {
-            "total_duration_seconds": round(total_duration, 6),
-            **({"full_duration_seconds": round(full_duration, 6)} if full_duration is not None else {}),
-            **({"full_vs_segment_scale": round((full_duration / total_duration), 6)} if (full_duration is not None and total_duration > 0) else {}),
-            "line_count": len(lines),
-            "lines": timing_lines,
+            "sentences": sentences,
+            "words": words,
+            "total_duration_seconds": round(len(cleaned_pcm) / (VO_SAMPLE_RATE_HZ * 2), 6),
         },
     }
 
-    vo_json_path = run_folder / "vo.json"
-    _write_json(vo_json_path, out)
-    print(f"Wrote: {vo_json_path}")
-    print(f"Wrote: {combined_path}")
-
+    _write_json(run / "vo.json", out)
+    print("VO generation + timing complete.")
     return 0
 
 

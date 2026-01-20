@@ -1,7 +1,7 @@
 {
   "50": {
     "inputs": {
-      "text": "cgi, 3d render, digital art, illustration, painting, anime, cartoon,\nstylized, concept art, graphic novel,\n\noversaturated colors, neon lighting, fantasy lighting,\nsupernatural glow, heavy color grading, extreme HDR,\n\nfisheye lens, ultra-wide distortion, extreme perspective,\ndutch angle, warped architecture, impossible geometry,\n\nblurry, low resolution, noisy image, motion blur, out of focus,\nvisual glitches, jpeg artifacts, compression artifacts,\n\nextra limbs, extra fingers, missing fingers, malformed anatomy,\n\ntext, watermark, logo, subtitles, captions, UI elements,\nbranded signage, readable labels, real place names,\n\ngraphic gore, dismemberment, exposed organs, blood spray, torture\n",
+      "text": "photorealistic, ultra realistic, realism,\nskin pores, wrinkles, freckles, hyper detailed skin,\nanime, manga, cartoon, chibi,\n3d render, cgi, unreal engine, octane,\noverly smooth, plastic skin, beauty lighting,\nsymmetrical face, perfect face,\noversharpened, noisy, grainy,\nbright cheerful lighting, flat lighting,\nvibrant saturated colors\n",
       "clip": [
         "58",
         1
@@ -25,7 +25,7 @@
   },
   "55": {
     "inputs": {
-      "seed": 813473939531075,
+      "seed": 4206969420,
       "steps": 30,
       "cfg": 5,
       "sampler_name": "dpmpp_2m_sde",
@@ -84,7 +84,7 @@
   },
   "58": {
     "inputs": {
-      "ckpt_name": "RealVisXL_V5.0_fp16.safetensors"
+      "ckpt_name": "DreamShaperXL_Turbo_v2.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -93,7 +93,7 @@
   },
   "92": {
     "inputs": {
-      "text": "Photo realistic hand touching a wall in a dark basement",
+      "text": "illustrated, graphic novel style, painterly shadows,\nnon-photoreal, stylized lighting, graphic novel style illustration, cinematic horror scene,\nstylized realism, illustrated adult male figure,\nnarrow motel hallway at night,\ncracked tile floor, peeling wallpaper,\nold wooden door slightly open with a metal sign reading “Room 6”,\ndim wall lamps casting long shadows,\nflickering light, deep blue and purple tones,\nmuted neon glow spilling from outside,\npainterly shadows, heavy contrast lighting,\nclean linework, sharp silhouettes,\ndramatic rim lighting on the figure,\nfilm noir atmosphere, unsettling quiet tension,\nnarrative composition, horror graphic novel panel,\nhigh detail environment, atmospheric depth\n",
       "clip": [
         "58",
         1
@@ -102,6 +102,15 @@
     "class_type": "CLIPTextEncode",
     "_meta": {
       "title": "POSITIVE"
+    }
+  },
+  "96": {
+    "inputs": {
+      "image": "pasted/image.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
     }
   }
 }
