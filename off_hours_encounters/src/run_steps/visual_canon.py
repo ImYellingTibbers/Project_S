@@ -1,8 +1,8 @@
 """
-src/run_steps/canon_creator.py
+src/run_steps/visual_canon.py
 
-STAGE: CANON CREATOR (CONSISTENT VISUAL WORLD)
-----------------------------------------------
+STAGE: VISUAL CANON (SIMPLE, DETERMINISTIC)
+------------------------------------------
 Inputs:
   - runs/<run_id>/script.json
   - runs/<run_id>/storyboard_1.json
@@ -11,8 +11,9 @@ Output:
   - runs/<run_id>/visual_canon.json
 
 Purpose:
-  - Create JUST ENOUGH canon detail for consistent image generation:
-    characters, entity, locations, props, and style.
+  - Identify characters, locations, and entity
+  - Keep descriptions minimal and reusable
+  - Style is handled OUTSIDE the LLM
 """
 
 from __future__ import annotations
@@ -27,57 +28,57 @@ if str(ROOT) not in sys_path:
     sys_path.insert(0, str(ROOT))
 
 from src.llm.qwen_instruct_llm import call_llm
-from src.run_steps._common_utils import utc_now_iso, read_json, write_json, get_script_text, extract_json_from_llm, find_latest_run_folder
+from src.run_steps._common_utils import (
+    utc_now_iso,
+    read_json,
+    write_json,
+    get_script_text,
+    extract_json_from_llm,
+    find_latest_run_folder,
+)
 
 SCHEMA_NAME = "visual_canon"
-SCHEMA_VERSION = "2.0"
+SCHEMA_VERSION = "4.0"
+
+# HARD CODED CHARACTER BASE (NOT LLM)
+BASE_CHARACTER_DESCRIPTION = (
+    "White adult male, age 30s–50s, short brown or dark hair, "
+    "wearing a plain shirt and jeans, average build, slightly tired appearance."
+)
 
 
 def build_prompt(script_text: str, storyboard_1: Dict[str, Any]) -> str:
-    must_see = storyboard_1.get("must_see_moments", [])
-    recurring = storyboard_1.get("recurring_ids", {})
+    return f"""
+You are helping create a visual story for a viral YouTube Shorts horror channel.
 
-    return """
-You are creating VISUAL_CANON: the consistent visual world for image generation.
+Your job is to read the script and pull out the recurring visual elements that need to stay consistent for AI image generation.
 
-Inputs:
-- The full script
-- A list of must-see macro moments and recurring canonical IDs
+Start by identifying any recurring human characters in the story. Assign them simple IDs like adult_1, adult_2 if there is more than one. Do not over-describe characters — just enough detail to keep them visually consistent across images.
 
-Rules (STRICT):
-- Output JSON ONLY. No commentary.
-- Use ONLY canonical IDs that appear in storyboard_1 (must_see_moments + recurring_ids).
-- Keep canon descriptions short but specific (2-4 sentences each).
-- Avoid mirrors / reflections as key visual requirements.
-- Disambiguate entity vs prop:
-  - entity_1 is the supernatural presence (shadow / silhouette / partial limb).
-  - cursed objects are PROPS (e.g., prop_box_1), not entities.
-- style_canon.global_style_prompt must be a single line describing the consistent art style.
+Next, identify the main locations that appear more than once in the story. Describe each location as a place only, focusing on physical traits like size, layout, lighting, furniture, and general condition. Do not include actions, events, people, animals, or emotions in location descriptions.
 
-Return JSON with EXACT shape (you may include MORE keys inside each *_canon dict as needed):
-{
-  "roles": ["adult_1", "entity_1"],
-  "character_canon": {
-    "adult_1": "Short consistent description.",
-    "entity_1": "Short consistent description."
-  },
-  "location_canon": {
-    "location_apartment_1": "Short consistent description."
-  },
-  "prop_canon": {
-    "prop_box_1": "Short consistent description."
-  },
-  "style_canon": {
-    "global_style_prompt": "One line style prompt for ALL images.",
-    "format": "vertical 9:16"
-  }
-}
+Then, identify any recurring physical objects that matter visually across the story. Describe only what the object looks like on the outside. Do not describe contents, symbols, writing, or story-specific evidence.
 
-STORYBOARD_1:
-{
-  "must_see_moments": {must_see},
-  "recurring_ids": {recurring}
-}
+Finally, identify the supernatural entity or presence that is stalking, haunting, or threatening the character. This description can be more detailed than the others, but it should still avoid very specific anatomy or a clearly defined face. Think eerie, partial, or obscured.
+
+All descriptions should be visual, concrete, and usable for AI image generation. Keep them general enough to avoid breaking consistency, but specific enough to produce similar images each time. Each description should be one sentence.
+
+Do not describe scenes, actions, pacing, or emotions. Do not invent elements that are not clearly implied by the script.
+
+Return JSON only in the following format:
+
+{{
+  "characters": ["adult_1"],
+  "entity": {{
+    "entity_1": "One sentence visual description."
+  }},
+  "locations": {{
+    "location_1": "One sentence physical description."
+  }},
+  "objects": {{
+    "object_1": "One sentence physical description."
+  }}
+}}
 
 SCRIPT:
 {script_text}
@@ -90,34 +91,29 @@ def main() -> None:
     args = parser.parse_args()
 
     RUNS_DIR = ROOT / "runs"
+    run_folder = RUNS_DIR / args.run_id if args.run_id else find_latest_run_folder(RUNS_DIR)
 
-    if args.run_id:
-        run_folder = RUNS_DIR / args.run_id
-    else:
-        run_folder = find_latest_run_folder(RUNS_DIR)
-
-    script_path = run_folder / "script.json"
-    sb1_path = run_folder / "storyboard_1.json"
-
-    script_json = read_json(script_path)
+    script_json = read_json(run_folder / "script.json")
     script_text = get_script_text(script_json)
     if not script_text:
         raise RuntimeError("script.json missing script text")
 
-    sb1 = read_json(sb1_path)
-
-    resp = call_llm(build_prompt(script_text, sb1))
+    resp = call_llm(build_prompt(script_text, {}))
     payload = extract_json_from_llm(resp)
+
+    # BUILD CANON DETERMINISTICALLY
+    character_canon = {
+        char_id: BASE_CHARACTER_DESCRIPTION
+        for char_id in payload.get("characters", [])
+    }
 
     out: Dict[str, Any] = {
         "schema": {"name": SCHEMA_NAME, "version": SCHEMA_VERSION},
         "run_id": args.run_id,
         "created_at": utc_now_iso(),
-        "roles": payload["roles"],
-        "character_canon": payload["character_canon"],
-        "location_canon": payload.get("location_canon", {}),
-        "prop_canon": payload.get("prop_canon", {}),
-        "style_canon": payload.get("style_canon", {}),
+        "character_canon": character_canon,
+        "entity_canon": payload.get("entity", {}),
+        "location_canon": payload.get("locations", {}),
     }
 
     write_json(run_folder / "visual_canon.json", out)
