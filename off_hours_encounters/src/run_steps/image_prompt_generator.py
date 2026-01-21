@@ -51,7 +51,11 @@ def main() -> None:
     for chapter in sb4.get("final_chapters", []):
         chapter_prompts = []
         for scene in chapter.get("scenes", []):
-            formatted_prompt = compile_prompt(scene.get("description", ""))
+            description = scene.get("description", "")
+            if isinstance(description, dict):
+                description = " ".join([str(v) for v in description.values()])
+
+            formatted_prompt = compile_prompt(description)
             
             chapter_prompts.append({
                 "scene_type": scene.get("scene_type"),

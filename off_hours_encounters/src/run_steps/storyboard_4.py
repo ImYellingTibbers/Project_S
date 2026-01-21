@@ -21,37 +21,31 @@ from src.run_steps._common_utils import (
 SCHEMA_NAME = "storyboard_4"
 
 def build_prompt(script_text: str, sb3: Dict[str, Any], canon: Dict[str, Any]) -> str:
+    target_idx = sb3.get("chapter_index", "UNKNOWN")
+    
     return f"""
-You are the Visual Executor. Your goal is to write the final descriptions for every scene in a horror short. 
+You are the Visual Executor. 
+TASK: Create a single, highly descriptive visual sentence for Chapter {target_idx}.
 
-CRITICAL INSTRUCTION: HARD-INJECTION OF CANON
-You must never use placeholder names like "the protagonist" or "the entity" alone. You must physically describe them in EVERY scene using the exact traits provided in the VISUAL CANON. This ensures the image generator maintains visual consistency.
+STRICT OUTPUT RULE:
+- Your response MUST be a single string of text. 
+- DO NOT use JSON, DO NOT use curly braces {{}}, and DO NOT use labels like "Description:".
+- If you return anything other than a plain sentence, the system will crash.
+
+CONTENT HIERARCHY:
+1. IF OBJECT: Focus on 3 specific textures. (Example: "A macro shot of [Texture A], [Texture B], and [Texture C] on the [Object].")
+2. IF CHARACTER: Describe 1 physical action and 1 facial emotion. (Example: "The [Character] [Action] while looking [Emotion].")
+3. IF ENVIRONMENT: Describe the lighting and the furthest visible point.
+
+STRICT NEGATIVE CONSTRAINTS:
+- Do NOT use the words "No humans," "Canon," "Shot type," or "Logic" in your sentence.
+- Do NOT describe more than one distinct moment.
 
 INPUTS:
-1. SCRIPT: {script_text}
-2. STORYBOARD_3 (The Narrative Logic): {sb3}
-3. VISUAL CANON (The Physical Truth): {canon}
+- Logic: {sb3}
+- Canon: {canon}
 
-EXECUTION RULES:
-- If a scene involves a character (e.g., adult_1), you MUST describe their physical features (age, hair, clothing) in that scene's description.
-- If a scene takes place in a location (e.g., location_1), you MUST describe the environmental details (lighting, furniture, atmosphere) from the canon.
-- Detail level: High. Describe the texture, the lighting contrast, and the specific movement.
-- Tone: Cinematic, dark, viral horror.
-
-RETURN FORMAT:
-{{
-  "final_chapters": [
-    {{
-      "chapter_index": 0,
-      "scenes": [
-        {{
-          "scene_type": "anchor/adjacent",
-          "description": "The final physical description. Example: 'A white adult male in his 40s with short brown hair, wearing a plain shirt [adult_1], sits in a dimly lit room with peeling wallpaper [location_1]...'"
-        }}
-      ]
-    }}
-  ]
-}}
+(Write the sentence now):
 """.strip()
 
 def main() -> None:
@@ -62,25 +56,69 @@ def main() -> None:
     RUNS_DIR = ROOT / "runs"
     run_folder = RUNS_DIR / args.run_id if args.run_id else find_latest_run_folder(RUNS_DIR)
 
+    # Load necessary files
     script_json = read_json(run_folder / "script.json")
+    script_text = script_json.get("script", "")
     sb3 = read_json(run_folder / "storyboard_3.json")
     canon = read_json(run_folder / "visual_canon.json")
+    
+    all_final_chapters = []
 
-    script_text = script_json.get("script", "")
+    # Sort chapters to maintain narrative order
+    chapters = sorted(sb3.get("expanded_chapters", []), key=lambda x: x['chapter_index'])
 
-    # Final execution call
-    resp = call_llm(build_prompt(script_text, sb3, canon))
-    payload = extract_json_from_llm(resp)
+    for chapter in chapters:
+        c_idx = chapter.get("chapter_index")
+        current_chapter_scenes = []
+        
+        for s_idx, scene_logic in enumerate(chapter.get("scenes", [])):
+            print(f"[*] Processing Chapter {c_idx} | Scene {s_idx}...")
+            
+            single_scene_sb3 = {
+                "chapter_index": c_idx,
+                "scenes": [scene_logic] 
+            }
+            
+            # 1. Call LLM
+            resp = call_llm(build_prompt(script_text, single_scene_sb3, canon))
+            
+            # 2. HYBRID PARSING LOGIC
+            # This prevents the "LLM did not return a JSON object" crash
+            try:
+                # Try parsing as JSON first
+                payload = extract_json_from_llm(resp)
+                # Dig through the expected structure
+                gen_desc = payload["final_chapters"][0]["scenes"][0]["description"]
+            except Exception:
+                # Fallback: Treat the raw response as the description string
+                # Strip quotes in case the LLM wrapped the sentence in them
+                gen_desc = resp.strip().strip('"').strip("'")
+            
+            # 3. Create a standardized scene object
+            gen_scene = {
+                "scene_type": scene_logic.get("scene_type", "adjacent"),
+                "description": gen_desc
+            }
+            current_chapter_scenes.append(gen_scene)
+        
+        # Rebuild chapter object
+        all_final_chapters.append({
+            "chapter_index": c_idx,
+            "scenes": current_chapter_scenes
+        })
 
+    # Prepare final output
     out: Dict[str, Any] = {
         "schema": SCHEMA_NAME,
         "run_id": args.run_id,
         "created_at": utc_now_iso(),
-        "final_chapters": payload.get("final_chapters", []),
+        "final_chapters": all_final_chapters
     }
-
+    
     write_json(run_folder / "storyboard_4.json", out)
-    print(f"[SUCCESS] storyboard_4.json (Hard-Injected) saved | run={args.run_id}")
+    
+    total_scenes = sum(len(c["scenes"]) for c in all_final_chapters)
+    print(f"[SUCCESS] storyboard_4.json saved with {total_scenes} total scenes across {len(all_final_chapters)} chapters.")
 
 if __name__ == "__main__":
     main()

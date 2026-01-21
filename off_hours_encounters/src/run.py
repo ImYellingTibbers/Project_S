@@ -119,6 +119,12 @@ STEP_8_IMAGE_PROMPT_GENERATOR = {
     "script": "src/run_steps/image_prompt_generator.py",
 }
 
+STEP_9_IMAGE_GENERATOR = {
+    "label": "Step 9 - Image Generator",
+    "script": "src/run_steps/image_generator.py",
+    "start_comfyui": True,    # Trigger the start_comfyui() helper
+}
+
 # -------------------------
 # Pipeline Assembly
 # -------------------------
@@ -128,12 +134,13 @@ def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
     return [
         # STEP_1_SCRIPTWRITER,
         # STEP_2_VO_GENERATOR,
-        STEP_3_STORYBOARD_1,
-        STEP_4_VISUAL_CANON,
-        STEP_5_STORYBOARD_2,
-        STEP_6_STORYBOARD_3,
+        # STEP_3_STORYBOARD_1,
+        # STEP_4_VISUAL_CANON,
+        # STEP_5_STORYBOARD_2,
+        # STEP_6_STORYBOARD_3,
         STEP_7_STORYBOARD_4,
         STEP_8_IMAGE_PROMPT_GENERATOR,
+        # STEP_9_IMAGE_GENERATOR,
     ]
 
 # -------------------------
@@ -187,7 +194,7 @@ def main() -> int:
                 }) + "\n")
 
             code = run_step(label, script, extra_args)
-            if label == "Step 8 - Image generator (ComfyUI)":
+            if label == "Step 9 - Image generator (ComfyUI)":
                 print("[runner] Image generation complete — killing ComfyUI to free GPU")
                 kill_comfyui()
 

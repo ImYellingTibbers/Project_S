@@ -17,10 +17,10 @@ PYTHON_BIN = os.path.expanduser("~/ai/ComfyUI/venv/bin/python")
 COMFY_CMD = [
     PYTHON_BIN,
     "main.py",
-    "--normalvram",
-    "--disable-pinned-memory",
-    "--disable-async-offload",
-    "--force-fp16",
+    "--highvram",             # This is the correct one for speed
+    "--force-fp16",           # Faster and uses less VRAM than fp32
+    "--disable-smart-memory", # Prevents fragmentation during the 28-image run
+    "--dont-upcast-attention" # Further speed boost for SDXL
 ]
 
 # -----------------------
