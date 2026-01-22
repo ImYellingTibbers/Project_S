@@ -3,7 +3,7 @@
     "inputs": {
       "text": "photorealistic, ultra realistic, realism,\nskin pores, wrinkles, freckles, hyper detailed skin,\nanime, manga, cartoon, chibi,\n3d render, cgi, unreal engine, octane,\noverly smooth, plastic skin, beauty lighting,\nsymmetrical face, perfect face,\noversharpened, noisy, grainy,\nbright cheerful lighting, flat lighting,\nvibrant saturated colors\n",
       "clip": [
-        "58",
+        "97",
         1
       ]
     },
@@ -25,14 +25,14 @@
   },
   "55": {
     "inputs": {
-      "seed": 4206969420,
+      "seed": 152779449093294,
       "steps": 30,
       "cfg": 5,
       "sampler_name": "dpmpp_2m_sde",
       "scheduler": "karras",
       "denoise": 1,
       "model": [
-        "58",
+        "97",
         0
       ],
       "positive": [
@@ -84,7 +84,7 @@
   },
   "58": {
     "inputs": {
-      "ckpt_name": "DreamShaperXL_Turbo_v2.safetensors"
+      "ckpt_name": "Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -93,9 +93,9 @@
   },
   "92": {
     "inputs": {
-      "text": "illustrated, graphic novel style, painterly shadows,\nnon-photoreal, stylized lighting, graphic novel style illustration, cinematic horror scene,\nstylized realism, illustrated adult male figure,\nnarrow motel hallway at night,\ncracked tile floor, peeling wallpaper,\nold wooden door slightly open with a metal sign reading “Room 6”,\ndim wall lamps casting long shadows,\nflickering light, deep blue and purple tones,\nmuted neon glow spilling from outside,\npainterly shadows, heavy contrast lighting,\nclean linework, sharp silhouettes,\ndramatic rim lighting on the figure,\nfilm noir atmosphere, unsettling quiet tension,\nnarrative composition, horror graphic novel panel,\nhigh detail environment, atmospheric depth\n",
+      "text": "stylized horror illustration, cinematic and non-photoreal,\na tall humanoid silhouette standing motionless in the foreground,\nmale adult proportions implied but indistinct,\nentire body reduced to a dark shape with no visible facial features,\ntwo faint, unnatural points of light where eyes should be,\nbackground suggested only by vertical shapes fading into fog,\nstrong backlight creating a halo of mist around the silhouette,\nheavy contrast, deep blacks swallowing detail,\nunnatural stillness, threatening presence,\ngraphic novel horror panel,\nless detail, more absence, quiet dread\n",
       "clip": [
-        "58",
+        "97",
         1
       ]
     },
@@ -111,6 +111,25 @@
     "class_type": "LoadImage",
     "_meta": {
       "title": "Load Image"
+    }
+  },
+  "97": {
+    "inputs": {
+      "lora_name": "realistic_horror.safetensors",
+      "strength_model": 0.31,
+      "strength_clip": 0.35,
+      "model": [
+        "58",
+        0
+      ],
+      "clip": [
+        "58",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
     }
   }
 }

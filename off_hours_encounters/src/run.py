@@ -86,43 +86,48 @@ STEP_1_SCRIPTWRITER = {
 
 STEP_2_VO_GENERATOR = {
     "label": "Step 2 - VO Generation",
-    "script": "src/run_steps/scriptwriter.py",
+    "script": "src/run_steps/vo_generator.py",
 }
 
-STEP_3_STORYBOARD_1 = {
-    "label": "Step 3 - Storyboard 1",
-    "script": "src/run_steps/storyboard_1.py",
+STEP_3_VISUAL_NARRATIVE = {
+    "label": "Step 3 - Visual Narrative",
+    "script": "src/run_steps/visual_narrative.py",
 }
 
-STEP_4_VISUAL_CANON = {
-    "label": "Step 4 - Visual Canon",
-    "script": "src/run_steps/visual_canon.py",
-}
+# STEP_3_STORYBOARD_1 = {
+#     "label": "Step 3 - Storyboard 1",
+#     "script": "src/run_steps/storyboard_1.py",
+# }
 
-STEP_5_STORYBOARD_2 = {
-    "label": "Step 5 - Storyboard 2",
-    "script": "src/run_steps/storyboard_2.py",
-}
+# STEP_4_VISUAL_CANON = {
+#     "label": "Step 4 - Visual Canon",
+#     "script": "src/run_steps/visual_canon.py",
+# }
 
-STEP_6_STORYBOARD_3 = {
-    "label": "Step 6 - Storyboard 3",
-    "script": "src/run_steps/storyboard_3.py",
-}
+# STEP_5_STORYBOARD_2 = {
+#     "label": "Step 5 - Storyboard 2",
+#     "script": "src/run_steps/storyboard_2.py",
+# }
 
-STEP_7_STORYBOARD_4 = {
-    "label": "Step 7 - Storyboard 4",
-    "script": "src/run_steps/storyboard_4.py",
-}
+# STEP_6_STORYBOARD_3 = {
+#     "label": "Step 6 - Storyboard 3",
+#     "script": "src/run_steps/storyboard_3.py",
+# }
 
-STEP_8_IMAGE_PROMPT_GENERATOR = {
-    "label": "Step 8 - Image Prompt Generator",
-    "script": "src/run_steps/image_prompt_generator.py",
-}
+# STEP_7_STORYBOARD_4 = {
+#     "label": "Step 7 - Storyboard 4",
+#     "script": "src/run_steps/storyboard_4.py",
+# }
+
+# STEP_8_IMAGE_PROMPT_GENERATOR = {
+#     "label": "Step 8 - Image Prompt Generator",
+#     "script": "src/run_steps/image_prompt_generator.py",
+# }
 
 STEP_9_IMAGE_GENERATOR = {
     "label": "Step 9 - Image Generator",
     "script": "src/run_steps/image_generator.py",
-    "start_comfyui": True,    # Trigger the start_comfyui() helper
+    "start_comfyui": True,
 }
 
 # -------------------------
@@ -134,13 +139,14 @@ def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
     return [
         # STEP_1_SCRIPTWRITER,
         # STEP_2_VO_GENERATOR,
+        STEP_3_VISUAL_NARRATIVE,
         # STEP_3_STORYBOARD_1,
         # STEP_4_VISUAL_CANON,
         # STEP_5_STORYBOARD_2,
         # STEP_6_STORYBOARD_3,
-        STEP_7_STORYBOARD_4,
-        STEP_8_IMAGE_PROMPT_GENERATOR,
-        # STEP_9_IMAGE_GENERATOR,
+        # STEP_7_STORYBOARD_4,
+        # STEP_8_IMAGE_PROMPT_GENERATOR,
+        STEP_9_IMAGE_GENERATOR,
     ]
 
 # -------------------------

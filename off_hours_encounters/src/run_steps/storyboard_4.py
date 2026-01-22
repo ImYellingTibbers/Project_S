@@ -22,30 +22,48 @@ SCHEMA_NAME = "storyboard_4"
 
 def build_prompt(script_text: str, sb3: Dict[str, Any], canon: Dict[str, Any]) -> str:
     target_idx = sb3.get("chapter_index", "UNKNOWN")
-    
+    scene = (sb3.get("scenes") or [{}])[0]
+
+    scene_type = scene.get("scene_type", "adjacent")
+    logic = scene.get("visual_logic", "")
+    goal = scene.get("narrative_goal", "")
+
     return f"""
-You are the Visual Executor. 
-TASK: Create a single, highly descriptive visual sentence for Chapter {target_idx}.
+You are the Visual Executor.
+
+TASK:
+Write ONE single, cinematic visual sentence for ONE scene.
 
 STRICT OUTPUT RULE:
-- Your response MUST be a single string of text. 
-- DO NOT use JSON, DO NOT use curly braces {{}}, and DO NOT use labels like "Description:".
-- If you return anything other than a plain sentence, the system will crash.
+- Output MUST be ONE plain sentence. No JSON. No labels. No quotes. No brackets.
 
-CONTENT HIERARCHY:
-1. IF OBJECT: Focus on 3 specific textures. (Example: "A macro shot of [Texture A], [Texture B], and [Texture C] on the [Object].")
-2. IF CHARACTER: Describe 1 physical action and 1 facial emotion. (Example: "The [Character] [Action] while looking [Emotion].")
-3. IF ENVIRONMENT: Describe the lighting and the furthest visible point.
+IDENTITY RULES (NON-NEGOTIABLE):
+- The protagonist is ALWAYS: {canon.get("character_canon", {}).get("adult_1", "adult_1")}
+- The entity is ALWAYS: {canon.get("entity_canon", {}).get("entity_1", "entity_1")}
+- DO NOT merge them. The protagonist never becomes the entity.
 
-STRICT NEGATIVE CONSTRAINTS:
-- Do NOT use the words "No humans," "Canon," "Shot type," or "Logic" in your sentence.
-- Do NOT describe more than one distinct moment.
+ENTITY APPEARANCE RULE:
+- Only show the entity’s BODY if the Logic clearly indicates it is physically present.
+- If Logic does NOT clearly indicate entity presence, you may only imply it indirectly
+  (shadow, disturbed object, ominous empty space, camera glitch), but no full entity body.
 
-INPUTS:
-- Logic: {sb3}
-- Canon: {canon}
+SAFETY / CONTENT RULES (HARD BAN):
+- No nudity. No lingerie. No cleavage focus. No sexual framing.
+- All people are fully clothed in normal, modest clothing.
+- No explicit body parts, no exposed breasts, no nude silhouettes.
 
-(Write the sentence now):
+VARIETY RULE:
+- Avoid repeating the same framing. Choose a distinct shot style:
+  (wide establishing, over-the-shoulder, extreme close-up, low angle, high angle, hallway depth shot,
+   POV handheld, macro prop detail, silhouette through doorway).
+
+SCENE CONTEXT:
+Chapter: {target_idx}
+Scene type: {scene_type}
+Narrative goal: {goal}
+Logic: {logic}
+
+Write the sentence now:
 """.strip()
 
 def main() -> None:

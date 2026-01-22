@@ -36,19 +36,30 @@ class ComfyConfig:
     client_id: str = os.getenv("COMFY_CLIENT_ID", "project_s_image_generator")
     input_subfolder_root: str = os.getenv("COMFY_INPUT_SUBFOLDER_ROOT", "project_s")
 
-# Note: HORROR_VISUAL_BIAS is now largely handled by the Prompt Generator LLM, 
-# but we keep this as a safety fallback or global negative reinforcement.
 NEGATIVE_PROMPT = (
-    "anime, cartoon, chibi, bright cheerful lighting, neon colors, "
-    "oversaturated, cgi, plastic skin, distorted anatomy, text, watermark, "
-    "multiple frames, split screen, storyboard, comic panel"
+    "photorealistic, photo, DSLR, studio lighting, fashion photography, glamour lighting, "
+    "hyperreal skin, skin pores, symmetrical face, beauty lighting, "
+    "romantic, sensual, explicit gore, exposed organs, graphic anatomy, sexualized pose, intimate framing, "
+    "shirtless male, bare torso, erotic, porn, nsfw, fetish, genitalia, nudity, breasts, nipples, "
+    "bright cheerful lighting, neon colors, oversaturated, "
+    "cgi, unreal engine, octane, glossy 3d, plastic skin, "
+    "text, watermark, logo, caption, multiple frames, split screen, "
+    "woman, women, female, girl, girls, child, children, teen, teenager, pregnant, "
+)
+
+STYLE_PREFIX = (
+    "stylized horror illustration, painterly and cinematic, non-photoreal, "
+    "silhouette-first composition, exaggerated contrast, deep crushing shadows, "
+    "fog, darkness, and occlusion obscuring anatomy, "
+    "imperfect proportions, suggestion over detail, "
+    "faces partially obscured, facial features indistinct, identity not emphasized, "
+    "graphic novel horror tone, unsettling negative space"
 )
 
 # ----------------------------
 # Helpers
 # ----------------------------
 def latest_run_dir() -> Path:
-    # Get the most recent folder in /runs
     return sorted([p for p in RUNS_DIR.iterdir() if p.is_dir()])[-1]
 
 def load_json(p: Path) -> dict:
@@ -88,10 +99,10 @@ def wait_for_completion(cfg: ComfyConfig, pid: str, timeout: int = 1200):
 def get_history(cfg: ComfyConfig, pid: str) -> dict:
     r = requests.get(f"{cfg.base_url}/history/{pid}", timeout=60)
     r.raise_for_status()
-    return r.json()[pid] # Accessing the specific prompt ID history
+    return r.json()[pid]
 
 def extract_image(history: dict) -> dict:
-    for node_id, node_output in history.get("outputs", {}).items():
+    for node_output in history.get("outputs", {}).values():
         if "images" in node_output:
             return node_output["images"][0]
     raise RuntimeError("No image found in workflow output")
@@ -117,11 +128,10 @@ def patch_prompt(wf: dict, *, positive: str, negative: str, seed: int, filename:
             if "NEGATIVE" in title:
                 node["inputs"]["text"] = negative
             else:
-                # The prompt generator now builds the full string, so we pass it directly
                 node["inputs"]["text"] = positive
         if node.get("class_type") in ["KSampler", "KSamplerAdvanced"]:
-            seed_key = "seed" if node["class_type"] == "KSampler" else "noise_seed"
-            node["inputs"][seed_key] = seed
+            key = "seed" if node["class_type"] == "KSampler" else "noise_seed"
+            node["inputs"][key] = seed
         if node.get("class_type") == "SaveImage":
             node["inputs"]["filename_prefix"] = filename
     return wf
@@ -132,66 +142,87 @@ def patch_prompt(wf: dict, *, positive: str, negative: str, seed: int, filename:
 def main():
     cfg = ComfyConfig()
     run = latest_run_dir()
+
+    scenes_path = run / "visual_scenes.json"
+    canon_path = run / "canon.json"
+
+    if not scenes_path.exists():
+        raise FileNotFoundError("visual_scenes.json not found in latest run")
+
+    scenes_data = load_json(scenes_path)
+    scenes = scenes_data.get("scenes", [])
     
-    # NEW: Load the final compiled prompts (28+ scenes)
-    prompt_artifact = load_json(run / "final_image_prompts.json")
-    run_id = prompt_artifact.get("run_id")
-    seed = random.randint(100000, 1000000)
+    canon_map = {}
+    if canon_path.exists():
+        canon_data = load_json(canon_path)
+        canon_map = {c["id"]: c["description"] for c in canon_data.get("canon", [])}
+
+    c1_desc = canon_map.get("c1", "adult white male, mid 30s, short dark hair, short beard, dark casual clothing")
+    c2_desc = canon_map.get("c2", "non-human presence, partial intrusion only, no full body, no face")
+
+    seed_base = random.randint(100_000, 1_000_000)
 
     images_dir = run / "images"
     images_dir.mkdir(exist_ok=True)
 
-    # Load workflow template
     workflow_path = ROOT / "src/image_generation/horror_shorts_txt2img_beat_workflow.json"
     if not workflow_path.exists():
         raise FileNotFoundError(f"Workflow not found at {workflow_path}")
-    
+
     base_workflow = load_json(workflow_path)
 
-    print(f"[*] Starting Image Generation for Run: {run_id}")
+    print(f"[*] Generating {len(scenes)} images for run: {run.name}")
 
-    global_scene_counter = 0
-    
-    # NEW: Iterate through Chapters and Nested Prompts
-    for chapter in prompt_artifact.get("chapters", []):
-        chapter_idx = chapter.get("chapter_index")
+    for idx, scene in enumerate(scenes):
+        visible_ids = scene.get("visible_canon_ids", [])
         
-        for prompt_obj in chapter.get("prompts", []):
-            # The prompt is already pre-compiled with Style and Canon by image_prompt_generator.py
-            full_prompt_text = prompt_obj.get("prompt")
-            
-            # Formatted name for alphabetical sorting in editors: scene_000.png
-            out_name = f"scene_{global_scene_counter:03d}_ch{chapter_idx}"
+        # 1. Start with the style
+        prompt_parts = [STYLE_PREFIX]
 
-            print(f"[+] Processing: {out_name}...")
+        # 2. Add Protagonist (c1) description ONLY if requested
+        if "c1" in visible_ids:
+            # We add the character description from our canon map
+            prompt_parts.append(f"Subject: {canon_map.get('c1', 'adult male protagonist')}. The character is visible in the frame.")
+        else:
+            prompt_parts.append("No people visible, empty scene, architectural or object focus.")
 
-            wf = patch_prompt(
-                base_workflow,
-                positive=full_prompt_text,
-                negative=NEGATIVE_PROMPT,
-                seed=seed + (global_scene_counter * 13),
-                filename=f"project_s/{run_id}/{out_name}"
-            )
+        # 3. Add Entity (c2) description ONLY if requested
+        if "c2" in visible_ids:
+            prompt_parts.append(f"Presence: {canon_map.get('c2', 'shrouded entity')}")
 
-            try:
-                pid = queue_prompt(cfg, wf)
-                wait_for_completion(cfg, pid)
-                
-                # Fetch and save locally to the run folder
-                history = get_history(cfg, pid)
-                img_info = extract_image(history)
-                img_data = download_image(cfg, img_info)
-                
-                img_path = images_dir / f"{out_name}.png"
-                img_path.write_bytes(img_data)
-                
-                print(f"    [OK] Saved to {img_path.name}")
-            except Exception as e:
-                print(f"    [ERROR] Failed scene {global_scene_counter}: {e}")
-            
-            global_scene_counter += 1
+        # 4. Add the specific visual description from the LLM
+        prompt_parts.append(f"Visual: {scene['visual_description']}")
 
-    print(f"\n[SUCCESS] Generated {global_scene_counter} images for video production.")
+        # Join everything into the final string
+        prompt_text = ", ".join(prompt_parts)
+
+        out_name = f"scene_{idx:03d}"
+        print(f"[+] Rendering {out_name} | IDs: {visible_ids}")
+
+        wf = patch_prompt(
+            base_workflow,
+            positive=prompt_text,
+            negative=NEGATIVE_PROMPT,
+            seed=seed_base + (idx * 31),
+            filename=f"project_s/{run.name}/{out_name}",
+        )
+
+        try:
+            pid = queue_prompt(cfg, wf)
+            wait_for_completion(cfg, pid)
+
+            history = get_history(cfg, pid)
+            img_info = extract_image(history)
+            img_data = download_image(cfg, img_info)
+
+            out_path = images_dir / f"{out_name}.png"
+            out_path.write_bytes(img_data)
+
+            print(f"    [OK] {out_path.name}")
+        except Exception as e:
+            print(f"    [ERROR] Scene {idx}: {e}")
+
+    print(f"\n[SUCCESS] Image generation complete.")
 
 if __name__ == "__main__":
     main()

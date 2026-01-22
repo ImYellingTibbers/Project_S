@@ -17,8 +17,24 @@ from src.run_steps._common_utils import (
 
 SCHEMA_NAME = "image_prompt_generator"
 
-STYLE_PREFIX = "Cinematic horror film still, shot on 35mm lens, grainy texture, high contrast chiaroscuro lighting, eerie atmosphere, hyper-realistic, 8k resolution,"
-STYLE_SUFFIX = "--ar 9:16 --v 6.0 --style raw"
+STYLE_PREFIX = (
+    "Cinematic horror film still, shot on 35mm lens, gritty realism, "
+    "moody chiaroscuro lighting, eerie atmosphere, hyper-realistic, 8k resolution, "
+    "SFW, fully clothed subjects, modest clothing, no nudity, no sexual content,"
+)
+
+STYLE_SUFFIX = "" 
+
+SHOT_VARIATIONS = [
+    "wide establishing shot, deep shadows, strong negative space,",
+    "over-the-shoulder shot, shallow depth of field,",
+    "extreme close-up macro detail, high texture clarity,",
+    "low angle shot, looming perspective,",
+    "high angle shot, vulnerable framing,",
+    "POV handheld shot, slight motion blur,",
+    "hallway depth shot, long corridor vanishing point,",
+    "silhouette in doorway, backlit haze,",
+]
 
 def clean_description(text: str) -> str:
     """Removes technical tags, bracketed metadata, and extra whitespace."""
@@ -31,10 +47,11 @@ def clean_description(text: str) -> str:
     
     return text
 
-def compile_prompt(description: str) -> str:
+def compile_prompt(description: str, scene_index: int) -> str:
     """Combines the cleaned description with global style markers."""
     cleaned = clean_description(description)
-    return f"{STYLE_PREFIX} {cleaned} {STYLE_SUFFIX}"
+    shot = SHOT_VARIATIONS[scene_index % len(SHOT_VARIATIONS)]
+    return f"{STYLE_PREFIX} {shot} {cleaned} {STYLE_SUFFIX}".strip()
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -49,13 +66,15 @@ def main() -> None:
     final_prompts = []
 
     for chapter in sb4.get("final_chapters", []):
+        global_scene_counter = 0
         chapter_prompts = []
         for scene in chapter.get("scenes", []):
             description = scene.get("description", "")
             if isinstance(description, dict):
                 description = " ".join([str(v) for v in description.values()])
 
-            formatted_prompt = compile_prompt(description)
+            formatted_prompt = compile_prompt(description, global_scene_counter)
+            global_scene_counter += 1
             
             chapter_prompts.append({
                 "scene_type": scene.get("scene_type"),

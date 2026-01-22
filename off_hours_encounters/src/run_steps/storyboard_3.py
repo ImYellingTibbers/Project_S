@@ -20,6 +20,68 @@ from src.run_steps._common_utils import (
 
 SCHEMA_NAME = "storyboard_3"
 
+def enforce_scene_counts(sb3_payload: Dict[str, Any], sb2: Dict[str, Any]) -> Dict[str, Any]:
+    """Force storyboard_3 expanded_chapters to exactly match storyboard_2 scene counts."""
+    target_counts = {c["chapter_index"]: c["scene_count"] for c in sb2.get("chapters", [])}
+
+    expanded = sb3_payload.get("expanded_chapters", [])
+    expanded_by_idx = {c["chapter_index"]: c for c in expanded}
+
+    # Ensure all chapters exist
+    for chap_idx, target in target_counts.items():
+        if chap_idx not in expanded_by_idx:
+            expanded_by_idx[chap_idx] = {"chapter_index": chap_idx, "scenes": []}
+
+        scenes = expanded_by_idx[chap_idx].get("scenes", [])
+        if scenes is None:
+            scenes = []
+            expanded_by_idx[chap_idx]["scenes"] = scenes
+
+        # Ensure at least one anchor exists
+        has_anchor = any(s.get("scene_type") == "anchor" for s in scenes)
+        if scenes and not has_anchor:
+            mid = len(scenes) // 2
+            scenes[mid]["scene_type"] = "anchor"
+
+        # Trim if too many (keep anchor + early/late context)
+        if len(scenes) > target:
+            anchors = [s for s in scenes if s.get("scene_type") == "anchor"]
+            non_anchors = [s for s in scenes if s.get("scene_type") != "anchor"]
+
+            kept = []
+            if anchors:
+                kept.append(anchors[0])
+
+            # Keep from beginning then end
+            remaining = target - len(kept)
+            front_take = max(0, remaining // 2)
+            back_take = remaining - front_take
+
+            kept.extend(non_anchors[:front_take])
+            if back_take > 0:
+                kept.extend(non_anchors[-back_take:])
+
+            expanded_by_idx[chap_idx]["scenes"] = kept[:target]
+
+        # Pad if too few
+        while len(expanded_by_idx[chap_idx]["scenes"]) < target:
+            i = len(expanded_by_idx[chap_idx]["scenes"])
+            expanded_by_idx[chap_idx]["scenes"].append({
+                "scene_type": "adjacent",
+                "narrative_goal": "Bridge pacing with a supporting cutaway that maintains tension.",
+                "visual_logic": (
+                    "A grounded, non-repeating cutaway detail that supports the moment: "
+                    "hands, door hardware, hallway depth, phone screen glow, shadows, clutter, "
+                    "footsteps, appliance light, or a tight close-up on a prop."
+                )
+            })
+
+    # Return chapters in order
+    fixed = sorted(expanded_by_idx.values(), key=lambda x: x["chapter_index"])
+    sb3_payload["expanded_chapters"] = fixed
+    return sb3_payload
+
+
 def build_prompt(script_text: str, sb1: Dict[str, Any], sb2: Dict[str, Any]) -> str:
     return f"""
 You are the Narrative Architect for a horror YouTube Shorts channel. 
@@ -82,12 +144,59 @@ def main() -> None:
     sb2 = read_json(run_folder / "storyboard_2.json")
 
     script_text = script_json.get("script", "")
-    if not script_text:
-        raise RuntimeError("script.json missing script text")
+    chapters_map = sb2.get("chapters", [])
+    
+    all_expanded_chapters = []
 
-    # Call LLM for narrative "thinking"
-    resp = call_llm(build_prompt(script_text, sb1, sb2))
-    payload = extract_json_from_llm(resp)
+    print(f"[*] Starting chunked processing for {len(chapters_map)} chapters...")
+
+    for chapter in chapters_map:
+        c_idx = chapter["chapter_index"]
+        target_count = chapter["scene_count"]
+        purpose = chapter["chapter_purpose"]
+        
+        print(f"[>] Processing Chapter {c_idx} ({target_count} scenes)...")
+
+        # Refined prompt just for this chapter
+        chapter_prompt = f"""
+        You are a Horror Narrative Architect.
+        
+        TASK:
+        Generate the visual logic for Chapter {c_idx} only.
+        Chapter Purpose: {purpose}
+        Target Number of Scenes: {target_count}
+        
+        INPUTS:
+        - FULL SCRIPT: {script_text}
+        - ANCHOR MOMENTS: {sb1}
+        
+        RETURN FORMAT (JSON ONLY):
+        {{
+          "chapter_index": {c_idx},
+          "scenes": [
+            {{
+              "scene_type": "anchor or adjacent",
+              "narrative_goal": "One sentence goal",
+              "visual_logic": "One sentence visual description"
+            }}
+          ]
+        }}
+        """
+
+        # Call LLM for this specific chunk
+        resp = call_llm(chapter_prompt.strip())
+        chapter_payload = extract_json_from_llm(resp)
+        
+        # Add to our collection
+        all_expanded_chapters.append(chapter_payload)
+
+    # Reconstruct the final payload
+    payload = {
+        "expanded_chapters": all_expanded_chapters
+    }
+
+    # Enforce counts (your existing function works great here as a safety net)
+    payload = enforce_scene_counts(payload, sb2)
 
     out: Dict[str, Any] = {
         "schema": SCHEMA_NAME,
@@ -95,6 +204,10 @@ def main() -> None:
         "created_at": utc_now_iso(),
         "expanded_chapters": payload.get("expanded_chapters", []),
     }
+
+    write_json(run_folder / "storyboard_3.json", out)
+    print(f"[SUCCESS] storyboard_3.json (Thinking Layer) saved | run={args.run_id}")
+
 
     write_json(run_folder / "storyboard_3.json", out)
     print(f"[SUCCESS] storyboard_3.json (Thinking Layer) saved | run={args.run_id}")
