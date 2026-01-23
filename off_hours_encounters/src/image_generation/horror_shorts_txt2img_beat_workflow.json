@@ -1,9 +1,9 @@
 {
   "50": {
     "inputs": {
-      "text": "photorealistic, ultra realistic, realism,\nskin pores, wrinkles, freckles, hyper detailed skin,\nanime, manga, cartoon, chibi,\n3d render, cgi, unreal engine, octane,\noverly smooth, plastic skin, beauty lighting,\nsymmetrical face, perfect face,\noversharpened, noisy, grainy,\nbright cheerful lighting, flat lighting,\nvibrant saturated colors\n",
+      "text": "",
       "clip": [
-        "97",
+        "58",
         1
       ]
     },
@@ -27,12 +27,12 @@
     "inputs": {
       "seed": 152779449093294,
       "steps": 30,
-      "cfg": 5,
+      "cfg": 8,
       "sampler_name": "dpmpp_2m_sde",
       "scheduler": "karras",
       "denoise": 1,
       "model": [
-        "97",
+        "58",
         0
       ],
       "positive": [
@@ -84,7 +84,7 @@
   },
   "58": {
     "inputs": {
-      "ckpt_name": "Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors"
+      "ckpt_name": "realvisxlV50_v40Bakedvae.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -93,9 +93,9 @@
   },
   "92": {
     "inputs": {
-      "text": "stylized horror illustration, cinematic and non-photoreal,\na tall humanoid silhouette standing motionless in the foreground,\nmale adult proportions implied but indistinct,\nentire body reduced to a dark shape with no visible facial features,\ntwo faint, unnatural points of light where eyes should be,\nbackground suggested only by vertical shapes fading into fog,\nstrong backlight creating a halo of mist around the silhouette,\nheavy contrast, deep blacks swallowing detail,\nunnatural stillness, threatening presence,\ngraphic novel horror panel,\nless detail, more absence, quiet dread\n",
+      "text": "",
       "clip": [
-        "97",
+        "58",
         1
       ]
     },
@@ -111,25 +111,6 @@
     "class_type": "LoadImage",
     "_meta": {
       "title": "Load Image"
-    }
-  },
-  "97": {
-    "inputs": {
-      "lora_name": "realistic_horror.safetensors",
-      "strength_model": 0.31,
-      "strength_clip": 0.35,
-      "model": [
-        "58",
-        0
-      ],
-      "clip": [
-        "58",
-        1
-      ]
-    },
-    "class_type": "LoraLoader",
-    "_meta": {
-      "title": "Load LoRA"
     }
   }
 }

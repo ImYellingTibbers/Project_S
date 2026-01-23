@@ -124,10 +124,20 @@ STEP_3_VISUAL_NARRATIVE = {
 #     "script": "src/run_steps/image_prompt_generator.py",
 # }
 
+# STEP_8_IMAGE_PROMPT_GENERATOR = {
+#     "label": "Step 8 - Image Prompt Generator",
+#     "script": "src/run_steps/image_prompt_generator.py",
+# }
+
 STEP_9_IMAGE_GENERATOR = {
     "label": "Step 9 - Image Generator",
     "script": "src/run_steps/image_generator.py",
     "start_comfyui": True,
+}
+
+STEP_10_TIMING_PLANNER = {
+    "label": "Step 10 - Timing Planner",
+    "script": "src/run_steps/timing_planner.py",
 }
 
 # -------------------------
@@ -146,7 +156,8 @@ def build_steps(run_id: str | None = None) -> List[Dict[str, Any]]:
         # STEP_6_STORYBOARD_3,
         # STEP_7_STORYBOARD_4,
         # STEP_8_IMAGE_PROMPT_GENERATOR,
-        STEP_9_IMAGE_GENERATOR,
+        # STEP_9_IMAGE_GENERATOR,
+        # STEP_10_TIMING_PLANNER,
     ]
 
 # -------------------------
