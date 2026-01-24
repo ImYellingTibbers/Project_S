@@ -14,7 +14,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 
 RUNS_DIR = Path(__file__).resolve().parent.parent.parent / "runs"
-SAMPLING_MODE = True 
+SAMPLING_MODE = False 
 
 def get_latest_run():
     if not RUNS_DIR.exists(): return None
@@ -70,7 +70,12 @@ def generate_images():
         except Exception as e:
             print(f"❌ [ERROR]: {e}")
 
-        time.sleep(1) # FLUX handles quick requests well
+        if not SAMPLING_MODE and i != indices[-1]:
+            wait_time = 30
+            print(f"⏳ Cooling down {wait_time} seconds to avoid rate limits...")
+            time.sleep(wait_time) 
+        else:
+            time.sleep(1)
 
     print(f"\n📁 Batch complete! Images saved to: {run_folder}")
 

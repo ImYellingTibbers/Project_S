@@ -14,7 +14,7 @@ RUNS_DIR = ROOT / "runs"
 load_dotenv(dotenv_path=ROOT / ".env")
 
 # --- CONFIGURATION ---
-VO_SAMPLE_RATE_HZ = 44100 # ElevenLabs supports higher quality
+VO_SAMPLE_RATE_HZ = 24000
 ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
 def find_latest_run_folder() -> Path:
@@ -56,11 +56,10 @@ def elevenlabs_tts_pcm(text: str) -> bytes:
     headers = {
         "xi-api-key": api_key,
         "Content-Type": "application/json",
-        "Accept": "audio/mpeg", # We get MPEG and convert if needed, or use pcm_44100
+        "Accept": "audio/octet-stream",
     }
     
-    # Using pcm_44100 for raw processing compatibility
-    params = {"output_format": "pcm_44100"}
+    params = {"output_format": f"pcm_{VO_SAMPLE_RATE_HZ}"}
     payload = {
         "text": text,
         "model_id": model_id,

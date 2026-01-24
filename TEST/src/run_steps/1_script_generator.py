@@ -1,58 +1,84 @@
 import os
 import random
+import time
 from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-# Import your existing utilities
-try:
-    from _common_utils import (
-        write_json, 
-        extract_json_from_llm, 
-        utc_now_iso
-    )
-except ImportError:
-    raise ImportError("Could not find _common_utils.py. Please check your file structure.")
+from _common_utils import (
+    write_json,
+    extract_json_from_llm,
+    utc_now_iso
+)
+
 
 # --- CONFIGURATION ---
 ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-MODEL_ID = "gemini-flash-latest" 
+MODEL_ID = "gemini-flash-latest"
 RUNS_DIR = Path(__file__).resolve().parent.parent.parent / "runs"
 
 # --- IDEA GENERATOR ---
 def generate_viral_theme(client) -> str:
-    """Generates a high-concept, high-retention horror theme using the AI."""
+    """You are a viral horror strategist specializing in 'High-Concept Dread'.
+    Your job is to take a mundane 'Anchor' and invent a PREDATORY PHYSICAL or SUPERNATURAL ENTITY."""
     print("🧠 THINKING OF A VIRAL CONCEPT...")
-    
-    system_instruction = """
-    You are a viral content strategist for a major horror studio. Your job is to invent 'High-Concept' ideas for 60-second vertical videos.
-    
-    ### THE VIRAL FORMULA:
-    1. THE ANCHOR: A modern, relatable piece of technology or a common social rule.
-    2. THE GLITCH: The technology starts behaving in a physically impossible way.
-    3. THE THREAT: A 'Double' (doppelgänger), a 'Lurk', or 'The System'.
-    4. THE HOOK: A 'Rule-Based' opening.
-    
-    ### CONSTRAINTS:
-    - Avoid complex crowds or heavy gore. Focus on 'Liminal Spaces'.
-    - Ending: Must always include a 'Stare at the Viewer' or 'Check your surroundings' call to action.
-    
+   
+    # --- ANCHORS ---
+    anchors = [
+    "Every night, your home Wi-Fi shows a device named 'Basement Cam'—you don’t have one.",
+    "You wake up with fresh dirt under your fingernails—like you were digging in your sleep.",
+    "Your front door deadbolt is locked from the inside… but you live alone.",
+    "You find muddy footprints leading to your bed… and none leading away.",
+    "Your ceiling vent cover is slightly bent outward—like it’s been pushed from inside the duct.",
+    "Your camera footage skips exactly one minute every night—always the same minute.",
+    "Your photo gallery has screenshots you never took… of your own front door at night.",
+    "You keep finding wet handprints on the outside of your windows—second floor.",
+    "You discover your attic hatch has fresh scratches around the latch from the inside.",
+    "You hear someone slowly dragging something heavy across the floor above you—there is no second floor.",
+    "You receive a voicemail that’s just your living room audio—recorded while you were asleep.",
+    "A neighbor says they saw you outside last night—standing still in the yard for an hour.",
+    "Your locked car trunk is open in the morning, and it smells like warm breath.",
+    "Your laptop webcam light turns on for one second… at the same time every night.",
+    "Your closet door is open every morning, but you always keep it closed at night.",
+    "Your doorbell camera shows someone standing at your door… perfectly still… for 12 minutes.",
+    "You discover a second set of fingerprints on the inside of your bedroom window.",
+    "Every time you lock the door, you hear quiet scratching from *inside* the house.",
+    "You hear a soft whisper repeating the last thing you said… from another room.",
+    "A new fingerprint lock profile appears: 'Guest 2'—registered at 4:44 AM.",
+    "You find scratches on the wall that progressively get worse each night.",
+    "You hear something whispering your name from outside your room, but you live alone."
+]
+   
+    selected_anchor = random.choice(anchors)
+    print(f"🎲 ANCHOR INJECTED: {selected_anchor}")
+
+    system_instruction = f"""
+    You are a viral horror strategist specializing in 'High-Concept Dread'.
+    Your job is to take a mundane 'Anchor' and invent a truly terrifying, original threat.
+
+    ### YOUR ASSIGNED ANCHOR:
+    {selected_anchor}
+
+    ### THE ENTITY/THREAT REQUIREMENTS:
+    - PHYSICALITY: It has a body, a texture, and a horrifying way of moving. No 'glitches' or 'feelings'.
+    - THE HUNT: The entity is actively stalking, invading, or claiming the narrator's space. The stakes are physical and immediate.
+    - BAN CLICHÉS: No generic ghosts or slashers. Think 'Biological Horror' or 'Stalking Cryptid'.
+
     ### OUTPUT FORMAT:
-    Return ONLY the following structure:
-    THEME: [One sentence description]
+    Return ONLY:
+    THEME: [One sentence: The entity is (description) and it is (action) the narrator.]
     CORE REQUIREMENTS:
-    - [Requirement 1]
-    - [Requirement 2]
-    - [The mandatory ending instruction]
+    - [Specific physical trait of the entity's body]
+    - [The mandatory 'Check your surroundings' or 'I cannot escape this, and it is getting worse' ending]
     """
 
     response = client.models.generate_content(
         model=MODEL_ID,
-        contents="Generate 3 unique viral horror themes. Pick the scariest one and output it.",
+        contents="Invent a groundbreaking horror concept for a 60-second video based on the anchor provided.",
         config=types.GenerateContentConfig(
             system_instruction=system_instruction,
             temperature=1.0
@@ -68,8 +94,7 @@ def create_narrator_canon() -> str:
     tops = ["charcoal grey hoodie", "black thermal shirt", "faded navy t-shirt", "brown canvas jacket"]
     bottoms = ["dark denim jeans", "black cargo pants", "grey sweatpants"]
     ages = ["mid-20s", "mid-30s", "early-40s"]
-    
-    # Narrator is always a white male per project requirements
+
     canon = (
         f"A Caucasian male in his {random.choice(ages)}, "
         f"{random.choice(hair_styles)} {random.choice(hair_colors)} hair, "
@@ -77,13 +102,18 @@ def create_narrator_canon() -> str:
     )
     return canon
 
+def extract_location(theme_text: str) -> str:
+    """Simple helper to extract a location keyword from the generated theme."""
+    return theme_text.split("THEME:")[1].split(".")[0] if "THEME:" in theme_text else "dark liminal space"
+
+
 def get_viral_system_instruction(canon_desc: str) -> str:
     return f"""
-    You are an elite horror cinematographer. Your specialty is 'Visual Dread'—building terror through composition and the 'Uncanny Valley'.
-    
+    You are an elite horror cinematographer. Your specialty is 'Visual Dread'—building terror through composition and the 'Uncanny Valley'.   
+
     ### THE SUBJECT (VISUAL CANON):
     {canon_desc}
-    
+   
     ### TARGET DURATION: 60 SECONDS
     - You must generate EXACTLY between 17-21 segments.
     - Each segment's "text" MUST be extremely brief: 5 to 7 words maximum.
@@ -93,12 +123,12 @@ def get_viral_system_instruction(canon_desc: str) -> str:
     To maintain high retention, you must never repeat the same shot type twice in a row. Every image_prompt MUST start with a [SHOT TAG]:
 
     1. [POV SHOT]: Seen directly through the character's eyes. Show only trembling hands, an object being held, or the ground moving. NO FACE.
-    2. [DETAIL SHOT]: Extreme close-up on a relevant object, a texture, or a specific part of the setting. NO HUMANS.
-    3. [ENVIRONMENTAL SHOT]: A wide-angle, high-contrast shot of the setting. The [PROTAGONIST] should be a tiny, distant silhouette, a reflection in the corner, or absent entirely. Focus on 'Liminal Space'.
+    2. [DETAIL SHOT]: Extreme close-up on a specific object, texture, or anomaly. BANNED: No faces, no eyes. Focus on the "Anchor".
+    3. [ENVIRONMENTAL SHOT]: A wide-angle view of the empty architecture. The [PROTAGONIST] should be a tiny, out-of-focus silhouette or partially obscured by shadows.
     4. [CLOSE-UP / THE MIRROR]: Show the [PROTAGONIST] only through distorted glass, security monitors, or a tiny peephole. If a direct close-up is used, focus on a disturbing physical reaction (dilated eyes, sweat).
 
     ### WRITING RULES:
-    - USE PLACEHOLDERS: Use [PROTAGONIST] and [ENTITY]. 
+    - USE PLACEHOLDERS: Use [PROTAGONIST] and [ENTITY].
     - VISUAL ANCHORING: Prioritize the environment. If the narrator is talking about a sound, show the empty hallway where the sound is coming from, not the narrator's face.
     - ENTITY REVEAL: Segments 1-12: Use only shadows, reflections, or distorted shapes. Segments 13-20: Slow, disturbing reveal of parts.
     - BAN CLICHES: No 'Suddenly', 'Mysterious', 'Realized', 'Scary', 'Spooky'.
@@ -111,12 +141,13 @@ def get_viral_system_instruction(canon_desc: str) -> str:
 
     ### OUTPUT JSON SCHEMA:
     {{
+      "environment_anchor": "One sentence describing the primary physical setting",
       "entity_description": "Define 2 unique, disturbing physical traits relevant to the story",
       "title": "Script Title",
       "hook": "High-impact opening line",
       "segments": [
         {{
-          "text": "Narrator speech", 
+          "text": "Narrator speech",
           "image_prompt": "[SHOT TAG]: A visual description prioritizing the setting. Include [PROTAGONIST] or [ENTITY] only as defined by the tag rules."
         }}
       ]
@@ -127,85 +158,69 @@ def run():
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY missing.")
 
-    # 1. Setup Folder & Canon
     timestamp = utc_now_iso().replace(":", "-").replace(".", "-")
     run_folder = RUNS_DIR / f"run_{timestamp}"
     run_folder.mkdir(parents=True, exist_ok=True)
-    
+   
     narrator_canon = create_narrator_canon()
-    print(f"👤 Character Canon Generated: {narrator_canon}")
+    print(f"👤 Character Canon: {narrator_canon}")
 
-    # 2. Initialize AI and Generate Dynamic Theme
     with genai.Client(api_key=GEMINI_API_KEY) as client:
         try:
-            # DYNAMIC THEME GENERATION
             user_theme = generate_viral_theme(client)
-            print(f"🔥 THEME SELECTED:\n{user_theme}\n")
+            print(f"🔥 THEME: {user_theme}")
 
-            print(f"🚀 GENERATING 10/10 CINEMATIC HORROR SCRIPT...")
-            
             response = client.models.generate_content(
                 model=MODEL_ID,
-                contents=user_theme, 
+                contents=user_theme,
                 config=types.GenerateContentConfig(
                     system_instruction=get_viral_system_instruction(narrator_canon),
                     response_mime_type="application/json",
-                    temperature=0.9, 
-                    top_p=0.95
-                ) # Fixed missing closing config
-            ) # Fixed missing closing generate_content
-            
+                    temperature=0.8,
+                )
+            )
+           
             data = extract_json_from_llm(response.text)
-            
-            # 3. THE INJECTION ENGINE (Visual Consistency Fix)
-            entity_canon = data.get("entity_description", "A shadowy, distorted figure.")
+           
+            entity_canon = data.get("entity_description", "a twitching, distorted shadow")
+           
             style_anchor = (
-                "1994 VHS screengrab, heavy magnetic tape noise, horizontal tracking lines, "
-                "chromatic aberration, overexposed fluorescent lighting, deep crushed blacks, "
-                "unsettling liminal space, shot on a cheap 90s handcam, grainy low-bitrate."
+                "Found footage, 1990s VHS tape, security camera footage, grainy, "
+                "heavy motion blur, analog distortion, low-resolution, "
+                "harsh flash photography, deep shadows, gritty realism. "
+                "NO digital polish, NO CGI, NO high-definition."
             )
             
-            print(f"👾 Entity Defined: {entity_canon}")
+            location_lock = data.get("environment_anchor", "unsettling liminal space")
 
             for seg in data['segments']:
                 p = seg['image_prompt']
-                
-                # Identify the shot type
+               
                 is_pov = "[POV SHOT]" in p
                 is_detail = "[DETAIL SHOT]" in p
                 is_environmental = "[ENVIRONMENTAL SHOT]" in p
-                
-                # Cleanup the Shot Tag for the Image Generator
+               
                 p = p.replace("[SHOT TAG]:", "").strip()
-                
-                # --- SELECTIVE INJECTION LOGIC ---
+               
                 if is_pov:
-                    # Replace with first-person body parts only
-                    p = p.replace("[PROTAGONIST]", "the character's trembling hands and arms")
+                    p = p.replace("[PROTAGONIST]", "male pale trembling hands")
                 elif is_detail:
-                    # Remove protagonist entirely from extreme close-ups of objects
-                    p = p.replace("[PROTAGONIST]", "")
+                    p = p.replace("[PROTAGONIST]", "distorted male human texture")
                 elif is_environmental:
-                    # Make him a tiny, distant figure to emphasize the liminal space
-                    p = p.replace("[PROTAGONIST]", f"a tiny, distant silhouette of {narrator_canon}")
+                    p = p.replace("[PROTAGONIST]", f"tiny distant blurry silhouette of {narrator_canon}")
                 else:
-                    # Full injection for Close-ups or standard shots
                     p = p.replace("[PROTAGONIST]", narrator_canon)
 
-                # Entity injection is usually safe as the entity is the threat
-                p = p.replace("[ENTITY]", f"the horror entity ({entity_canon})")
-                
-                # Prepend the global style anchor
-                seg['image_prompt'] = f"{style_anchor} {p}"
+                p = p.replace("[ENTITY]", entity_canon)
 
-            # 4. Save
+                seg['image_prompt'] = f"{style_anchor}, Area: {location_lock}, {p}"
+
             write_json(run_folder / "script.json", data)
-            print(f"✅ Success! Consistent 10/10 Script saved to: {run_folder}")
-            
+            print(f"✅ Consistent Script saved to: {run_folder}")
+           
         except Exception as e:
-            print(f"❌ API Error: {e}")
-            import traceback
-            traceback.print_exc() # This helps debug exactly where it fails
+            print(f"❌ Error: {e}")
+            traceback.print_exc()
 
 if __name__ == "__main__":
     run()
