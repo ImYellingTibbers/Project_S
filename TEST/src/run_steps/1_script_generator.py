@@ -1,6 +1,8 @@
 import os
 import random
 import time
+import json
+import traceback
 from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
@@ -96,7 +98,7 @@ def create_narrator_canon() -> str:
     ages = ["mid-20s", "mid-30s", "early-40s"]
 
     canon = (
-        f"A Caucasian male in his {random.choice(ages)}, "
+        f"Caucasian male in his {random.choice(ages)}, "
         f"{random.choice(hair_styles)} {random.choice(hair_colors)} hair, "
         f"wearing a {random.choice(tops)} and {random.choice(bottoms)}."
     )
@@ -109,7 +111,9 @@ def extract_location(theme_text: str) -> str:
 
 def get_viral_system_instruction(canon_desc: str) -> str:
     return f"""
-    You are an elite horror cinematographer. Your specialty is 'Visual Dread'—building terror through composition and the 'Uncanny Valley'.   
+    You are writing a FIRST-PERSON CONFESSIONAL horror short.
+    The visuals matter, but the spoken lines must feel like a real person recording a final warning.
+    Your specialty is escalation through physical evidence and immediate danger.
 
     ### THE SUBJECT (VISUAL CANON):
     {canon_desc}
@@ -118,6 +122,18 @@ def get_viral_system_instruction(canon_desc: str) -> str:
     - You must generate EXACTLY between 17-21 segments.
     - Each segment's "text" MUST be extremely brief: 5 to 7 words maximum.
     - This ensures a fast visual pace of one new image every ~3 seconds.
+    - Every segment "text" must be a spoken confession line with evidence.
+    - Each line must introduce a NEW proof detail (wet patch, dust, dent, crack, clicking, vibration, heat, pressure).
+    - Ban poetic lines like "silence is loud" or "house coordinates."
+    
+    ### CONFESSIONAL VOICE RULES (CRITICAL)
+    - Every "text" line must sound like spoken confession, NOT description.
+    - Each segment must add NEW INFORMATION or raise the stakes. No filler.
+    - Use concrete physical details: dust, damp air, scratches, breath, pressure dents, heat, clicking, dragging.
+    - Avoid fancy adjectives ("strangely", "massive", "ominous") and avoid cinematic language.
+    - The narrator is actively reacting: listening, locking, backing up, holding breath, checking footage.
+    - The FINAL segment MUST be a direct warning line (e.g., "Check your walls." / "Check your surroundings.")
+    - Segments 9–14 MUST include a failed escape attempt (door jammed, window stuck, phone dead, power out).
 
     ### MANDATORY SHOT ROTATION (THE DIRECTORS TOOLKIT):
     To maintain high retention, you must never repeat the same shot type twice in a row. Every image_prompt MUST start with a [SHOT TAG]:
@@ -134,17 +150,18 @@ def get_viral_system_instruction(canon_desc: str) -> str:
     - BAN CLICHES: No 'Suddenly', 'Mysterious', 'Realized', 'Scary', 'Spooky'.
     - TENSE: 1st person, present tense.
 
-    ### STORY BEAT COMPOSITION:
-    - 0-25% (ESTABLISH): Heavily use [DETAIL] and [ENVIRONMENTAL] shots. Establish the geography.
-    - 26-75% (ESCALATION): High rotation between [POV] and [ENVIRONMENTAL]. Create a sense of being trapped.
-    - 76-100% (CLIMAX): Use [CLOSE-UP] and [POV] for a claustrophobic, direct confrontation.
+    ### STORY BEAT COMPOSITION (MANDATORY)
+    - Segments 1–4: confession setup + one undeniable physical clue.
+    - Segments 5–12: proof escalates (marks, sounds, footage, air, movement).
+    - Segments 13–18: entity partially appears (texture/limbs/eyes only).
+    - Segments 19–21: immediate threat + warning ending line.
 
     ### OUTPUT JSON SCHEMA:
     {{
       "environment_anchor": "One sentence describing the primary physical setting",
       "entity_description": "Define 2 unique, disturbing physical traits relevant to the story",
       "title": "Script Title",
-      "hook": "High-impact opening line",
+      "hook": "8–12 words. Direct confession + immediate danger.",
       "segments": [
         {{
           "text": "Narrator speech",

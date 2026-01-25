@@ -2,9 +2,14 @@ import os
 import json
 import time
 import random
+import sys
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+from src.tools.start_comfyui import start as start_comfyui
 
 # Ensure required dependencies are installed
 def _ensure_import(pkg: str, import_name: Optional[str] = None):
@@ -99,6 +104,7 @@ def download_image(cfg: ComfyConfig, pid: str) -> bytes:
 
 # --- MAIN EXECUTION ---
 def generate_images():
+    start_comfyui()
     cfg = ComfyConfig()
     run_folder = get_latest_run()
     
