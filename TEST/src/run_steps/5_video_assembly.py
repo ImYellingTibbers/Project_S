@@ -33,7 +33,9 @@ ENABLE_VIGNETTE = True
 ENABLE_TRANSITIONS = True
 
 # Global "dust specks" vibe (subtle)
-DUST_SPECKS_STRENGTH = float(os.getenv("RENDER_DUST_SPECKS_STRENGTH", "0.03"))  # 0 disables
+DUST_SPECKS_STRENGTH = float(os.getenv("RENDER_DUST_SPECKS_STRENGTH", "0.12"))
+DUST_SPECKS_ALPHA    = float(os.getenv("RENDER_DUST_SPECKS_ALPHA", "0.75"))
+DUST_SPECKS_THRESH   = int(os.getenv("RENDER_DUST_SPECKS_THRESH", "35"))
 
 # Per-segment motion intensity
 KB_MAX_ZOOM_IN = float(os.getenv("RENDER_KB_MAX_ZOOM_IN", "1.06"))   # zoom-in peak
@@ -252,9 +254,14 @@ def _pick_music_file(run_id: str) -> Path:
     if not files:
         raise RuntimeError(f"No music files found in {MUSIC_DIR}")
 
-    rng = random.Random(MUSIC_SEED if MUSIC_SEED else run_id)
-    return rng.choice(files)
+    # If MUSIC_SEED is set, user wants deterministic selection.
+    if MUSIC_SEED:
+        rng = random.Random(MUSIC_SEED)
+        return rng.choice(files)
 
+    # Otherwise: truly random every render (even in same run folder)
+    return random.SystemRandom().choice(files)
+    
 
 def _build_bed_audio(tmp_dir: Path, bed_path: Path, target_duration: float) -> Path:
     """
@@ -386,14 +393,26 @@ def _resolve_image_for_segment(images_dir: Path, seg_idx: int, fallback_sorted: 
     padded = f"{seg_idx:03d}"
     candidates: List[Path] = []
 
+    # Hard exact match for your actual naming convention: image_001.png, image_002.png, etc.
+    exact = images_dir / f"image_{seg_idx+1:03d}.png"
+    if exact.exists():
+        return exact
+
     patterns = [
+        # Prefer image_001 style (1-based)
+        f"image_{seg_idx+1:03d}*.png",
+        f"image_{seg_idx+1}*.png",
+
+        # Then explicit segment naming
         f"segment_{padded}*.png",
         f"segment_{seg_idx}*.png",
         f"seg_{padded}*.png",
         f"seg_{seg_idx}*.png",
+        f"beat_{padded}*.png",
+
+        # Then generic fallbacks
         f"{padded}.png",
         f"*_{padded}.png",
-        f"beat_{padded}*.png",
     ]
 
     for pat in patterns:
@@ -476,6 +495,125 @@ def _xfade_chain(clips: List[Path], xfade_dur: float, out_path: Path, transition
     ])
 
     return _ffprobe_duration(out_path)
+
+
+def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
+    """
+    Builds a filter_complex video graph that:
+      - pads video to VO length if needed
+      - overlays floating dust specks
+      - applies a strong vignette at the end
+    Output label: [vout]
+    """
+    pad = max(0.0, audio_dur - stitched_dur)
+
+    # Base video: pad -> trim -> format
+    v_parts = []
+    v_parts.append("[0:v]setpts=PTS-STARTPTS")
+
+    if pad > 0.02:
+        v_parts.append(f"tpad=stop_mode=clone:stop_duration={pad:.6f}")
+
+    v_parts.append(f"trim=duration={audio_dur:.6f}")
+    v_parts.append("format=rgba[vbase]")
+
+    # -------------------------
+    # Ghost ORBS (big dusty attic flecks)
+    # -------------------------
+    # Key idea:
+    # - generate STATIC random noise at very low-res
+    # - threshold to sparse dots
+    # - grow (dilate) + blur = soft orbs
+    # - scale up + blur more
+    # - scroll slowly so they "float"
+
+    alpha = DUST_SPECKS_ALPHA if DUST_SPECKS_STRENGTH > 0 else 0.0
+
+    # Controls (good defaults)
+    ORB_DOWNSCALE = int(os.getenv("RENDER_ORB_DOWNSCALE", "24"))   # bigger number = fewer/bigger orbs
+    ORB_THRESH    = int(os.getenv("RENDER_ORB_THRESH", "254"))     # higher = fewer orbs (254-255 range)
+    ORB_DILATE    = int(os.getenv("RENDER_ORB_DILATE", "6"))       # bigger = larger orbs
+    ORB_BLUR_LO   = float(os.getenv("RENDER_ORB_BLUR_LO", "2.2"))  # initial softness
+    ORB_BLUR_HI   = float(os.getenv("RENDER_ORB_BLUR_HI", "18.0")) # final softness
+    ORB_GAIN      = float(os.getenv("RENDER_ORB_GAIN", "1.8"))     # brightness of orb alpha
+
+    # Scroll speed is pixels-per-second converted to pixels-per-frame
+    ORB_SPEED_X_PX_S = float(os.getenv("RENDER_ORB_SPEED_X", "6.0"))
+    ORB_SPEED_Y_PX_S = float(os.getenv("RENDER_ORB_SPEED_Y", "10.0"))
+    orb_scroll_x = ORB_SPEED_X_PX_S / TARGET_FPS
+    orb_scroll_y = ORB_SPEED_Y_PX_S / TARGET_FPS
+
+    low_w = max(30, TARGET_W // ORB_DOWNSCALE)
+    low_h = max(60, TARGET_H // ORB_DOWNSCALE)
+
+    specks = (
+        # 1) Low-res static noise → sparse white dots
+        f"color=c=black:s={low_w}x{low_h}:d={audio_dur:.6f},"
+        f"noise=alls=80:allf=u,"
+        f"format=gray,"
+        f"lut=y='if(gt(val,{ORB_THRESH}),255,0)',"
+        f"dilation={ORB_DILATE},"
+        f"gblur=sigma={ORB_BLUR_LO:.3f}"
+        f"[mask_lo];"
+
+        # 2) Scale up + heavy blur = soft orbs
+        f"[mask_lo]scale={TARGET_W}:{TARGET_H}:flags=bicubic,"
+        f"gblur=sigma={ORB_BLUR_HI:.3f}:steps=2,"
+        f"lut=y='min(255,val*{ORB_GAIN:.3f})'"
+        f"[mask];"
+
+        # 3) White layer + alpha mask → RGBA orbs
+        f"color=c=white:s={TARGET_W}x{TARGET_H}:d={audio_dur:.6f},format=rgba[white];"
+        f"[white][mask]alphamerge,"
+        f"colorchannelmixer=aa={alpha:.3f},"
+        f"scroll=horizontal={orb_scroll_x:.6f}:vertical={orb_scroll_y:.6f}"
+        f"[specks]"
+    )
+
+
+
+
+    # 1) Horror grade first (affects the image, NOT the dust)
+    horror_grade = (
+        "[vbase]"
+        "hue=s=0.80,"
+        "eq=contrast=1.25:brightness=-0.05:gamma=0.92"
+        "[vgraded]"
+    )
+
+    # 2) True BLACK vignette overlay (color-stable)
+    vign_alpha = (
+        "0.55*min(max(("
+        "sqrt("
+        "((X-W/2)/(W/2))*((X-W/2)/(W/2)) + "
+        "((Y-H/2)/(H/2))*((Y-H/2)/(H/2))"
+        ") - 0.35"
+        ")/0.65,0),1)"
+    )
+
+    vignette_layer = (
+        f"color=c=black:s={TARGET_W}x{TARGET_H}:d={audio_dur:.6f},"
+        f"format=rgba,"
+        f"geq=r='0':g='0':b='0':a='{vign_alpha}'"
+        f"[vign]"
+    )
+
+    overlay_vignette = "[vgraded][vign]overlay=shortest=1:format=auto[vfx]"
+
+    # 3) Specks LAST (film dirt sits on top)
+    overlay_specks = "[vfx][specks]overlay=shortest=1:format=auto[vout]"
+
+    # NOTE: `specks` already contains semicolons inside it (mask + white + alphamerge),
+    # so we append it directly into the filter graph string.
+    return ";".join([
+        ",".join(v_parts),
+        specks,
+        horror_grade,
+        vignette_layer,
+        overlay_vignette,
+        overlay_specks,
+    ])
+
 
 
 def _render_segment_clip(tmp_dir: Path, image_path: Path, seg_idx: int, duration: float, seed: str) -> Path:
@@ -561,49 +699,30 @@ def main() -> int:
     # 4) Lay VO (+ music if present); pad/trim video to audio duration
     final_path = out_dir / FINAL_NAME
 
-    pad = max(0.0, audio_dur - stitched_dur)
-    vf = []
-    if pad > 0.02:
-        vf.append(f"tpad=stop_mode=clone:stop_duration={pad:.6f}")
-
-    # Global post look (applied ONCE)
-    post = []
-    if ENABLE_VIGNETTE:
-        post.append("vignette=PI/4")
-
-    # "Floating specks" approximation:
-    # Low-intensity temporal noise + soft blend -> dusty/VCR vibe without heavy grain.
-    if DUST_SPECKS_STRENGTH > 0.0:
-        alls = max(1, min(12, int(DUST_SPECKS_STRENGTH * 120)))
-        post.append(f"noise=alls={alls}:allf=t")
-
-    vf.append(",".join(post) if post else "")
-    vf.append(f"trim=duration={audio_dur:.6f},setpts=PTS-STARTPTS")
-
-    # clean join
-    vf = [x for x in vf if x.strip()]
-    vf_str = ",".join(vf)
-
+    video_fc = _build_video_filter_complex(audio_dur, stitched_dur)
 
     if bed_path and bed_path.exists():
-        af = (
+        audio_fc = (
             "[1:a]aresample=48000,volume=1.0[vo];"
             "[2:a]aresample=48000,volume=1.0[bed];"
-            "[vo][bed]amix=inputs=2:duration=first:dropout_transition=0,alimiter=limit=0.98[aout]"
+            "[vo][bed]amix=inputs=2:duration=first:dropout_transition=0,"
+            "alimiter=limit=0.98[aout]"
         )
+
+        fc = video_fc + ";" + audio_fc
 
         _run([
             "ffmpeg", "-y",
-            "-i", _ffmpeg_path(stitched_path),
-            "-i", _ffmpeg_path(audio_path),
-            "-i", _ffmpeg_path(bed_path),
-            "-vf", vf_str,
-            "-filter_complex", af,
-            "-map", "0:v:0",
+            "-i", _ffmpeg_path(stitched_path),   # 0:v
+            "-i", _ffmpeg_path(audio_path),      # 1:a
+            "-i", _ffmpeg_path(bed_path),        # 2:a
+            "-filter_complex", fc,
+            "-map", "[vout]",
             "-map", "[aout]",
             "-c:v", "libx264",
             "-preset", "medium",
             "-crf", "18",
+            "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", "192k",
             "-shortest",
@@ -611,16 +730,24 @@ def main() -> int:
             FINAL_NAME,
         ], cwd=out_dir)
     else:
+        audio_fc = (
+            "[1:a]aresample=48000,volume=1.0,"
+            "alimiter=limit=0.98[aout]"
+        )
+
+        fc = video_fc + ";" + audio_fc
+
         _run([
             "ffmpeg", "-y",
-            "-i", _ffmpeg_path(stitched_path),
-            "-i", _ffmpeg_path(audio_path),
-            "-vf", vf_str,
-            "-map", "0:v:0",
-            "-map", "1:a:0",
+            "-i", _ffmpeg_path(stitched_path),  # 0:v
+            "-i", _ffmpeg_path(audio_path),     # 1:a
+            "-filter_complex", fc,
+            "-map", "[vout]",
+            "-map", "[aout]",
             "-c:v", "libx264",
             "-preset", "medium",
             "-crf", "18",
+            "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", "192k",
             "-shortest",
