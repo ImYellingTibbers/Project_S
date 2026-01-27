@@ -530,16 +530,16 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
     alpha = DUST_SPECKS_ALPHA if DUST_SPECKS_STRENGTH > 0 else 0.0
 
     # Controls (good defaults)
-    ORB_DOWNSCALE = int(os.getenv("RENDER_ORB_DOWNSCALE", "24"))   # bigger number = fewer/bigger orbs
+    ORB_DOWNSCALE = int(os.getenv("RENDER_ORB_DOWNSCALE", "18"))   # bigger number = fewer/bigger orbs
     ORB_THRESH    = int(os.getenv("RENDER_ORB_THRESH", "254"))     # higher = fewer orbs (254-255 range)
-    ORB_DILATE    = int(os.getenv("RENDER_ORB_DILATE", "6"))       # bigger = larger orbs
+    ORB_DILATE    = int(os.getenv("RENDER_ORB_DILATE", "8"))       # bigger = larger orbs
     ORB_BLUR_LO   = float(os.getenv("RENDER_ORB_BLUR_LO", "2.2"))  # initial softness
     ORB_BLUR_HI   = float(os.getenv("RENDER_ORB_BLUR_HI", "18.0")) # final softness
     ORB_GAIN      = float(os.getenv("RENDER_ORB_GAIN", "1.8"))     # brightness of orb alpha
 
     # Scroll speed is pixels-per-second converted to pixels-per-frame
-    ORB_SPEED_X_PX_S = float(os.getenv("RENDER_ORB_SPEED_X", "6.0"))
-    ORB_SPEED_Y_PX_S = float(os.getenv("RENDER_ORB_SPEED_Y", "10.0"))
+    ORB_SPEED_X_PX_S = float(os.getenv("RENDER_ORB_SPEED_X", "2.5"))
+    ORB_SPEED_Y_PX_S = float(os.getenv("RENDER_ORB_SPEED_Y", "4.0"))
     orb_scroll_x = ORB_SPEED_X_PX_S / TARGET_FPS
     orb_scroll_y = ORB_SPEED_Y_PX_S / TARGET_FPS
 
@@ -549,7 +549,7 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
     specks = (
         # 1) Low-res static noise → sparse white dots
         f"color=c=black:s={low_w}x{low_h}:d={audio_dur:.6f},"
-        f"noise=alls=80:allf=u,"
+        f"noise=alls=80:allf=t,"
         f"format=gray,"
         f"lut=y='if(gt(val,{ORB_THRESH}),255,0)',"
         f"dilation={ORB_DILATE},"
@@ -562,11 +562,15 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
         f"lut=y='min(255,val*{ORB_GAIN:.3f})'"
         f"[mask];"
 
-        # 3) White layer + alpha mask → RGBA orbs
-        f"color=c=white:s={TARGET_W}x{TARGET_H}:d={audio_dur:.6f},format=rgba[white];"
-        f"[white][mask]alphamerge,"
-        f"colorchannelmixer=aa={alpha:.3f},"
+        # 3) Scroll the MASK first (true floating motion)
+        f"[mask]"
         f"scroll=horizontal={orb_scroll_x:.6f}:vertical={orb_scroll_y:.6f}"
+        f"[mask_scroll];"
+
+        # 4) White layer + alpha mask → RGBA orbs
+        f"color=c=white:s={TARGET_W}x{TARGET_H}:d={audio_dur:.6f},format=rgba[white];"
+        f"[white][mask_scroll]alphamerge,"
+        f"colorchannelmixer=aa={alpha:.3f}"
         f"[specks]"
     )
 
