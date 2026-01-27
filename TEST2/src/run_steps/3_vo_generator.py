@@ -97,43 +97,6 @@ def whisper_align(audio_path: Path):
     return words, sentences
 
 
-def split_script_for_vo(text: str, max_chars: int = 260):
-    """
-    Splits narration into natural VO-sized chunks.
-    Prefers paragraph breaks, falls back to sentence splits.
-    """
-    parts = []
-    buffer = ""
-
-    for para in text.split("\n\n"):
-        para = para.strip()
-        buffer = ""
-        if not para:
-            continue
-
-        if len(para) <= max_chars:
-            parts.append(para)
-            continue
-
-        # sentence fallback
-        for sentence in para.replace("—", ".").split("."):
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-
-            if len(buffer) + len(sentence) < max_chars:
-                buffer += sentence + ". "
-            else:
-                parts.append(buffer.strip())
-                buffer = sentence + ". "
-
-        if buffer:
-            parts.append(buffer.strip())
-            buffer = ""
-
-    return parts
-
-
 def main():
     try:
         run = get_latest_run()
@@ -154,41 +117,19 @@ def main():
         
         script_text = script_text.strip()
 
-        segments = split_script_for_vo(script_text)
+        vo_dir = run / "vo"
+        vo_dir.mkdir(exist_ok=True)
+
+        print("🎙️ [ELEVENLABS] Generating VO (single pass)")
+
+        pcm = elevenlabs_tts_pcm(script_text)
+        duration = len(pcm) / (VO_SAMPLE_RATE_HZ * 2)
 
         vo_dir = run / "vo"
         vo_dir.mkdir(exist_ok=True)
 
-        full_pcm = b""
-        segment_timings = []
-        current_offset = 0.0
-
-        print(f"🎙️ [ELEVENLABS] Generating VO ({len(segments)} segments)")
-
-        for i, text in enumerate(segments):
-            text = text.strip()
-            if not text:
-                continue
-
-            print(f"  ➜ VO Segment {i+1}/{len(segments)}: \"{text[:40]}...\"")
-
-            pcm = elevenlabs_tts_pcm(text)
-
-            duration = len(pcm) / (VO_SAMPLE_RATE_HZ * 2)
-
-            segment_timings.append({
-                "segment_index": i,
-                "start": round(current_offset, 3),
-                "end": round(current_offset + duration, 3),
-                "text": text
-            })
-
-            full_pcm += pcm
-            current_offset += duration
-
-        # Finalize Audio File
         clean_path = vo_dir / "vo_clean.wav"
-        write_wav(clean_path, full_pcm, VO_SAMPLE_RATE_HZ)
+        write_wav(clean_path, pcm, VO_SAMPLE_RATE_HZ)
         
         # Whisper Alignment for Subtitles/Sync
         words, sentences = whisper_align(clean_path)
@@ -196,16 +137,18 @@ def main():
         output = {
             "created_at": datetime.now().isoformat(),
             "audio_file": "vo/vo_clean.wav",
-            "total_duration": round(current_offset, 2),
-            "segments_timing": segment_timings,
-            "alignment": {"sentences": sentences, "words": words}
+            "total_duration": round(duration, 2),
+            "alignment": {
+                "sentences": sentences,
+                "words": words
+            }
         }
-        
+       
         with open(run / "vo.json", "w") as f:
             json.dump(output, f, indent=2)
         
         print(f"🚀 SUCCESS: ElevenLabs VO generated for {run.name}")
-        print(f"⏱️ Total Duration: {round(current_offset, 2)}s")
+        print(f"⏱️ Total Duration: {round(duration, 2)}s")
 
     except Exception as e:
         print(f"\n❌ ERROR LOG:\n{str(e)}")
