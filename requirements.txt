@@ -1,3 +1,5 @@
+--index-url https://download.pytorch.org/whl/cu128
+
 # ----------------------------
 # Core utilities
 # ----------------------------
@@ -15,16 +17,16 @@ pycaps[all] @ git+https://github.com/francozanardi/pycaps.git
 # Numeric / ML foundations
 # ----------------------------
 numpy<2.0
-scipy
+scipy<1.14
 einops
 hdbscan
 
 # ----------------------------
-# PyTorch stack
+# PyTorch stack (CUDA 12.8 – pinned)
 # ----------------------------
-torch
-torchvision
-torchaudio
+torch==2.10.0+cu128
+torchvision==0.25.0+cu128
+torchaudio==2.10.0+cu128
 torchsde
 
 # ----------------------------
@@ -42,7 +44,7 @@ insightface
 # Image / video processing
 # ----------------------------
 pillow
-opencv-python
+opencv-python-headless
 imageio
 imageio-ffmpeg
 av
