@@ -10,7 +10,7 @@ from typing import Dict, Any, List, Optional, Tuple
 # -------------------------
 # Config
 # -------------------------
-ROOT = Path("/home/jcpix/projects/Project_S/TEST")
+ROOT = Path(__file__).resolve().parents[2]
 RUNS_DIR = ROOT / "runs"
 PROJECT_ROOT = ROOT
 
@@ -103,13 +103,34 @@ def _ffprobe_duration(path: Path) -> float:
     return float(s) if s else 0.0
 
 
-def _latest_run_dir() -> Path:
+def find_latest_run_folder():
     if not RUNS_DIR.exists():
-        raise RuntimeError("runs/ folder not found")
-    runs = sorted([p for p in RUNS_DIR.iterdir() if p.is_dir() and p.name.startswith("run_")])
-    if not runs:
-        raise RuntimeError("No run folders found")
-    return runs[-1]
+        raise RuntimeError(f"Directory NOT FOUND: {RUNS_DIR}")
+
+    valid_runs = []
+
+    for f in RUNS_DIR.iterdir():
+        if not f.is_dir():
+            continue
+
+        vo_path = f / "vo.json"
+        script_path = f / "script_with_prompts.json"
+
+        if not vo_path.exists() or not script_path.exists():
+            continue
+
+        try:
+            vo_data = json.loads(vo_path.read_text(encoding="utf-8"))
+            sentences = vo_data.get("alignment", {}).get("sentences", [])
+            if sentences:
+                valid_runs.append(f)
+        except Exception:
+            continue
+
+    if not valid_runs:
+        raise RuntimeError("No runs found containing valid vo.json + script_with_prompts.json")
+
+    return max(valid_runs, key=os.path.getmtime)
 
 
 def _read_json(path: Path) -> Dict[str, Any]:
@@ -321,8 +342,12 @@ def _load_vo_audio_path(run_dir: Path) -> Path:
 
 def _load_segment_timing(run_dir: Path) -> List[Dict[str, Any]]:
     """
-    Load timing_plan.json v3_consistent style:
-    beats[] items contain segment_index, start_time, end_time.
+    Load timing_plan.json (v4+):
+    Each beat is a renderable segment and MUST contain:
+      - segment_index
+      - start_time
+      - end_time
+      - image_file
     """
     timing_path = run_dir / TIMING_PLAN
     if not timing_path.exists():
@@ -333,41 +358,33 @@ def _load_segment_timing(run_dir: Path) -> List[Dict[str, Any]]:
     if not isinstance(beats, list) or not beats:
         raise RuntimeError(f"{TIMING_PLAN} missing beats list")
 
-    # Sort by segment_index if present
-    def _key(b: Dict[str, Any]) -> int:
-        if "segment_index" in b:
-            return int(b["segment_index"])
-        if "beat_id" in b:
-            return int(b["beat_id"])
-        return 0
-
-    beats = sorted(beats, key=_key)
-
-    # Normalize duration per segment
     segments: List[Dict[str, Any]] = []
+
     for b in beats:
-        seg_idx = int(b.get("segment_index", b.get("beat_id", 0)))
-        start = _safe_float(b.get("start_time"), 0.0)
-        end = _safe_float(b.get("end_time"), 0.0)
+        seg_idx = int(b["segment_index"])
+        start = _safe_float(b["start_time"])
+        end = _safe_float(b["end_time"])
 
-        # Fallback support for older timing schemas
         if end <= start:
-            dur = _safe_float(b.get("duration_seconds"), 0.0)
-            end = start + dur
+            raise RuntimeError(
+                f"Invalid timing for segment {seg_idx}: start={start}, end={end}"
+            )
 
-        dur = max(0.0, end - start)
-        if dur <= 0.02:
-            raise RuntimeError(f"Invalid segment duration for segment {seg_idx}: start={start} end={end}")
+        image_file = b.get("image_file")
+        if not image_file:
+            raise RuntimeError(f"Missing image_file for segment {seg_idx}")
 
         segments.append({
             "segment_index": seg_idx,
             "start_time": start,
             "end_time": end,
-            "duration": dur,
-            "text": b.get("text", ""),
-            "image_prompt": b.get("image_prompt", ""),
+            "duration": end - start,
+            "image_file": image_file,
+            "chunk_index": b.get("chunk_index"),
         })
 
+    # Deterministic order
+    segments.sort(key=lambda s: s["segment_index"])
     return segments
 
 
@@ -516,66 +533,21 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
 
     v_parts.append(f"trim=duration={audio_dur:.6f}")
     v_parts.append("format=rgba[vbase]")
-
-    # -------------------------
-    # Ghost ORBS (big dusty attic flecks)
-    # -------------------------
-    # Key idea:
-    # - generate STATIC random noise at very low-res
-    # - threshold to sparse dots
-    # - grow (dilate) + blur = soft orbs
-    # - scale up + blur more
-    # - scroll slowly so they "float"
-
-    alpha = DUST_SPECKS_ALPHA if DUST_SPECKS_STRENGTH > 0 else 0.0
-
-    # Controls (good defaults)
-    ORB_DOWNSCALE = int(os.getenv("RENDER_ORB_DOWNSCALE", "18"))   # bigger number = fewer/bigger orbs
-    ORB_THRESH    = int(os.getenv("RENDER_ORB_THRESH", "254"))     # higher = fewer orbs (254-255 range)
-    ORB_DILATE    = int(os.getenv("RENDER_ORB_DILATE", "8"))       # bigger = larger orbs
-    ORB_BLUR_LO   = float(os.getenv("RENDER_ORB_BLUR_LO", "2.2"))  # initial softness
-    ORB_BLUR_HI   = float(os.getenv("RENDER_ORB_BLUR_HI", "18.0")) # final softness
-    ORB_GAIN      = float(os.getenv("RENDER_ORB_GAIN", "1.8"))     # brightness of orb alpha
-
-    # Scroll speed is pixels-per-second converted to pixels-per-frame
-    ORB_SPEED_X_PX_S = float(os.getenv("RENDER_ORB_SPEED_X", "2.5"))
-    ORB_SPEED_Y_PX_S = float(os.getenv("RENDER_ORB_SPEED_Y", "4.0"))
-    orb_scroll_x = ORB_SPEED_X_PX_S / TARGET_FPS
-    orb_scroll_y = ORB_SPEED_Y_PX_S / TARGET_FPS
-
-    low_w = max(30, TARGET_W // ORB_DOWNSCALE)
-    low_h = max(60, TARGET_H // ORB_DOWNSCALE)
+    
+    # Controls
+    DUST_AMOUNT = float(os.getenv("RENDER_DUST_AMOUNT", "0.35"))   # 0–1
+    DUST_SIZE   = float(os.getenv("RENDER_DUST_SIZE", "0.6"))      # particle size
+    DUST_ALPHA  = float(os.getenv("RENDER_DUST_ALPHA", "0.18"))    # visibility
+    DUST_BLUR   = float(os.getenv("RENDER_DUST_BLUR", "3.0"))      # softness
 
     specks = (
-        # 1) Low-res static noise → sparse white dots
-        f"color=c=black:s={low_w}x{low_h}:d={audio_dur:.6f},"
-        f"noise=alls=80:allf=t,"
-        f"format=gray,"
-        f"lut=y='if(gt(val,{ORB_THRESH}),255,0)',"
-        f"dilation={ORB_DILATE},"
-        f"gblur=sigma={ORB_BLUR_LO:.3f}"
-        f"[mask_lo];"
-
-        # 2) Scale up + heavy blur = soft orbs
-        f"[mask_lo]scale={TARGET_W}:{TARGET_H}:flags=bicubic,"
-        f"gblur=sigma={ORB_BLUR_HI:.3f}:steps=2,"
-        f"lut=y='min(255,val*{ORB_GAIN:.3f})'"
-        f"[mask];"
-
-        # 3) Scroll the MASK first (true floating motion)
-        f"[mask]"
-        f"scroll=horizontal={orb_scroll_x:.6f}:vertical={orb_scroll_y:.6f}"
-        f"[mask_scroll];"
-
-        # 4) White layer + alpha mask → RGBA orbs
-        f"color=c=white:s={TARGET_W}x{TARGET_H}:d={audio_dur:.6f},format=rgba[white];"
-        f"[white][mask_scroll]alphamerge,"
-        f"colorchannelmixer=aa={alpha:.3f}"
+        f"color=c=black:s={TARGET_W}x{TARGET_H}:d={audio_dur:.6f},"
+        f"noise=alls=20:allf=t+u,"
+        f"gblur=sigma={DUST_BLUR},"
+        f"format=rgba,"
+        f"colorchannelmixer=aa={DUST_ALPHA}"
         f"[specks]"
     )
-
-
-
 
     # 1) Horror grade first (affects the image, NOT the dust)
     horror_grade = (
@@ -645,7 +617,7 @@ def _render_segment_clip(tmp_dir: Path, image_path: Path, seg_idx: int, duration
 # Main
 # -------------------------
 def main() -> int:
-    run_dir = _latest_run_dir()
+    run_dir = find_latest_run_folder()
 
     # Load segment timing (new timing_plan.json format)
     segments = _load_segment_timing(run_dir)
@@ -673,7 +645,14 @@ def main() -> int:
         seg_idx = int(s["segment_index"])
         dur = float(s["duration"])
 
-        img = _resolve_image_for_segment(images_dir, seg_idx, all_pngs)
+        image_file = s.get("image_file")
+        if not image_file:
+            raise RuntimeError(f"Missing image_file for segment {seg_idx}")
+
+        img = images_dir / image_file
+        if not img.exists():
+            raise RuntimeError(f"Image not found: {img}")
+
         clip = _render_segment_clip(tmp_dir, img, seg_idx, dur, seed=f"{run_dir.name}|seg{seg_idx}")
         segment_clips.append(clip)
         print(f"[render] segment {seg_idx:03d} ({dur:.3f}s) -> {clip.name} (img={img.name})")
