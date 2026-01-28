@@ -31,6 +31,9 @@ XFADE_DUR = float(os.getenv("RENDER_XFADE_DUR", str(XFADE_FRAMES / TARGET_FPS)))
 # Effects (simplified)
 ENABLE_VIGNETTE = True
 ENABLE_TRANSITIONS = True
+ENABLE_FIRST_FRAME_INTERRUPT = True
+FIRST_FRAME_GLITCH_DUR = 0.30  # seconds (max 0.35)
+FIRST_FRAME_BASS_DB = -6.0     # subtle, not loud
 
 # Global "dust specks" vibe (subtle)
 DUST_SPECKS_STRENGTH = float(os.getenv("RENDER_DUST_SPECKS_STRENGTH", "0.12"))
@@ -164,6 +167,8 @@ def _motion_filter(duration_s: float, seed: str) -> str:
       6) combo zoom + pan (Ken Burns)
     Output: a vf string for ffmpeg -vf
     """
+    if random.Random(seed).random() < 0.33:
+        return f"scale={TARGET_W}:{TARGET_H},format=yuv420p"
     frames = max(1, int(math.ceil(duration_s * TARGET_FPS)))
     rng = random.Random(seed)
 
@@ -577,9 +582,18 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
     overlay_vignette = "[vgraded][vign]overlay=shortest=1:format=auto[vfx]"
 
     # 3) Specks LAST (film dirt sits on top)
-    overlay_specks = "[vfx][specks]overlay=shortest=1:format=auto[vout]"
+    enable_expr = (
+        f"between(t,0,{audio_dur*0.5:.3f})"
+        f"+between(t,{audio_dur*0.8:.3f},{audio_dur:.3f})"
+    )
 
-    # NOTE: `specks` already contains semicolons inside it (mask + white + alphamerge),
+    overlay_specks = (
+        "[vfx][specks]"
+        f"overlay=shortest=1:format=auto:enable='{enable_expr}'"
+        "[vout]"
+    )
+
+    # NOTE: `specks` is a standalone generator chain appended into the main graph
     # so we append it directly into the filter graph string.
     return ";".join([
         ",".join(v_parts),
@@ -594,15 +608,33 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
 
 def _render_segment_clip(tmp_dir: Path, image_path: Path, seg_idx: int, duration: float, seed: str) -> Path:
     out_path = tmp_dir / f"segment_{seg_idx:03d}.mp4"
+    is_first = seg_idx == 0
 
     vf = _motion_filter(duration, seed)
+    vf_chain = vf
+
+    if is_first and ENABLE_FIRST_FRAME_INTERRUPT:
+        glitch = (
+            f"[0:v]"
+            f"eq=contrast=1.8:brightness=-0.15,"
+            f"gblur=sigma=8:steps=1,"
+            f"fps=48,"
+            f"trim=duration={FIRST_FRAME_GLITCH_DUR}"
+            f"[g];"
+            f"[0:v]{vf},"
+            f"trim=start={FIRST_FRAME_GLITCH_DUR}"
+            f"[n];"
+            f"[g][n]concat=n=2:v=1:a=0[v0]"
+        )
+        vf_chain = glitch
 
     _run([
         "ffmpeg", "-y",
         "-loop", "1",
         "-i", str(image_path),
-        "-vf",
-        f"{vf},trim=duration={duration:.6f},setpts=PTS-STARTPTS",
+        "-filter_complex",
+        f"{vf_chain},trim=duration={duration:.6f},setpts=PTS-STARTPTS[v]",
+        "-map", "[v]",
         "-an",
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
@@ -686,11 +718,12 @@ def main() -> int:
 
     if bed_path and bed_path.exists():
         audio_fc = (
-            "[1:a]aresample=48000,volume=1.0[vo];"
-            "[2:a]aresample=48000,volume=1.0[bed];"
-            "[vo][bed]amix=inputs=2:duration=first:dropout_transition=0,"
-            "alimiter=limit=0.98[aout]"
-        )
+        "[1:a]aresample=48000,volume=1.0,"
+        f"afade=t=out:st={audio_dur-1.2:.2f}:d=1.2[vo];"
+        "[2:a]aresample=48000,volume=1.0[bed];"
+        "[vo][bed]amix=inputs=2:duration=first:dropout_transition=0,"
+        "alimiter=limit=0.98[aout]"
+    )
 
         fc = video_fc + ";" + audio_fc
 
@@ -715,6 +748,7 @@ def main() -> int:
     else:
         audio_fc = (
             "[1:a]aresample=48000,volume=1.0,"
+            f"afade=t=out:st={audio_dur-1.2:.2f}:d=1.2,"
             "alimiter=limit=0.98[aout]"
         )
 

@@ -41,33 +41,28 @@ SCHEMA_VERSION = "1.0"
 # ============================================================
 CONFIG_DEFAULTS = {
     # Chunking
-    "CHUNK_WORDS": int(os.getenv("CHUNK_WORDS", "20")),          # words per section
+    "CHUNK_WORDS": int(os.getenv("CHUNK_WORDS", "15")),          # words per section
     "MIN_CHUNK_WORDS": int(os.getenv("MIN_CHUNK_WORDS", "16")),
     "MAX_CHUNK_WORDS": int(os.getenv("MAX_CHUNK_WORDS", "26")),
     "IMAGES_PER_CHUNK": int(os.getenv("IMAGES_PER_CHUNK", "2")), # must be 2 for your requirement
 
     # Style anchor for prompts
-    "STYLE_ANCHOR": os.getenv(
-        "STYLE_ANCHOR",
-        "found footage, VHS, analog distortion, low-light realism, grainy, subtle motion blur, "
-        "harsh practical lighting, deep shadows, no CGI, no glow, no cinematic grading, believable"
+    "STYLE_ANCHOR_HARD": (
+        "raw photo, shot on iPhone, shaky handheld motion, practical domestic lighting, "
+        "grainy low-light textures, authentic messy interior, 4k highly detailed"
     ),
+    "STYLE_ANCHOR_SOFT": "glare, soft focus, accidental movement blur",
 
     # Local (Ollama)
     "USE_LOCAL_FIRST": os.getenv("USE_LOCAL_FIRST", "1") == "1",
     "OLLAMA_URL": os.getenv("OLLAMA_URL", "http://127.0.0.1:11434"),
     "OLLAMA_MODEL_MAIN": os.getenv("OLLAMA_MODEL_MAIN", "mistral-nemo"),
-    "OLLAMA_MODEL_JUDGE": os.getenv("OLLAMA_MODEL_JUDGE", "gemma2:9b"),
 
     # OpenAI fallback
     "OPENAI_MODEL_FALLBACK": os.getenv("OPENAI_MODEL_FALLBACK", "gpt-4o-mini"),
     "OPENAI_TEMPERATURE": float(os.getenv("OPENAI_TEMPERATURE", "0.8")),
     "OPENAI_TOP_P": float(os.getenv("OPENAI_TOP_P", "0.95")),
 
-    # Quality gate
-    "MIN_SCORE_TO_ACCEPT": float(os.getenv("MIN_SCORE_TO_ACCEPT", "9.0")),  # "9/10"
-    "MAX_RETRIES_LOCAL": int(os.getenv("MAX_RETRIES_LOCAL", "2")),
-    "SLEEP_BETWEEN_RETRIES_SEC": float(os.getenv("SLEEP_BETWEEN_RETRIES_SEC", "0.3")),
 }
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -207,7 +202,6 @@ class LLMClient:
         self.ollama_url = CONFIG_DEFAULTS["OLLAMA_URL"].rstrip("/")
         self.use_local_first = CONFIG_DEFAULTS["USE_LOCAL_FIRST"]
         self.ollama_model_main = CONFIG_DEFAULTS["OLLAMA_MODEL_MAIN"]
-        self.ollama_model_judge = CONFIG_DEFAULTS["OLLAMA_MODEL_JUDGE"]
 
         self.openai_model_fallback = CONFIG_DEFAULTS["OPENAI_MODEL_FALLBACK"]
         self.openai_enabled = bool(OPENAI_API_KEY) and (OpenAI is not None)
@@ -342,11 +336,29 @@ You generate grounded, non-repetitive image prompts from a completed script.
 
 Hard rules:
 - The SCRIPT is immutable. Do NOT rewrite, escalate, or add new events.
-- You must keep visuals believable: found footage / VHS / analog distortion / low-light realism.
+- You must keep visuals believable: real-world handheld smartphone photography, documentary evidence framing, practical indoor lighting, no stylization.
 - No glowing eyes, no CGI beams, no magical auras.
 - Avoid repeated compositions. Each prompt must be clearly distinct.
 - No clear faces unless unavoidable.
 - Humans must never be centered, posed, or facing the camera.
+
+SOURCE TRACEABILITY (MANDATORY):
+- Every image MUST cite the exact word, phrase, or object from the chunk it visualizes.
+- If a visual element cannot be directly traced to the chunk text, it MUST NOT appear.
+- Inferred visuals must be physically unavoidable consequences of the cited detail.
+
+ANTI-REPETITION BIAS:
+- If a new image resembles any prior prompt in camera distance, framing, or subject role, you MUST choose a different visual approach.
+- Similar vibe is allowed. Similar composition is not.
+- When uncertain, intentionally change camera distance or point-of-view.
+
+AVOID OVERUSING:
+- dark hallways
+- human silhouettes in doorways
+- ceiling corner drips
+- shadowy human figures
+- sludge, ooze, or liquid residue
+- distorted walls, breathing textures, or moving surfaces
 
 CRITICAL RETENTION RULES:
 - For the FIRST IMAGE ONLY (image 1 of chunk 1):
@@ -370,18 +382,24 @@ Placeholder rules:
   Examples: "adult male hands", "adult male silhouette", "adult male torso in hoodie"
 - If only a partial/indirect entity presence is visible, do NOT use [entity]. Use: "unseen presence suggested by (trace)".
 - Prompts must be interesting and cinematic-REALISTIC (not cinematic-writing): practical lighting, messy realism, plausible camera angles.
-- Prefer visuals where something physical is subtly incorrect: light direction, liquid behavior, shadows, spatial logic.
+
+SELF-CHECK (internal, do not output):
+Before writing each prompt, ask:
+- What exact phrase or action from the chunk is this image showing?
+If you cannot answer that question, the image is invalid.
 
 Return ONLY JSON in this schema:
 {
   "images": [
     {
       "focus": "one short phrase: what this image focuses on",
+      "source_detail": "exact phrase or object from the chunk this image is based on",
       "prompt": "the full image prompt",
       "hook_hint": "plain-language danger summary for title/caption alignment (first image only)"
     },
     {
-      "focus": "..."
+      "focus": "...",
+      "source_detail": "...",
       "prompt": "..."
     }
   ]
@@ -417,9 +435,16 @@ ALREADY USED IMAGE PROMPTS (do NOT repeat compositions):
 
 Task:
 - Create EXACTLY {CONFIG_DEFAULTS["IMAGES_PER_CHUNK"]} distinct image prompts for this chunk.
-- Each prompt MUST start with this style prefix (verbatim), then a comma:
-  "{CONFIG_DEFAULTS["STYLE_ANCHOR"]}"
-- Keep them grounded and varied. Different angle/location/object each time.
+- Each prompt MUST start with the HARD style anchor verbatim:
+  "{CONFIG_DEFAULTS["STYLE_ANCHOR_HARD"]}"
+- The SOFT style anchor should only be used if it does NOT contradict the script:
+  "{CONFIG_DEFAULTS["STYLE_ANCHOR_SOFT"]}"
+- Each of the {CONFIG_DEFAULTS["IMAGES_PER_CHUNK"]} images MUST focus on a DIFFERENT concrete detail from the chunk.
+- Do NOT show the same action, object, or moment twice.
+
+IMAGE PAIR LOGIC:
+- If a physical change occurs: show before → after.
+- If no physical change occurs: show focus → consequence.
 
 IMPORTANT RETENTION RULES:
 {"For CHUNK 1 ONLY:" if chunk_index == 0 else ""}
@@ -433,42 +458,6 @@ IMPORTANT RETENTION RULES:
 {"- One visual violation only." if chunk_index <= 1 else ""}
 {"- Avoid atmosphere-only shots." if chunk_index <= 1 else ""}
 
-Return ONLY JSON.
-""".strip()
-
-
-def system_judge() -> str:
-    return """
-You are a strict quality rater for horror image prompts.
-
-Score each prompt 0-10 for:
-- grounded realism (no fantasy glow/CGI)
-- visual specificity and interest
-- non-repetition vs prior list
-- respects placeholder rules
-- fits found-footage/VHS vibe
-
-Return ONLY JSON:
-{
-  "scores": [
-    {"score": 0-10, "reason": "short"}
-  ],
-  "min_score": 0-10
-}
-""".strip()
-
-
-def user_judge(prompts: List[str], prior_prompts: List[str]) -> str:
-    prior_block = "\n".join([f"- {p}" for p in prior_prompts[-40:]])  # last 40
-    p_block = "\n".join([f"{i+1}. {p}" for i, p in enumerate(prompts)])
-    return f"""
-PRIOR PROMPTS (for repetition check):
-{prior_block if prior_block else "- (none yet)"}
-
-NEW PROMPTS TO SCORE:
-{p_block}
-
-Score them.
 Return ONLY JSON.
 """.strip()
 
@@ -494,36 +483,6 @@ def load_script_from_run(run_folder: Path) -> Tuple[str, Dict[str, Any]]:
     if not isinstance(script_text, str) or not script_text.strip():
         raise RuntimeError(f"script.json missing 'script' text: {script_path}")
     return script_text.strip(), data
-
-
-def quality_gate_local(
-    llm: LLMClient,
-    new_prompts: List[str],
-    prior_prompts: List[str],
-) -> Tuple[float, str]:
-    """
-    Uses local judge model first if available; if judge call fails, returns 0 score to trigger fallback.
-    """
-    try:
-        res = llm.ollama_chat(
-            system=system_judge(),
-            user=user_judge(new_prompts, prior_prompts),
-            model=CONFIG_DEFAULTS["OLLAMA_MODEL_JUDGE"],
-            temperature=0.2,
-        )
-        obj = extract_first_json_object(res.text)
-        min_score = float(obj.get("min_score", 0.0))
-        reason = ""
-        scores = obj.get("scores", [])
-        if scores and isinstance(scores, list):
-            # gather low reasons
-            lows = [s for s in scores if float(s.get("score", 0.0)) < CONFIG_DEFAULTS["MIN_SCORE_TO_ACCEPT"]]
-            if lows:
-                reason = "; ".join([normalize_whitespace(l.get("reason", "")) for l in lows][:3])
-        return min_score, reason or "ok"
-    except Exception as e:
-        return 0.0, f"judge_failed: {e}"
-
 
 def generate_place_entity(
     llm: LLMClient,

@@ -38,14 +38,14 @@ class ComfyConfig:
 # STYLIZED HORROR CONSTANTS
 NEGATIVE_PROMPT = (
     "woman, female, girl, feminine, lady, child, "
-    "photorealistic, photo, DSLR, studio lighting, fashion photography, "
+    "studio lighting, fashion photography, "
     "hyperreal skin, skin pores, symmetrical face, beauty lighting, "
     "romantic, sensual, explicit gore, sexualized pose, intimate framing, "
     "shirtless male, bare torso, erotic, nsfw, fetish, nudity, "
     "bright cheerful lighting, neon colors, oversaturated, "
     "cgi, unreal engine, glossy 3d, plastic skin, "
     "text, watermark, logo, caption, multiple frames, split screen, "
-    "abstract, conceptual, symbolic, surreal, dreamlike, artistic interpretation"
+    "artistic interpretation"
 )
 
 STYLE_PREFIX = (
