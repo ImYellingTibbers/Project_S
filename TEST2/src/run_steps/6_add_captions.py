@@ -47,9 +47,18 @@ def latest_run_dir() -> Path:
         raise RuntimeError("No runs found")
     return runs[-1]
 
-
 def main():
     run_dir = latest_run_dir()
+
+    vo_path = run_dir / "vo.json"
+    if not vo_path.exists():
+        raise RuntimeError(f"Missing vo.json in {run_dir}")
+
+    vo = json.loads(vo_path.read_text(encoding="utf-8"))
+    words = vo.get("alignment", {}).get("words", [])
+    if not words:
+        raise RuntimeError("vo.json missing alignment.words")
+
     render_dir = run_dir / "render"
 
     input_video = render_dir / INPUT_VIDEO_NAME
@@ -63,6 +72,9 @@ def main():
     config = {
         "input": str(input_video),
         "output": str(output_video),
+
+        "css": None,
+
         "splitters": [
             { "type": "limit_by_words", "limit": 3 }
         ],

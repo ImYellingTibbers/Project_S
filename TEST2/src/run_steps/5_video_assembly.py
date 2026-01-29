@@ -156,106 +156,115 @@ def _ffmpeg_path(p: Path) -> str:
     return p.resolve().as_posix()
 
 
-def _motion_filter(duration_s: float, seed: str) -> str:
-    """
-    Randomly choose ONE camera move per segment:
-      1) zoom in
-      2) zoom out (starts zoomed in)
-      3) pan left/right
-      4) pan up/down
-      5) pan diagonal
-      6) combo zoom + pan (Ken Burns)
-    Output: a vf string for ffmpeg -vf
-    """
-    if random.Random(seed).random() < 0.33:
-        return f"scale={TARGET_W}:{TARGET_H},format=yuv420p"
-    frames = max(1, int(math.ceil(duration_s * TARGET_FPS)))
-    rng = random.Random(seed)
+def _motion_filter(duration_s: float, seg_idx: int) -> str:
+    frames = max(1, int(duration_s * TARGET_FPS))
+    denom = max(1, frames - 1)
 
-    # Choose move type
-    move = rng.choice(["zoom_in", "zoom_out", "pan_lr", "pan_ud", "pan_diag", "combo"])
+    # 0..1 escalation curve across early segments (keeps energy rising)
+    intensity = min(1.0, seg_idx / 12.0)
 
-    # Scale up first so pans have room
-    # (Keep it simple: just ensure extra pixels exist)
-    pre = [
-        f"scale={int(TARGET_W*1.12)}:{int(TARGET_H*1.12)}:force_original_aspect_ratio=increase"
-    ]
+    # Deterministic variety per segment (repeatable render)
+    rng = random.Random(f"motion|{seg_idx}")
 
-    # Helper terms
-    t = f"(on/{max(1, frames-1)})"  # 0..1 across segment
-    pan_max_x = f"(iw - iw/zoom)*{PAN_PCT:.6f}"
-    pan_max_y = f"(ih - ih/zoom)*{PAN_PCT:.6f}"
+    # Motion "modes" – this is what stops slideshow vibes.
+    # push_in: slow creep toward subject
+    # pull_out: reverse creep (uneasy reveal)
+    # pan_lr / pan_ud: lateral movement (more cinematic)
+    # punch: quick micro-zoom + settle (attention grab)
+    mode_pool = ["push_in", "push_in", "pan_lr", "pan_ud", "pull_out", "punch"]
+    mode = rng.choice(mode_pool)
 
-    # Defaults: centered
-    x_expr = "iw/2-(iw/zoom/2)"
-    y_expr = "ih/2-(ih/zoom/2)"
+    # Overscale so we can move/rotate without black edges
+    overscale = 1.14 + 0.03 * intensity
+    scale_w = int(TARGET_W * overscale)
+    scale_h = int(TARGET_H * overscale)
 
-    # Zoom expressions
-    # Use clamps so it doesn't go nuts
-    if move == "zoom_in":
-        inc = (KB_MAX_ZOOM_IN - 1.0) / max(1, frames-1)
-        z_expr = f"min(zoom+{inc:.8f},{KB_MAX_ZOOM_IN:.6f})"
+    # Base zoom endpoints (kept subtle, but not boring)
+    z_min = 1.015 + 0.015 * intensity
+    z_max = 1.060 + 0.030 * intensity
 
-    elif move == "zoom_out":
-        dec = (KB_START_ZOOM_OUT - 1.0) / max(1, frames-1)
-        z_expr = f"max(zoom-{dec:.8f},1.000000)"
-        # start zoomed in
-        z_expr = f"if(eq(on,0),{KB_START_ZOOM_OUT:.6f},{z_expr})"
+    if mode == "push_in":
+        z0, z1 = z_min, z_max
+    elif mode == "pull_out":
+        z0, z1 = z_max, z_min
+    elif mode in ("pan_lr", "pan_ud"):
+        # Keep zoom flatter when panning
+        z0 = 1.030 + 0.015 * intensity
+        z1 = 1.040 + 0.020 * intensity
+    else:  # "punch"
+        # punch-in then settle (handled via expression)
+        z0 = 1.020 + 0.010 * intensity
+        z1 = 1.070 + 0.030 * intensity
 
-    elif move == "pan_lr":
-        # Keep slight zoom so pan has room
-        z_expr = "1.030000"
-        direction = rng.choice(["left_to_right", "right_to_left"])
-        if direction == "left_to_right":
-            x_expr = f"0 + {pan_max_x}*{t}"
-        else:
-            x_expr = f"{pan_max_x}*(1-{t})"
-        y_expr = "ih/2-(ih/zoom/2)"
+    # Smoothstep interpolation factor p in [0..1] based on frame index
+    # p = on/denom; smoothstep = p*p*(3-2*p)
+    p = f"(on/{denom})"
+    smooth = f"({p}*{p}*(3-2*{p}))"
 
-    elif move == "pan_ud":
-        z_expr = "1.030000"
-        direction = rng.choice(["top_to_bottom", "bottom_to_top"])
-        if direction == "top_to_bottom":
-            y_expr = f"0 + {pan_max_y}*{t}"
-        else:
-            y_expr = f"{pan_max_y}*(1-{t})"
-        x_expr = "iw/2-(iw/zoom/2)"
+    # Micro-handheld drift (varies per segment)
+    amp = 6 + int(10 * intensity) + rng.randint(0, 6)         # pixels
+    fx1 = 0.010 + rng.random() * 0.020
+    fx2 = 0.017 + rng.random() * 0.025
+    fy1 = 0.012 + rng.random() * 0.020
+    fy2 = 0.019 + rng.random() * 0.025
 
-    elif move == "pan_diag":
-        z_expr = "1.040000"
-        direction = rng.choice(["tl_br", "br_tl", "tr_bl", "bl_tr"])
-        if direction == "tl_br":
-            x_expr = f"0 + {pan_max_x}*{t}"
-            y_expr = f"0 + {pan_max_y}*{t}"
-        elif direction == "br_tl":
-            x_expr = f"{pan_max_x}*(1-{t})"
-            y_expr = f"{pan_max_y}*(1-{t})"
-        elif direction == "tr_bl":
-            x_expr = f"{pan_max_x}*(1-{t})"
-            y_expr = f"0 + {pan_max_y}*{t}"
-        else:  # bl_tr
-            x_expr = f"0 + {pan_max_x}*{t}"
-            y_expr = f"{pan_max_y}*(1-{t})"
+    # Pan targets (in pixels within the overscaled frame)
+    pan_span_x = int(TARGET_W * (0.05 + 0.05 * intensity))
+    pan_span_y = int(TARGET_H * (0.04 + 0.04 * intensity))
+    pan_dir_x = rng.choice([-1, 1])
+    pan_dir_y = rng.choice([-1, 1])
 
-    else:  # combo (Ken Burns)
-        # Zoom gently + pan gently
-        z0 = rng.choice([1.01, 1.02, 1.03])
-        z1 = rng.choice([1.04, 1.05, 1.06])
-        z_expr = f"({z0:.6f} + ({z1:.6f}-{z0:.6f})*{t})"
+    # Zoom expression
+    if mode == "punch":
+        # Fast punch (first ~25%), then ease back to a steadier zoom
+        punch_cut = 0.25
+        # piecewise on p:
+        # if p<punch_cut: ramp to z1 quickly
+        # else: drift toward mid zoom
+        mid = 1.045 + 0.020 * intensity
+        z = (
+            f"if(lte({p},{punch_cut}),"
+            f"{z0:.4f}+({z1 - z0:.4f})*(({p}/{punch_cut})*({p}/{punch_cut})*(3-2*({p}/{punch_cut}))),"
+            f"{z1:.4f}+({mid - z1:.4f})*(({p}-{punch_cut})/(1-{punch_cut}))"
+            f")"
+        )
+    else:
+        z = f"{z0:.4f}+({z1 - z0:.4f})*{smooth}"
 
-        # small pan directions
-        x_dir = rng.choice([-1, 1])
-        y_dir = rng.choice([-1, 1])
-        x_expr = f"iw/2-(iw/zoom/2) + ({x_dir})*{pan_max_x}*{t}"
-        y_expr = f"ih/2-(ih/zoom/2) + ({y_dir})*{pan_max_y}*{t}"
+    # Position expressions:
+    # Start centered, add drift always, add intentional pan depending on mode.
+    drift_x = f"sin(on*{fx1:.5f})*{amp} + sin(on*{fx2:.5f})*{int(amp*0.6)}"
+    drift_y = f"cos(on*{fy1:.5f})*{amp} + cos(on*{fy2:.5f})*{int(amp*0.6)}"
 
-    # Final zoompan into target size
-    zp = (
-        f"zoompan=z='{z_expr}':x='{x_expr}':y='{y_expr}':"
-        f"d={frames}:s={TARGET_W}x{TARGET_H}:fps={TARGET_FPS}"
+    # Base center framing
+    base_x = "iw/2-(iw/zoom/2)"
+    base_y = "ih/2-(ih/zoom/2)"
+
+    # Add a slow pan that *changes per segment*
+    if mode == "pan_lr":
+        pan_x = f"({pan_dir_x}*{pan_span_x})*{smooth}"
+        pan_y = f"0"
+    elif mode == "pan_ud":
+        pan_x = f"0"
+        pan_y = f"({pan_dir_y}*{pan_span_y})*{smooth}"
+    else:
+        pan_x = "0"
+        pan_y = "0"
+
+    x = f"{base_x} + ({drift_x}) + ({pan_x})"
+    y = f"{base_y} + ({drift_y}) + ({pan_y})"
+
+    # Subtle gate-weave rotate AFTER zoompan (rotate uses t, which exists here)
+    rot_amp = 0.0020 + 0.0015 * intensity + rng.random() * 0.0010  # radians
+    rot_freq = 0.45 + rng.random() * 0.35
+
+    return (
+        f"scale={scale_w}:{scale_h},"
+        f"zoompan=z='{z}':x='{x}':y='{y}':d={frames}:s={TARGET_W}x{TARGET_H}:fps={TARGET_FPS},"
+        f"rotate={rot_amp:.6f}*sin(2*PI*t*{rot_freq:.3f}):c=black,"
+        f"crop={TARGET_W}:{TARGET_H}:x=(iw-ow)/2:y=(ih-oh)/2,"
+        f"format=yuv420p"
     )
-
-    return ",".join(pre + [zp, "format=yuv420p"])
 
 
 # -------------------------
@@ -480,7 +489,13 @@ def _xfade_chain(clips: List[Path], xfade_dur: float, out_path: Path, transition
 
     fc_parts = []
     for i in range(len(clips)):
-        fc_parts.append(f"[{i}:v]setpts=PTS-STARTPTS[v{i}]")
+        fc_parts.append(
+            f"[{i}:v]"
+            f"fps={TARGET_FPS},"
+            f"settb=1/{TARGET_FPS},"
+            f"setpts=PTS-STARTPTS"
+            f"[v{i}]"
+        )
 
     current = "v0"
     timeline = durs[0]
@@ -610,33 +625,46 @@ def _render_segment_clip(tmp_dir: Path, image_path: Path, seg_idx: int, duration
     out_path = tmp_dir / f"segment_{seg_idx:03d}.mp4"
     is_first = seg_idx == 0
 
-    vf = _motion_filter(duration, seed)
+    vf = _motion_filter(duration, seg_idx)
     vf_chain = vf
 
     if is_first and ENABLE_FIRST_FRAME_INTERRUPT:
         glitch = (
             f"[0:v]"
+            f"scale={TARGET_W}:{TARGET_H},"
             f"eq=contrast=1.8:brightness=-0.15,"
             f"gblur=sigma=8:steps=1,"
-            f"fps=48,"
-            f"trim=duration={FIRST_FRAME_GLITCH_DUR}"
+            f"fps={TARGET_FPS},settb=1/{TARGET_FPS},"
+            f"trim=duration={FIRST_FRAME_GLITCH_DUR},setpts=PTS-STARTPTS"
             f"[g];"
             f"[0:v]{vf},"
-            f"trim=start={FIRST_FRAME_GLITCH_DUR}"
+            f"fps={TARGET_FPS},settb=1/{TARGET_FPS},"
+            f"trim=start={FIRST_FRAME_GLITCH_DUR},setpts=PTS-STARTPTS"
             f"[n];"
             f"[g][n]concat=n=2:v=1:a=0[v0]"
         )
         vf_chain = glitch
 
+    if is_first and ENABLE_FIRST_FRAME_INTERRUPT:
+        filter_complex = (
+            f"{vf_chain};"
+            f"[v0]trim=duration={duration:.6f},setpts=PTS-STARTPTS[v]"
+        )
+    else:
+        filter_complex = (
+            f"{vf_chain},trim=duration={duration:.6f},setpts=PTS-STARTPTS[v]"
+        )
+
     _run([
         "ffmpeg", "-y",
         "-loop", "1",
         "-i", str(image_path),
-        "-filter_complex",
-        f"{vf_chain},trim=duration={duration:.6f},setpts=PTS-STARTPTS[v]",
+        "-filter_complex", filter_complex,
         "-map", "[v]",
         "-an",
         "-c:v", "libx264",
+        "-r", str(TARGET_FPS),
+        "-video_track_timescale", "24000",
         "-pix_fmt", "yuv420p",
         "-movflags", "+faststart",
         str(out_path),

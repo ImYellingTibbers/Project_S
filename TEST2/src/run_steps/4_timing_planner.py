@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import re
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -58,7 +59,7 @@ def main():
         script = read_json(run_dir / "script_with_prompts.json")
         vo = read_json(run_dir / "vo.json")
 
-        chunks = script.get("image_prompt_chunks", [])
+        chunks = script.get("chunks", [])
         sentences = vo.get("alignment", {}).get("sentences", [])
         total_duration = float(vo.get("total_duration", 0))
 
@@ -72,71 +73,97 @@ def main():
         images = get_sorted_image_files(run_dir)
 
         # Validate image counts
-        expected_images = sum(len(c.get("images", [])) for c in chunks)
+        expected_images = sum(len(c.get("image_prompts", [])) for c in chunks)
         if expected_images != len(images):
             raise RuntimeError(
                 f"Image count mismatch: chunks expect {expected_images}, "
                 f"but found {len(images)} images"
             )
 
-        num_chunks = len(chunks)
-        chunk_window = total_duration / num_chunks
-
+        # ---------------- PROMPT-LOCKED SENTENCE TIMING ----------------
         timed_beats = []
-        image_cursor = 0
         beat_index = 0
+        image_cursor = 0
+        vo_idx = 0
 
-        for chunk_index, chunk in enumerate(chunks):
-            expected = len(chunk["images"])
-            chunk_start_time = chunk_index * chunk_window
-            chunk_end_time = (chunk_index + 1) * chunk_window
+        for chunk in chunks:
+            prompts = chunk.get("image_prompts", [])
+            if not prompts:
+                continue
 
-            # Sentences whose midpoint falls in this chunk window
-            chunk_sentences = []
-            for s in sentences:
-                mid = (float(s["start"]) + float(s["end"])) / 2
-                if chunk_start_time <= mid < chunk_end_time:
-                    chunk_sentences.append(s)
+            # Consume VO sentences until we cover this chunk's script text
+            collected = []
+            script_words = len(chunk["script_text"].split())
 
-            # Fallback safety (never fail hard)
-            if not chunk_sentences:
-                chunk_sentences = [
-                    s for s in sentences
-                    if s["start"] >= chunk_start_time and s["start"] < chunk_end_time
-                ]
+            words_accum = 0
+            start_time = None
+            end_time = None
 
-            if not chunk_sentences:
-                raise RuntimeError(f"No VO coverage for chunk {chunk_index}")
+            while vo_idx < len(sentences) and words_accum < script_words:
+                sent = sentences[vo_idx]
+                sent_words = len(sent["text"].split())
 
-            start = min(float(s["start"]) for s in chunk_sentences)
-            end = max(float(s["end"]) for s in chunk_sentences)
-            duration = end - start
+                if start_time is None:
+                    start_time = float(sent["start"])
 
-            per_image = duration / expected
+                end_time = float(sent["end"])
+                words_accum += sent_words
+                collected.append(sent)
+                vo_idx += 1
 
-            chunk_images = images[image_cursor:image_cursor + expected]
-            image_cursor += expected
+            if start_time is None or end_time is None:
+                raise RuntimeError(
+                    f"Failed to assign VO time span for chunk {chunk['chunk_index']}"
+                )
 
-            for i, img in enumerate(chunk_images):
+            span_dur = end_time - start_time
+            if span_dur <= 0:
+                raise RuntimeError(
+                    f"Invalid VO span for chunk {chunk['chunk_index']}"
+                )
+
+            per_image = span_dur / len(prompts)
+            cursor = start_time
+
+            for _ in prompts:
+                start = cursor
+                end = min(start + per_image, end_time)
+
                 timed_beats.append({
                     "segment_index": beat_index,
-                    "chunk_index": chunk_index,
-                    "start_time": round(start + i * per_image, 3),
-                    "end_time": round(start + (i + 1) * per_image, 3),
-                    "image_file": img
+                    "chunk_index": chunk["chunk_index"],
+                    "start_time": round(start, 3),
+                    "end_time": round(end, 3),
+                    "image_file": images[image_cursor],
+                    "sentence_text": " ".join(s["text"] for s in collected)
                 })
+
+                cursor = end
+                image_cursor += 1
                 beat_index += 1
+
+
+        # Hard validation
+        if timed_beats:
+            final_end = timed_beats[-1]["end_time"]
+            if abs(final_end - total_duration) > 0.01:
+                print(
+                    f"⚠️ Drift detected: images end at {final_end:.2f}s "
+                    f"but VO is {total_duration:.2f}s"
+                )
 
         output = {
             "schema": SCHEMA_NAME,
             "created_at": utc_now_iso(),
             "meta": {
                 "total_duration": total_duration,
-                "total_chunks": num_chunks,
-                "total_beats": len(timed_beats)
+                "total_chunks": len(chunks),
+                "total_beats": len(timed_beats),
+                "timing_mode": "sentence_aligned",
             },
             "beats": timed_beats
         }
+
 
         out_path = run_dir / "timing_plan.json"
         write_json(out_path, output)

@@ -45,13 +45,22 @@ NEGATIVE_PROMPT = (
     "bright cheerful lighting, neon colors, oversaturated, "
     "cgi, unreal engine, glossy 3d, plastic skin, "
     "text, watermark, logo, caption, multiple frames, split screen, "
-    "artistic interpretation"
+    "artistic interpretation, "
+    "abandoned building, urban decay, derelict, ruin, debris, trash piles, "
+    "broken furniture, collapsed ceiling, exposed insulation, "
+    "post-apocalyptic, haunted house aesthetic"
 )
 
 STYLE_PREFIX = (
-    "dark cinematic horror frame, muted colors, realistic lighting, "
-    "film still, shallow depth of field, heavy shadows, grain, "
-    "natural textures, no illustration, no painterly style"
+    "photorealistic interior photograph, contemporary residential space, "
+    "clean but worn surfaces, maintained environment, no visible debris, "
+    "no rubble, no decay, no mold, "
+    "natural color palette, neutral tones, practical lighting, "
+    "soft ambient shadows, balanced exposure, "
+    "documentary realism, unstaged, observational, "
+    "uneventful moment with subtle unease, "
+    "real-world camera optics, 35mm lens, natural depth of field, "
+    "nothing exaggerated, nothing theatrical"
 )
 
 # --- COMFYUI HELPERS ---
@@ -174,13 +183,12 @@ def generate_images():
 
     for chunk in chunks:
         chunk_index = chunk.get("chunk_index", 0)
-        for img in chunk.get("images", []):
+        for img in chunk.get("image_prompts", []):
             prompt = img.get("prompt")
             if not prompt:
                 continue
             segments.append({
                 "image_prompt": prompt,
-                "focus": img.get("focus"),
                 "chunk_index": chunk_index,
             })
 
@@ -189,13 +197,19 @@ def generate_images():
         print("❌ Error: No image prompts found after parsing script artifact.")
         return
 
+    image_counters = {}
+
     for i, segment in enumerate(segments):
+        chunk_idx = segment.get("chunk_index", 0)
+        image_counters.setdefault(chunk_idx, 0)
+        image_counters[chunk_idx] += 1
+        img_idx = image_counters[chunk_idx]
         raw_prompt = segment.get("image_prompt")
         if not raw_prompt:
             print(f"⚠️ Skipping segment {i}: missing image_prompt")
             continue
         chunk_idx = segment.get("chunk_index", 0)
-        out_name = f"c{chunk_idx:02d}_image_{i+1:03d}"
+        out_name = f"c{chunk_idx:02d}_image_{img_idx:02d}"
         seed = 777000 + (i * 37)
 
         print(f"🎨 Rendering {out_name}.png...", end=" ", flush=True)
