@@ -121,12 +121,16 @@ Schema:
 
     user = f"SCRIPT:\n{script}\n\nExtract anchors."
     raw = ollama_chat(OLLAMA_MODEL, system, user)
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start == -1 or end == -1:
-        raise RuntimeError("Failed to extract JSON for place/entity")
-
-    data = json.loads(raw[start:end + 1])
+    # Extract the FIRST valid JSON object only
+    matches = re.finditer(r"\{.*?\}", raw, re.DOTALL)
+    for m in matches:
+        try:
+            data = json.loads(m.group())
+            break
+        except json.JSONDecodeError:
+            continue
+    else:
+        raise RuntimeError(f"Failed to extract valid JSON from model output:\n{raw}")
     
     return data["place"], data["entity"]
 

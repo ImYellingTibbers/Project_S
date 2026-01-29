@@ -80,68 +80,62 @@ def main():
                 f"but found {len(images)} images"
             )
 
-        # ---------------- PROMPT-LOCKED SENTENCE TIMING ----------------
+        # ---------------- WORD-LOCKED TIMING (CANONICAL) ----------------
         timed_beats = []
         beat_index = 0
         image_cursor = 0
-        vo_idx = 0
+        word_idx = 0
+
+        words = vo.get("alignment", {}).get("words", [])
+        if not words:
+            raise RuntimeError("No VO word alignment found")
 
         for chunk in chunks:
             prompts = chunk.get("image_prompts", [])
             if not prompts:
                 continue
 
-            # Consume VO sentences until we cover this chunk's script text
-            collected = []
-            script_words = len(chunk["script_text"].split())
+            chunk_words = int(chunk.get("word_count", 0))
+            if chunk_words <= 0:
+                raise RuntimeError(f"Invalid word_count for chunk {chunk['chunk_index']}")
 
-            words_accum = 0
-            start_time = None
-            end_time = None
-
-            while vo_idx < len(sentences) and words_accum < script_words:
-                sent = sentences[vo_idx]
-                sent_words = len(sent["text"].split())
-
-                if start_time is None:
-                    start_time = float(sent["start"])
-
-                end_time = float(sent["end"])
-                words_accum += sent_words
-                collected.append(sent)
-                vo_idx += 1
-
-            if start_time is None or end_time is None:
+            if word_idx >= len(words):
                 raise RuntimeError(
-                    f"Failed to assign VO time span for chunk {chunk['chunk_index']}"
+                    f"Out of VO words at chunk {chunk['chunk_index']}"
                 )
 
-            span_dur = end_time - start_time
-            if span_dur <= 0:
+            start_word_idx = word_idx
+            end_word_idx = min(word_idx + chunk_words - 1, len(words) - 1)
+
+            start_time = float(words[start_word_idx]["start"])
+            end_time = float(words[end_word_idx]["end"])
+
+            if end_time <= start_time:
                 raise RuntimeError(
                     f"Invalid VO span for chunk {chunk['chunk_index']}"
                 )
 
+            span_dur = end_time - start_time
             per_image = span_dur / len(prompts)
             cursor = start_time
 
             for _ in prompts:
-                start = cursor
-                end = min(start + per_image, end_time)
+                img_start = cursor
+                img_end = min(cursor + per_image, end_time)
 
                 timed_beats.append({
                     "segment_index": beat_index,
                     "chunk_index": chunk["chunk_index"],
-                    "start_time": round(start, 3),
-                    "end_time": round(end, 3),
+                    "start_time": round(img_start, 3),
+                    "end_time": round(img_end, 3),
                     "image_file": images[image_cursor],
-                    "sentence_text": " ".join(s["text"] for s in collected)
                 })
 
-                cursor = end
+                cursor = img_end
                 image_cursor += 1
                 beat_index += 1
 
+            word_idx += chunk_words
 
         # Hard validation
         if timed_beats:

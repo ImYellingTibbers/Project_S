@@ -40,15 +40,21 @@ def main():
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
 
     print("\nPaste your full script below.")
-    print("When finished, press Ctrl+D (Linux/macOS) or Ctrl+Z + Enter (Windows).\n")
+    print("Type <<<END>>> on its own line when finished.\n")
 
-    try:
-        script_text = ""
-        while True:
+    lines = []
+    while True:
+        try:
             line = input()
-            script_text += line + "\n"
-    except EOFError:
-        pass
+        except EOFError:
+            break
+
+        if line.strip() == "<<<END>>>":
+            break
+
+        lines.append(line)
+
+    script_text = "\n".join(lines).strip()
 
     script_text = script_text.strip()
 

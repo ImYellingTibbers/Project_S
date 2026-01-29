@@ -147,11 +147,11 @@ def elevenlabs_tts_pcm(text: str) -> bytes:
         "text": text,
         "model_id": model_id,
         "voice_settings": {
-            "stability": 0.50,
+            "stability": 0.75,
             "similarity_boost": 0.75,
             "style": 0.05,
             "use_speaker_boost": False,
-            "speed": 1.05
+            "speed": 1.15
         }
     }
 
