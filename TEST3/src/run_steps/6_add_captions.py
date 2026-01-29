@@ -11,33 +11,37 @@ OUTPUT_VIDEO_NAME = "story_w_captions.mp4"
 
 CAPTIONS_CSS = """
 .word {
-  font-family: "Cormorant SC", "Trajan Pro", "Libre Baskerville", serif;
-  font-size: 36px;
+  font-family: "Cinzel", "Trajan Pro", "Cormorant SC", serif;
+  font-size: 38px;
   line-height: 1.05;
-  font-weight: 600;
+  font-weight: 700;
 
-  color: #E6E6E6;
+  /* NON-NARRATED WORDS */
+  color: #DAD4CC;
+
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 1px;
 
+  /* DARK EDGE ONLY — NO WHITE */
   text-shadow:
-    0 1px 2px rgba(0,0,0,0.9),
-    0 2px 6px rgba(0,0,0,0.8);
+    0 0 4px rgba(0,0,0,0.95),
+    0 0 8px rgba(0,0,0,0.85);
 }
 
 .word-being-narrated {
-  color: #C73A2B;
-  font-weight: 600;
+  /* ACTIVE WORD */
+  color: #9B1C1C;
+
+  /* CONTINUOUS SOFT OUTLINE (NO SQUEEZE) */
   text-shadow:
-    /* hard edge separation */
-    0 0 2px rgba(0, 0, 0, 0.95),
-    0 0 4px rgba(0, 0, 0, 0.9),
+    0 0 2px #ffffff,
+    0 0 4px #ffffff,
 
-    /* warm mid halo (lifts red without whitening) */
-    0 0 8px rgba(120, 40, 30, 0.75),
+    /* separation */
+    0 0 6px rgba(0,0,0,0.95),
 
-    /* soft diffusion */
-    0 0 16px rgba(0, 0, 0, 0.70);
+    /* red energy */
+    0 0 10px rgba(120, 20, 20, 0.85);
 }
 """
 
@@ -85,28 +89,22 @@ def main():
             "x_words_space": 20,
             "vertical_align": {
                 "align": "bottom",
-                "offset": -0.28
+                "offset": -0.22
             }
         },
 
         "animations": [
             {
-                "type": "fade_in",
+                "type": "zoom_in_primitive",
                 "when": "narration-starts",
                 "what": "segment",
-                "duration": 0.08
-            },
-            {
-                "type": "zoom_in",
-                "when": "narration-starts",
-                "what": "segment",
-                "duration": 0.12
+                "duration": 0.06
             },
             {
                 "type": "fade_out",
                 "when": "narration-ends",
                 "what": "segment",
-                "duration": 0.06
+                "duration": 0.05
             }
         ]
     }

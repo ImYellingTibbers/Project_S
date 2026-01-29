@@ -151,7 +151,7 @@ def elevenlabs_tts_pcm(text: str) -> bytes:
             "similarity_boost": 0.75,
             "style": 0.05,
             "use_speaker_boost": False,
-            "speed": 1.15
+            "speed": 1.10
         }
     }
 

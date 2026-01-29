@@ -37,8 +37,8 @@ FIRST_FRAME_BASS_DB = -6.0     # subtle, not loud
 
 # Global "dust specks" vibe (subtle)
 DUST_SPECKS_STRENGTH = float(os.getenv("RENDER_DUST_SPECKS_STRENGTH", "0.12"))
-DUST_SPECKS_ALPHA    = float(os.getenv("RENDER_DUST_SPECKS_ALPHA", "0.75"))
-DUST_SPECKS_THRESH   = int(os.getenv("RENDER_DUST_SPECKS_THRESH", "35"))
+DUST_SPECKS_ALPHA    = float(os.getenv("RENDER_DUST_SPECKS_ALPHA", "0.22"))
+DUST_SPECKS_THRESH   = int(os.getenv("RENDER_DUST_SPECKS_THRESH", "180"))
 
 # Per-segment motion intensity
 KB_MAX_ZOOM_IN = float(os.getenv("RENDER_KB_MAX_ZOOM_IN", "1.06"))   # zoom-in peak
@@ -562,10 +562,11 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
 
     specks = (
         f"color=c=black:s={TARGET_W}x{TARGET_H}:d={audio_dur:.6f},"
-        f"noise=alls=20:allf=t+u,"
-        f"gblur=sigma={DUST_BLUR},"
+        f"noise=alls=60:allf=t+u,"
+        f"lut=y='if(gt(val,{DUST_SPECKS_THRESH}),255,0)',"
+        f"gblur=sigma=1.2,"
         f"format=rgba,"
-        f"colorchannelmixer=aa={DUST_ALPHA}"
+        f"colorchannelmixer=aa={DUST_SPECKS_ALPHA}"
         f"[specks]"
     )
 
@@ -576,15 +577,23 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
         "eq=contrast=1.25:brightness=-0.05:gamma=0.92"
         "[vgraded]"
     )
+    
+    found_footage = (
+        "[vgraded]"
+        "noise=alls=8:allf=t+u,"
+        "eq=contrast=1.08:brightness=-0.02,"
+        "tblend=all_mode=average:all_opacity=0.15"
+        "[vff]"
+    )
 
     # 2) True BLACK vignette overlay (color-stable)
     vign_alpha = (
-        "0.55*min(max(("
+        "0.75*min(max(("
         "sqrt("
         "((X-W/2)/(W/2))*((X-W/2)/(W/2)) + "
         "((Y-H/2)/(H/2))*((Y-H/2)/(H/2))"
-        ") - 0.35"
-        ")/0.65,0),1)"
+        ") - 0.25"
+        ")/0.55,0),1)"
     )
 
     vignette_layer = (
@@ -594,7 +603,7 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
         f"[vign]"
     )
 
-    overlay_vignette = "[vgraded][vign]overlay=shortest=1:format=auto[vfx]"
+    overlay_vignette = "[vff][vign]overlay=shortest=1:format=auto[vfx]"
 
     # 3) Specks LAST (film dirt sits on top)
     enable_expr = (
@@ -614,6 +623,7 @@ def _build_video_filter_complex(audio_dur: float, stitched_dur: float) -> str:
         ",".join(v_parts),
         specks,
         horror_grade,
+        found_footage,
         vignette_layer,
         overlay_vignette,
         overlay_specks,
@@ -747,7 +757,7 @@ def main() -> int:
     if bed_path and bed_path.exists():
         audio_fc = (
         "[1:a]aresample=48000,volume=1.0,"
-        f"afade=t=out:st={audio_dur-1.2:.2f}:d=1.2[vo];"
+        f"afade=t=out:st={max(audio_dur-0.4, 0):.2f}:d=0.35[vo];"
         "[2:a]aresample=48000,volume=1.0[bed];"
         "[vo][bed]amix=inputs=2:duration=first:dropout_transition=0,"
         "alimiter=limit=0.98[aout]"
@@ -776,7 +786,7 @@ def main() -> int:
     else:
         audio_fc = (
             "[1:a]aresample=48000,volume=1.0,"
-            f"afade=t=out:st={audio_dur-1.2:.2f}:d=1.2,"
+            f"afade=t=out:st={max(audio_dur-0.4, 0):.2f}:d=0.35,"
             "alimiter=limit=0.98[aout]"
         )
 

@@ -198,6 +198,8 @@ VISUAL RULES:
 - Prefer POV or environmental storytelling.
 - One primary subject per image.
 - Background must remain minimal and non-distracting.
+- The UPCOMING section is for mood and anticipation ONLY.
+- Do NOT depict objects, text, or evidence that appear only in UPCOMING.
 
 CHARACTER RULES:
 - Do NOT show full faces of any person.
@@ -220,7 +222,7 @@ Return ONLY a single JSON object (no markdown, no code fences, no extra text):
         opening_directive = (
             "OPENING IMAGE DIRECTIVE:\n"
             "- This is the FIRST image of the video.\n"
-            "- Show the MOST unsettling detail that appears ANYWHERE in the story,\n"
+            "- Show the MOST unsettling PHYSICAL EVIDENCE that appears later in the story, presented without context, explanation, or visible cause.\n"
             "  but without context or explanation.\n"
             "- No faces. No answers. No explanations.\n"
             "- Make the viewer need to know how this happened.\n\n"
@@ -424,11 +426,20 @@ def main():
     out_chunks = []
 
     for idx, chunk in enumerate(chunks):
+        past_script = " ".join(chunks[: idx + 1])
+
+        next_chunk = ""
+        if idx + 1 < len(chunks):
+            next_chunk = chunks[idx + 1]
+
+        script_context = past_script
+        if next_chunk:
+            script_context += "\n\nUPCOMING (FORESHADOW ONLY):\n" + next_chunk
         wc = len(chunk.split())
         img_count = images_for_chunk(wc)
 
         images = gpt_image_prompts(
-            script,
+            script_context,
             chunk,
             place,
             entity,
