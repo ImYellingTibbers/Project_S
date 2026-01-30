@@ -1,0 +1,116 @@
+{
+  "50": {
+    "inputs": {
+      "text": "cgi, 3d render, illustration, painting, anime, cartoon,\nstylized, concept art, graphic novel,\n\nneon lighting, fantasy lighting, supernatural glow,\nheavy color grading, extreme HDR,\n\nfisheye lens, ultra wide distortion, dutch angle,\nimpossible geometry, warped architecture,\n\nblur, low resolution, noise, motion blur,\njpeg artifacts, compression artifacts,\n\npeople, humans, person, body, face, head,\nhands, fingers, limbs, silhouettes,\nreflections, mirrors,\n\ntext, watermark, logo, subtitles, captions,\nUI elements, branded signage, readable labels,\n\ngraphic gore, dismemberment, exposed organs,\nblood spray, torture\n",
+      "clip": [
+        "58",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "NEGATIVE"
+    }
+  },
+  "53": {
+    "inputs": {
+      "width": 768,
+      "height": 1344,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "EMPTY_LATENT"
+    }
+  },
+  "55": {
+    "inputs": {
+      "seed": 61140271156675,
+      "steps": 20,
+      "cfg": 5,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "denoise": 1,
+      "model": [
+        "58",
+        0
+      ],
+      "positive": [
+        "92",
+        0
+      ],
+      "negative": [
+        "50",
+        0
+      ],
+      "latent_image": [
+        "53",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSAMPLER_A_COMPOSE"
+    }
+  },
+  "56": {
+    "inputs": {
+      "samples": [
+        "55",
+        0
+      ],
+      "vae": [
+        "58",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE_DECODE_A"
+    }
+  },
+  "57": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "56",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "SAVE_IMAGE_A"
+    }
+  },
+  "58": {
+    "inputs": {
+      "ckpt_name": "DreamShaperXL_Turbo_v2.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint - BASE"
+    }
+  },
+  "92": {
+    "inputs": {
+      "text": "Empty interior space, unfinished room, concrete or plaster surfaces,\ndim ambient lighting, static frame, no people, no animals,\nunoccupied environment, realistic textures, natural shadows,\ndocumentary-style realism, neutral composition",
+      "clip": [
+        "58",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "POSITIVE"
+    }
+  },
+  "96": {
+    "inputs": {
+      "image": "pasted/image.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  }
+}

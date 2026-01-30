@@ -17,10 +17,11 @@ PYTHON_BIN = os.path.expanduser("~/ai/ComfyUI/venv/bin/python")
 COMFY_CMD = [
     PYTHON_BIN,
     "main.py",
-    "--normalvram",
-    "--disable-pinned-memory",
-    "--disable-async-offload",
-    "--force-fp16",
+    "--normalvram",         
+    "--force-fp16",          
+    "--fp16-vae",             
+    "--disable-smart-memory", 
+    "--dont-upcast-attention" 
 ]
 
 # -----------------------

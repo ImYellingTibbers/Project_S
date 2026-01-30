@@ -1,7 +1,7 @@
 {
   "50": {
     "inputs": {
-      "text": "cgi, 3d render, illustration, painting, anime, cartoon,\nstylized, concept art, graphic novel,\n\nneon lighting, fantasy lighting, supernatural glow,\nheavy color grading, extreme HDR,\n\nfisheye lens, ultra wide distortion, dutch angle,\nimpossible geometry, warped architecture,\n\nblur, low resolution, noise, motion blur,\njpeg artifacts, compression artifacts,\n\npeople, humans, person, body, face, head,\nhands, fingers, limbs, silhouettes,\nreflections, mirrors,\n\ntext, watermark, logo, subtitles, captions,\nUI elements, branded signage, readable labels,\n\ngraphic gore, dismemberment, exposed organs,\nblood spray, torture\n",
+      "text": "",
       "clip": [
         "58",
         1
@@ -25,9 +25,9 @@
   },
   "55": {
     "inputs": {
-      "seed": 61140271156675,
-      "steps": 20,
-      "cfg": 5,
+      "seed": 152779449093294,
+      "steps": 30,
+      "cfg": 8.5,
       "sampler_name": "dpmpp_2m_sde",
       "scheduler": "karras",
       "denoise": 1,
@@ -84,7 +84,7 @@
   },
   "58": {
     "inputs": {
-      "ckpt_name": "DreamShaperXL_Turbo_v2.safetensors"
+      "ckpt_name": "realvisxlV50_v40Bakedvae.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -93,7 +93,7 @@
   },
   "92": {
     "inputs": {
-      "text": "Empty interior space, unfinished room, concrete or plaster surfaces,\ndim ambient lighting, static frame, no people, no animals,\nunoccupied environment, realistic textures, natural shadows,\ndocumentary-style realism, neutral composition",
+      "text": "",
       "clip": [
         "58",
         1

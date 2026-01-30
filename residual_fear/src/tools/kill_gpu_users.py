@@ -13,12 +13,12 @@ def kill_comfyui():
     print("[kill] Killing ComfyUI (Linux)")
     _run("pkill -f comfyui")
     _run("pkill -f 'python.*main.py'")
-    time.sleep(2)
+    time.sleep(1)
 
 def kill_ollama():
     print("[kill] Killing Ollama (Linux)")
     _run("pkill -f ollama")
-    time.sleep(2)
+    time.sleep(1)
 
 def kill_all():
     print("[kill] HARD reset of GPU / LLM stack")

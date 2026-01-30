@@ -1,0 +1,86 @@
+{
+  "schema": {
+    "name": "idea_seed_library",
+    "version": "3.1",
+    "intended_use": "youtube_horror_shorts_high_stakes_supernatural"
+  },
+  "global_rules": {
+    "supernatural_allowed": true,
+    "supernatural_style": "implied or observed only",
+    "avoid_named_lore": true,
+    "avoid_graphic_content": true,
+    "first_person_required": true
+  },
+  "seeds": [
+    {
+      "id": "unacknowledged_person",
+      "mechanism": "a person or human-like presence appears in the narrator’s life or records that no one else recognizes",
+      "escalation": "the presence becomes more involved, closer, or more aware of the narrator",
+      "consequence": "the narrator suspects the presence is replacing or erasing them",
+      "supernatural_allowance": "the presence may not be human, but behaves as if it is learning how to be one"
+    },
+    {
+      "id": "contaminated_records",
+      "mechanism": "photos, videos, or records reveal an impossible figure, shape, or shadow that was never there",
+      "escalation": "the anomaly appears more frequently and in newer, more personal records",
+      "consequence": "the narrator believes something is entering reality through the records",
+      "supernatural_allowance": "the figure may be an entity that can only appear indirectly"
+    },
+    {
+      "id": "inherited_threat",
+      "mechanism": "a disturbing presence or phenomenon affects the narrator, then begins appearing around someone dependent on them",
+      "escalation": "the second person shows signs of being noticed or followed",
+      "consequence": "the narrator realizes the presence spreads through proximity or care",
+      "supernatural_allowance": "the presence behaves like a parasitic or predatory intelligence"
+    },
+    {
+      "id": "private_space_violation",
+      "mechanism": "something unseen occupies the narrator’s most private or protected space",
+      "escalation": "physical signs suggest awareness of being observed",
+      "consequence": "the narrator avoids being alone or sleeping normally",
+      "supernatural_allowance": "the presence may exist only when unobserved"
+    },
+    {
+      "id": "rule_learned_too_late",
+      "mechanism": "a subtle rule governs a place, object, or behavior",
+      "escalation": "each violation triggers a more severe reaction",
+      "consequence": "the narrator realizes the rule is enforced by something watching",
+      "supernatural_allowance": "the enforcement may come from an unseen entity tied to the environment"
+    },
+    {
+      "id": "false_memory_anchor",
+      "mechanism": "the narrator remembers a person or event that no longer exists in reality",
+      "escalation": "evidence increasingly contradicts the memory",
+      "consequence": "the narrator wonders if something altered reality or their mind",
+      "supernatural_allowance": "the discrepancy may be caused by a non-human intelligence altering perception"
+    },
+    {
+      "id": "growing_proximity",
+      "mechanism": "a shape, sound, or presence is always nearby but never fully visible",
+      "escalation": "the distance between it and the narrator steadily decreases",
+      "consequence": "the narrator restructures their life to avoid confined or dark spaces",
+      "supernatural_allowance": "the presence may be hunting or approaching without physical form"
+    },
+    {
+      "id": "attention_feeds_it",
+      "mechanism": "acknowledging or observing the phenomenon makes it stronger",
+      "escalation": "attempts to ignore it fail and increase its activity",
+      "consequence": "the narrator becomes hyper-aware of their own thoughts and reactions",
+      "supernatural_allowance": "the phenomenon may be sentient and responsive to awareness"
+    },
+    {
+      "id": "environmental_memory",
+      "mechanism": "a location reacts as if it remembers the narrator’s past actions",
+      "escalation": "responses become specific and intentional",
+      "consequence": "the narrator avoids places that feel aware of them",
+      "supernatural_allowance": "the environment may be influenced by an inhabiting presence"
+    },
+    {
+      "id": "delayed_consequence",
+      "mechanism": "a brief encounter with something unnatural seems harmless at first",
+      "escalation": "effects appear later in unrelated places or times",
+      "consequence": "the narrator realizes the encounter marked them",
+      "supernatural_allowance": "the entity may have attached itself without immediate effect"
+    }
+  ]
+}
