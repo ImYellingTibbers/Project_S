@@ -7,11 +7,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 RUNS_DIR = PROJECT_ROOT / "runs"
 
 STEPS = [
-    # {"label": "Step 0 - Script Creator", "script": "run_steps/0_manual_run.py"},
-    # {"label": "Step 1 - Script Generator", "script": "run_steps/1_script_generator.py"},
-    # {"label": "Step 2 - Image Generator", "script": "run_steps/2_image_generator_comfy.py"},
-    # {"label": "Step 3 - Voice Over Generator", "script": "run_steps/3_vo_generator.py"},
-    # {"label": "Step 4 - Timing Planner", "script": "run_steps/4_timing_planner.py"},
+    {"label": "Step 0 - Script Creator", "script": "run_steps/0_manual_run.py"},
+    {"label": "Step 1 - Script Generator", "script": "run_steps/1_script_generator.py"},
+    {"label": "Step 2 - Image Generator", "script": "run_steps/2_image_generator_comfy.py"},
+    {"label": "Step 3 - Voice Over Generator", "script": "run_steps/3_vo_generator.py"},
+    {"label": "Step 4 - Timing Planner", "script": "run_steps/4_timing_planner.py"},
     {"label": "Step 5 - Video Assembly", "script": "run_steps/5_video_assembly.py"},
     {"label": "Step 6 - Captions", "script": "run_steps/6_add_captions.py"},
 ]
