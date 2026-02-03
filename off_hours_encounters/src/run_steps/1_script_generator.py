@@ -115,7 +115,7 @@ Schema:
     raw = ollama_chat(OLLAMA_MODEL, system, user)
 
     # Extract the FIRST valid JSON object only
-    matches = re.finditer(r"\{.*?\}", raw, re.DOTALL)
+    matches = re.finditer(r"\{.*\}", raw, re.DOTALL)
     for m in matches:
         try:
             data = json.loads(m.group())
@@ -298,65 +298,20 @@ def gpt_image_prompts(
 ) -> List[Dict[str, str]]:
 
     system = """
-You generate STRICTLY literal, physically depictable image prompts
+Generate simple, literal descriptions of single video frames
 for a third-person urban legend horror short.
 
-ABSOLUTE RULES (NON-NEGOTIABLE):
+Each image must describe:
+- what is visible
+- who is present
+- what is physically happening
+- where it is happening
 
-1. Every image MUST depict something that can be physically seen.
-   - No mood, no tone, no atmosphere, no symbolism.
-   - No emotions, no vibes, no implication language.
-
-2. Every image MUST clearly show:
-   - WHO is present (people, entity, or both)
-   - WHAT is happening (a visible action or state)
-   - WHERE it is happening (basic physical setting)
-
-3. If people are present, they MUST be described as visible figures,
-   not vague silhouettes, unless the script explicitly implies distance or obstruction.
-
-4. If the entity is present or being demonstrated:
-   - Show the entity DOING something physically observable
-   If the entity is visible:
-    - Use the placeholder {{ENTITY}}
-    - Do NOT describe the entity in detail
-
-5. DO NOT describe:
-   - fear, dread, tension, unease
-   - cinematic framing
-   - lighting mood
-   - symbolism
-   - anything abstract or interpretive
-
-6. DO NOT add story information not explicitly present in the script.
-
-7. Each image prompt describes EXACTLY ONE moment in time.
-
-FORMAT RULES:
-- Plain, literal language
-- One paragraph per image
-- No adjectives that imply mood or emotion
-- Describe only what is visible in the frame
-
-PLACEHOLDER RULES (MANDATORY):
-
-- If a physical location is visible, use {{LOCATION}}.
-- If the main encounter character is visible, use {{MAIN_CHARACTER}}.
-- If the entity is visible, use {{ENTITY}}.
-
-DO NOT describe these directly.
-DO NOT paraphrase them.
-DO NOT partially describe them.
-
-Only use placeholders.
-
-Return ONLY valid JSON:
-
-{
-  "images": [
-    { "prompt": "...", "source_detail": "..." }
-  ]
-}
+Write one short paragraph per image.
+Describe only concrete, visible details.
+Do not explain, interpret, or summarize.
+Use placeholders exactly as provided.
+Return only valid JSON.
 """.strip()
 
     context = "\n".join(prior_prompts[-6:])
@@ -364,13 +319,9 @@ Return ONLY valid JSON:
     opening_directive = ""
     if is_opening:
         opening_directive = (
-            "OPENING IMAGE DIRECTIVE:\n"
-            "- This is the FIRST image of the video.\n"
-            "- Show the THREAT described by the warning in the script.\n"
-            "- Do NOT explain it.\n"
-            "- Do NOT show consequences yet.\n"
-            "- The image must make the rule feel necessary by showing the condition itself.\n"
-            "- The location MUST be represented using {{LOCATION}}.\n\n"
+            "OPENING IMAGE:\n"
+            "- Show the threat actively present in {{LOCATION}}.\n"
+            "- If a person is present, they are exposed or interrupted.\n\n"
         )
 
     user = f"""
@@ -381,27 +332,12 @@ SCRIPT CONTEXT:
 ANCHORS:
 Place: {place}
 Entity behavior: {entity_behavior}
-Entity canon: {entity_canon}
 Main encounter character canon: {main_character_canon}
-
-RECENT IMAGES:
-{context}
 
 CURRENT SCRIPT CHUNK:
 {chunk}
 
-STORY PHASE GUIDANCE:
-
-- If the script describes a WARNING or RULE:
-  Show the THREAT itself (fog, sound, signal, object, condition).
-  Do NOT show victims yet.
-
-- If the script explains the LEGEND or ENTITY:
-  Show the entity or phenomenon exactly as it is being described.
-
-- If the script tells the story of a PERSON encountering the entity:
-  Show the main encounter character and the entity in the same scene,
-  using the established character and entity descriptions.
+If the entity is present, show it physically interfering with space or movement.
 
 TASK:
 Generate {count} distinct image prompts.
@@ -642,14 +578,14 @@ def main():
             p, used_ent = inject_entity(p, entity_canon)
             
             if used_loc:
-                current_location = location
+                current_location = place
 
             anomaly = detect_visual_anomaly(
                 base_prompt=p,
                 script_context=chunk,
                 place=place,
                 is_opening=(idx == 0),
-                escalation_level=3 if idx == 0 else min(3, idx + 1),
+                escalation_level=1 if idx <= 1 else min(3, idx),
             )
 
             if anomaly != "NONE":
