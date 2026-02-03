@@ -38,6 +38,10 @@ SENTENCE_END_RE = re.compile(r"[.!?\u2026]")
 # Utilities
 # ============================================================
 
+LOCATION_TOKEN = "{{LOCATION}}"
+MAIN_CHARACTER_TOKEN = "{{MAIN_CHARACTER}}"
+ENTITY_TOKEN = "{{ENTITY}}"
+
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -68,6 +72,153 @@ def load_script_from_run(run_folder: Path) -> str:
 # Canon
 # ============================================================
 
+def _clean_short(s: str, max_len: int = 220) -> str:
+    s = re.sub(r"\s+", " ", (s or "").strip())
+    if len(s) > max_len:
+        s = s[:max_len].rsplit(" ", 1)[0].strip()
+    return s
+
+def extract_canons_from_script(script: str) -> Tuple[str, str, str, Dict[str, Any]]:
+    """
+    Returns:
+      place: short location anchor
+      entity_behavior: short behavior label/summary (safe + flexible for prompting)
+      entity_canon: visual description (comic-friendly, consistent, not too specific)
+      protagonist_profile: dict with identity traits inferred from script
+    """
+    system = """
+You extract legend anchors and canon descriptions from a third-person urban legend script.
+
+Rules:
+- Return ONLY valid JSON (no markdown, no extra text).
+- Do NOT add new story facts.
+- Keep descriptions concrete, visual, and generator-friendly.
+- Entity canon should be detailed enough for consistency, but not so specific that it becomes unrenderable.
+- Protagonist_profile should reflect what the script implies (age/gender), but avoid invented biography.
+
+Schema:
+{
+  "place": "short grounded place",
+  "entity_behavior": "short behavior summary (8-20 words)",
+  "entity_canon": "visual description of entity (20-45 words), avoid exact numbers/brands",
+  "protagonist_profile": {
+    "gender": "male|female|unknown",
+    "age_range": "teen|20s|30s|40s|50s|60+|unknown",
+    "ethnicity": "short descriptor or unknown",
+    "build": "short descriptor or unknown",
+    "hair": "short descriptor or unknown"
+  }
+}
+""".strip()
+
+    user = f"SCRIPT:\n{script}\n\nExtract canons."
+    raw = ollama_chat(OLLAMA_MODEL, system, user)
+
+    # Extract the FIRST valid JSON object only
+    matches = re.finditer(r"\{.*?\}", raw, re.DOTALL)
+    for m in matches:
+        try:
+            data = json.loads(m.group())
+            break
+        except json.JSONDecodeError:
+            continue
+    else:
+        raise RuntimeError(f"Failed to extract valid JSON from model output:\n{raw}")
+
+    place = _clean_short(data.get("place", ""), 80)
+    entity_behavior = _clean_short(data.get("entity_behavior", ""), 140)
+    entity_canon = _clean_short(data.get("entity_canon", ""), 240)
+
+    prof = data.get("protagonist_profile") or {}
+    if not isinstance(prof, dict):
+        prof = {}
+
+    # normalize expected keys
+    protagonist_profile = {
+        "gender": _clean_short(str(prof.get("gender", "unknown")), 24).lower(),
+        "age_range": _clean_short(str(prof.get("age_range", "unknown")), 24).lower(),
+        "ethnicity": _clean_short(str(prof.get("ethnicity", "unknown")), 48),
+        "build": _clean_short(str(prof.get("build", "unknown")), 48),
+        "hair": _clean_short(str(prof.get("hair", "unknown")), 64),
+    }
+
+    # sane fallbacks
+    if not place:
+        place = "a rural area"
+    if not entity_behavior:
+        entity_behavior = "a presence that appears when conditions are met"
+    if not entity_canon:
+        entity_canon = "a shadowy, humanoid figure with unsettling, wrong proportions"
+
+    return place, entity_behavior, entity_canon, protagonist_profile
+
+
+def create_main_character_canon(rng: random.Random, prof: Dict[str, Any]) -> str:
+    """
+    Uses script-derived identity traits (age/gender/etc),
+    but randomizes clothing + surface look locally for consistency across images.
+    """
+    # Identity traits from script (keep short)
+    gender = (prof.get("gender") or "unknown").lower()
+    age_range = (prof.get("age_range") or "unknown").lower()
+    ethnicity = (prof.get("ethnicity") or "unknown").strip()
+    build = (prof.get("build") or "unknown").strip()
+    hair = (prof.get("hair") or "unknown").strip()
+
+    # Clothing pools (adult-leaning, non-gimmicky, generator-friendly)
+    tops = [
+        "dark crewneck sweatshirt", "faded black t-shirt", "heather grey hoodie",
+        "dark flannel shirt", "plain long-sleeve thermal", "navy work shirt"
+    ]
+    outerwear = [
+        "worn denim jacket", "dark bomber jacket", "black canvas jacket",
+        "olive field jacket", "charcoal zip hoodie"
+    ]
+    bottoms = [
+        "dark jeans", "black work pants", "grey jeans", "dark cargo pants"
+    ]
+    footwear = [
+        "scuffed sneakers", "work boots", "dark running shoes"
+    ]
+    accessories = [
+        "a simple wristwatch", "a plain ring", "a small backpack", "a phone in hand", "none"
+    ]
+
+    # Build a compact identity phrase
+    parts = []
+
+    # Gender/age baseline
+    if gender in ("male", "female"):
+        gword = "man" if gender == "male" else "woman"
+        if age_range != "unknown":
+            parts.append(f"an adult {gword} in their {age_range}")
+        else:
+            parts.append(f"an adult {gword}")
+    else:
+        parts.append("an adult person")
+
+    # Optional traits (only if not unknown)
+    if ethnicity.lower() != "unknown":
+        parts.append(ethnicity)
+    if build.lower() != "unknown":
+        parts.append(build)
+    if hair.lower() != "unknown":
+        parts.append(hair)
+
+    identity = ", ".join(parts)
+
+    # Randomized outfit (deterministic via rng seed)
+    top = rng.choice(tops)
+    out = rng.choice(outerwear)
+    bot = rng.choice(bottoms)
+    shoe = rng.choice(footwear)
+    acc = rng.choice(accessories)
+
+    outfit = f"wearing a {top}, a {out}, {bot}, and {shoe}"
+    if acc != "none":
+        outfit += f", with {acc}"
+
+    return f"{identity}, {outfit}."
 
 # ============================================================
 # Local LLM (Ollama)
@@ -90,37 +241,9 @@ def ollama_chat(model: str, system: str, user: str) -> str:
     return resp.json()["message"]["content"]
 
 def extract_place_entity(script: str) -> Tuple[str, str]:
-    system = """
-You extract grounded story anchors from a confessional horror script.
-
-Rules:
-- Return ONLY valid JSON.
-- Keep outputs short, concrete, non-poetic.
-- Do NOT add new story facts.
-- Entity must be unseen, described ONLY by behavior or evidence.
-- Monetization-safe.
-
-Schema:
-{
-  "place": "...",
-  "entity": "..."
-}
-""".strip()
-
-    user = f"SCRIPT:\n{script}\n\nExtract anchors."
-    raw = ollama_chat(OLLAMA_MODEL, system, user)
-    # Extract the FIRST valid JSON object only
-    matches = re.finditer(r"\{.*?\}", raw, re.DOTALL)
-    for m in matches:
-        try:
-            data = json.loads(m.group())
-            break
-        except json.JSONDecodeError:
-            continue
-    else:
-        raise RuntimeError(f"Failed to extract valid JSON from model output:\n{raw}")
-    
-    return data["place"], data["entity"]
+    # Backwards-compatible helper: returns place + entity_behavior
+    place, entity_behavior, _entity_canon, _protagonist_profile = extract_canons_from_script(script)
+    return place, entity_behavior
 
 # ============================================================
 # Chunking
@@ -166,35 +289,69 @@ def gpt_image_prompts(
     script: str,
     chunk: str,
     place: str,
-    entity: str,
+    entity_behavior: str,
+    entity_canon: str,
+    main_character_canon: str,
     prior_prompts: List[str],
     count: int,
     is_opening: bool,
 ) -> List[Dict[str, str]]:
 
     system = """
-You generate concise, cinematic image prompts for a confessional horror short.
+You generate STRICTLY literal, physically depictable image prompts
+for a third-person urban legend horror short.
 
-CRITICAL STORY RULE:
-- Images must ONLY depict information that the narrator would plausibly know at THIS exact moment in the story.
-- Do NOT show future discoveries, future evidence, or implied outcomes early.
-- If something is not yet discovered in the narration, it must NOT appear.
+ABSOLUTE RULES (NON-NEGOTIABLE):
 
-VISUAL RULES:
-- Simple, grounded shots.
-- Prefer POV or environmental storytelling.
-- One primary subject per image.
-- Background must remain minimal and non-distracting.
-- The UPCOMING section is for mood and anticipation ONLY.
-- Do NOT depict objects, text, or evidence that appear only in UPCOMING.
+1. Every image MUST depict something that can be physically seen.
+   - No mood, no tone, no atmosphere, no symbolism.
+   - No emotions, no vibes, no implication language.
 
-CHARACTER RULES:
-- Do NOT show full faces of any person.
-- If a human is present, show only hands, silhouette, partial body, or hair.
-- If the entity is visible beyond silhouette, insert placeholder token:
-  {{ENTITY_BEHAVIOR}}
+2. Every image MUST clearly show:
+   - WHO is present (people, entity, or both)
+   - WHAT is happening (a visible action or state)
+   - WHERE it is happening (basic physical setting)
 
-Return ONLY a single JSON object (no markdown, no code fences, no extra text):
+3. If people are present, they MUST be described as visible figures,
+   not vague silhouettes, unless the script explicitly implies distance or obstruction.
+
+4. If the entity is present or being demonstrated:
+   - Show the entity DOING something physically observable
+   If the entity is visible:
+    - Use the placeholder {{ENTITY}}
+    - Do NOT describe the entity in detail
+
+5. DO NOT describe:
+   - fear, dread, tension, unease
+   - cinematic framing
+   - lighting mood
+   - symbolism
+   - anything abstract or interpretive
+
+6. DO NOT add story information not explicitly present in the script.
+
+7. Each image prompt describes EXACTLY ONE moment in time.
+
+FORMAT RULES:
+- Plain, literal language
+- One paragraph per image
+- No adjectives that imply mood or emotion
+- Describe only what is visible in the frame
+
+PLACEHOLDER RULES (MANDATORY):
+
+- If a physical location is visible, use {{LOCATION}}.
+- If the main encounter character is visible, use {{MAIN_CHARACTER}}.
+- If the entity is visible, use {{ENTITY}}.
+
+DO NOT describe these directly.
+DO NOT paraphrase them.
+DO NOT partially describe them.
+
+Only use placeholders.
+
+Return ONLY valid JSON:
+
 {
   "images": [
     { "prompt": "...", "source_detail": "..." }
@@ -209,10 +366,11 @@ Return ONLY a single JSON object (no markdown, no code fences, no extra text):
         opening_directive = (
             "OPENING IMAGE DIRECTIVE:\n"
             "- This is the FIRST image of the video.\n"
-            "- Show the MOST unsettling PHYSICAL EVIDENCE that appears later in the story, presented without context, explanation, or visible cause.\n"
-            "  but without context or explanation.\n"
-            "- No faces. No answers. No explanations.\n"
-            "- Make the viewer need to know how this happened.\n\n"
+            "- Show the THREAT described by the warning in the script.\n"
+            "- Do NOT explain it.\n"
+            "- Do NOT show consequences yet.\n"
+            "- The image must make the rule feel necessary by showing the condition itself.\n"
+            "- The location MUST be represented using {{LOCATION}}.\n\n"
         )
 
     user = f"""
@@ -222,7 +380,9 @@ SCRIPT CONTEXT:
 
 ANCHORS:
 Place: {place}
-Entity: {entity}
+Entity behavior: {entity_behavior}
+Entity canon: {entity_canon}
+Main encounter character canon: {main_character_canon}
 
 RECENT IMAGES:
 {context}
@@ -230,8 +390,29 @@ RECENT IMAGES:
 CURRENT SCRIPT CHUNK:
 {chunk}
 
+STORY PHASE GUIDANCE:
+
+- If the script describes a WARNING or RULE:
+  Show the THREAT itself (fog, sound, signal, object, condition).
+  Do NOT show victims yet.
+
+- If the script explains the LEGEND or ENTITY:
+  Show the entity or phenomenon exactly as it is being described.
+
+- If the script tells the story of a PERSON encountering the entity:
+  Show the main encounter character and the entity in the same scene,
+  using the established character and entity descriptions.
+
 TASK:
-Generate {count} distinct image prompts that visually advance this moment.
+Generate {count} distinct image prompts.
+
+Each prompt MUST explicitly describe:
+- WHO is visible in the image
+- WHAT is physically happening
+- WHAT the threat or entity is doing, if present
+
+Do NOT describe anything that cannot be directly seen.
+Do NOT imply outcomes.
 
 Each image must focus on ONE observable detail only.
 Do NOT combine multiple story beats into a single image.
@@ -383,10 +564,24 @@ Determine the most effective subtle visual anomaly for this image.
 # Post-processing
 # ============================================================
 
-def inject_entity(prompt: str, entity: str) -> Tuple[str, bool]:
-    uses_entity = "{{ENTITY_BEHAVIOR}}" in prompt
+def inject_location(prompt: str, location: str) -> Tuple[str, bool]:
+    uses_location = LOCATION_TOKEN in prompt
+    if uses_location:
+        prompt = prompt.replace(LOCATION_TOKEN, location)
+    return prompt, uses_location
+
+
+def inject_main_character(prompt: str, character_canon: str) -> Tuple[str, bool]:
+    uses_character = MAIN_CHARACTER_TOKEN in prompt
+    if uses_character:
+        prompt = prompt.replace(MAIN_CHARACTER_TOKEN, character_canon)
+    return prompt, uses_character
+
+
+def inject_entity(prompt: str, entity_canon: str) -> Tuple[str, bool]:
+    uses_entity = ENTITY_TOKEN in prompt
     if uses_entity:
-        prompt = prompt.replace("{{ENTITY_BEHAVIOR}}", entity)
+        prompt = prompt.replace(ENTITY_TOKEN, entity_canon)
     return prompt, uses_entity
 
 # ============================================================
@@ -399,12 +594,14 @@ def main():
     run = find_latest_run_folder()
     script = load_script_from_run(run)
 
-    place, entity = extract_place_entity(script)
+    place, entity_behavior, entity_canon, protagonist_profile = extract_canons_from_script(script)
+    main_character_canon = create_main_character_canon(rng, protagonist_profile)
 
     chunks = chunk_script(script)
 
     prior_prompts: List[str] = []
     out_chunks = []
+    current_location = place
 
     for idx, chunk in enumerate(chunks):
         past_script = " ".join(chunks[: idx + 1])
@@ -423,7 +620,9 @@ def main():
             script_context,
             chunk,
             place,
-            entity,
+            entity_behavior,
+            entity_canon,
+            main_character_canon,
             prior_prompts,
             img_count,
             is_opening=(idx == 0),
@@ -431,10 +630,19 @@ def main():
 
         processed = []
         for img in images:
-            p, u_e = inject_entity(
-                img["prompt"],
-                entity,
-            )
+            p = img["prompt"]
+
+            # Location: only inject if placeholder is present
+            p, used_loc = inject_location(p, current_location)
+
+            # Main character
+            p, used_char = inject_main_character(p, main_character_canon)
+
+            # Entity
+            p, used_ent = inject_entity(p, entity_canon)
+            
+            if used_loc:
+                current_location = location
 
             anomaly = detect_visual_anomaly(
                 base_prompt=p,
@@ -449,7 +657,9 @@ def main():
 
             processed.append({
                 "prompt": p,
-                "uses_entity": u_e,
+                "uses_location": used_loc,
+                "uses_main_character": used_char,
+                "uses_entity": used_ent,
                 "uses_anomaly": anomaly != "NONE",
                 "anomaly": None if anomaly == "NONE" else anomaly,
             })
@@ -467,7 +677,10 @@ def main():
 
     output = {
         "place": place,
-        "entity": entity,
+        "entity_behavior": entity_behavior,
+        "entity_canon": entity_canon,
+        "main_character_profile": protagonist_profile,
+        "main_character_canon": main_character_canon,
         "chunks": out_chunks,
     }
 

@@ -63,6 +63,11 @@ STYLE_PREFIX = (
     "nothing exaggerated, nothing theatrical"
 )
 
+VIBE_PREFIX = (
+    "low-key lighting, muted contrast, reduced saturation, "
+    "cool-neutral color grading, nighttime lighting"
+)
+
 # --- COMFYUI HELPERS ---
 def get_latest_run():
     if not RUNS_DIR.exists():
@@ -84,7 +89,7 @@ def get_latest_run():
 def patch_workflow(wf: dict, prompt: str, seed: int, filename: str) -> dict:
     """Targets specific node IDs: 92 (Positive), 50 (Negative), 55 (KSampler)"""
     wf = json.loads(json.dumps(wf))
-    if "92" in wf: wf["92"]["inputs"]["text"] = f"{STYLE_PREFIX}, {prompt}"
+    if "92" in wf: wf["92"]["inputs"]["text"] = f"{STYLE_PREFIX}, {VIBE_PREFIX}, {prompt}"
     if "50" in wf: wf["50"]["inputs"]["text"] = NEGATIVE_PROMPT
     if "55" in wf:
         wf["55"]["inputs"]["seed"] = seed
