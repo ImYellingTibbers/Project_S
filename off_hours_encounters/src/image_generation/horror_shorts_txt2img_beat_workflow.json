@@ -26,8 +26,8 @@
   "55": {
     "inputs": {
       "seed": 152779449093294,
-      "steps": 30,
-      "cfg": 8.5,
+      "steps": 26,
+      "cfg": 7,
       "sampler_name": "dpmpp_2m_sde",
       "scheduler": "karras",
       "denoise": 1,

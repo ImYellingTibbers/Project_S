@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 RUNS_DIR = PROJECT_ROOT / "runs"
 
 STEPS = [
-    {"label": "Step 0 - Script Creator", "script": "run_steps/0_manual_run.py"},
+    # {"label": "Step 0 - Script Creator", "script": "run_steps/0_manual_run.py"},
     {"label": "Step 1 - Script Generator", "script": "run_steps/1_script_generator.py"},
     {"label": "Step 2 - Image Generator", "script": "run_steps/2_image_generator_comfy.py"},
     # {"label": "Step 3 - Voice Over Generator", "script": "run_steps/3_vo_generator.py"},

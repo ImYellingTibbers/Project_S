@@ -64,13 +64,6 @@ def load_script_from_run(run_folder: Path) -> str:
         raise RuntimeError("script.json missing valid 'script'")
     return script.strip()
 
-def get_story_phase(chunk: str, *, witness_locked: bool, is_opening: bool) -> str:
-    if is_opening:
-        return "HOOK"
-    if witness_locked:
-        return "WITNESS"
-    return "LEGEND"
-
 # ============================================================
 # Canon
 # ============================================================
@@ -96,68 +89,15 @@ def ollama_chat(model: str, system: str, user: str) -> str:
     resp.raise_for_status()
     return resp.json()["message"]["content"]
 
-def extract_entity_canon(script: str, entity_name: str) -> str:
-    system = """
-You extract a SINGLE, reusable visual description of a folklore entity.
-
-Rules:
-- Base the description ONLY on the script.
-- Do NOT invent new traits.
-- Keep it purely visual.
-- One sentence.
-- No metaphors, no poetry.
-
-Return ONLY plain text.
-""".strip()
-
-    user = f"""
-ENTITY NAME:
-{entity_name}
-
-SCRIPT:
-{script}
-
-TASK:
-Describe what the entity visibly looks like.
-""".strip()
-
-    return ollama_chat(OLLAMA_MODEL, system, user).strip()
-
-def extract_witness_canon(script_chunk: str) -> str:
-    system = """
-You extract a reusable visual description of a human witness.
-
-Rules:
-- Adult only.
-- Prefer male if unspecified.
-- Specific but neutral, everyday clothing (no logos, no uniforms, no bright colors).
-- Two sentences. First sentence describes the person (age range, gender, general build), second sentence describes their clothing (i.e. red hoodie, black pants, baseball cap/beanie). Clothing must make sense in the setting of the script.
-- No personality traits.
-- No story events.
-
-Return ONLY plain text.
-""".strip()
-
-    user = f"""
-SCRIPT SEGMENT:
-{script_chunk}
-
-TASK:
-Describe what the witness looks like visually.
-""".strip()
-
-    return ollama_chat(OLLAMA_MODEL, system, user).strip()
-
 def extract_place_entity(script: str) -> Tuple[str, str]:
     system = """
-You extract grounded story anchors from an urban legend or folklore horror script.
+You extract grounded story anchors from a confessional horror script.
 
 Rules:
 - Return ONLY valid JSON.
 - Keep outputs short, concrete, non-poetic.
 - Do NOT add new story facts.
-- Entity may be named, described, or physically characterized if present in the legend.
-- Entity description must be stable and reusable across images.
+- Entity must be unseen, described ONLY by behavior or evidence.
 - Monetization-safe.
 
 Schema:
@@ -181,34 +121,6 @@ Schema:
         raise RuntimeError(f"Failed to extract valid JSON from model output:\n{raw}")
     
     return data["place"], data["entity"]
-
-def is_witness_chunk_llm(script_so_far: str, chunk: str) -> bool:
-    system = """
-You determine whether a story has transitioned into following
-a specific human witness’s experience.
-
-Rules:
-- Return ONLY one of: YES or NO
-- YES only if a specific person is now being followed
-- General legend exposition = NO
-- Vague or anonymous warnings = NO
-- Once YES, future chunks will remain YES
-- Do NOT guess or assume
-""".strip()
-
-    user = f"""
-STORY SO FAR:
-{script_so_far}
-
-CURRENT CHUNK:
-{chunk}
-
-QUESTION:
-Does this chunk introduce a specific human witness whose experience is now being narrated?
-""".strip()
-
-    raw = ollama_chat(OLLAMA_MODEL, system, user).strip().upper()
-    return raw == "YES"
 
 # ============================================================
 # Chunking
@@ -257,38 +169,30 @@ def gpt_image_prompts(
     entity: str,
     prior_prompts: List[str],
     count: int,
-    *,
-    phase: str,
+    is_opening: bool,
 ) -> List[Dict[str, str]]:
 
     system = """
-You generate concise image prompts for an urban legend / folklore horror short.
+You generate concise, cinematic image prompts for a confessional horror short.
 
 CRITICAL STORY RULE:
-- Images must ONLY depict information that is already known or being described at THIS moment in the narration.
-- Do NOT show future events, future victims, or outcomes that have not been revealed yet.
+- Images must ONLY depict information that the narrator would plausibly know at THIS exact moment in the story.
+- Do NOT show future discoveries, future evidence, or implied outcomes early.
+- If something is not yet discovered in the narration, it must NOT appear.
 
-VISUAL TONE:
-- Illustrated folklore style, not photorealistic.
-- Dark, graphic-novel or storybook horror feel.
-- Simple compositions with strong shapes and shadows.
-- Grounded, literal visuals — no abstract or symbolic imagery.
+VISUAL RULES:
+- Simple, grounded shots.
+- Prefer POV or environmental storytelling.
+- One primary subject per image.
+- Background must remain minimal and non-distracting.
+- The UPCOMING section is for mood and anticipation ONLY.
+- Do NOT depict objects, text, or evidence that appear only in UPCOMING.
 
-STORY FLOW GUIDANCE:
-- Early images establish the warning or threat.
-- Middle images show how the legend appears or behaves.
-- Later images may show a person encountering the legend, if the script does.
-
-CHARACTER GUIDANCE:
-- Adults preferred.
-- If a recurring entity or witness appears, keep their look consistent.
-- Use placeholders when appropriate:
-  {{ENTITY_CANON}}, {{WITNESS_CANON}}
-
-COMPOSITION RULES:
-- One clear subject per image.
-- Prefer people or places over empty atmosphere.
-- Everything shown should plausibly exist in the scene.
+CHARACTER RULES:
+- Do NOT show full faces of any person.
+- If a human is present, show only hands, silhouette, partial body, or hair.
+- If the entity is visible beyond silhouette, insert placeholder token:
+  {{ENTITY_BEHAVIOR}}
 
 Return ONLY a single JSON object (no markdown, no code fences, no extra text):
 {
@@ -300,10 +204,19 @@ Return ONLY a single JSON object (no markdown, no code fences, no extra text):
 
     context = "\n".join(prior_prompts[-6:])
 
-    user = f"""
-STORY PHASE:
-{phase}
+    opening_directive = ""
+    if is_opening:
+        opening_directive = (
+            "OPENING IMAGE DIRECTIVE:\n"
+            "- This is the FIRST image of the video.\n"
+            "- Show the MOST unsettling PHYSICAL EVIDENCE that appears later in the story, presented without context, explanation, or visible cause.\n"
+            "  but without context or explanation.\n"
+            "- No faces. No answers. No explanations.\n"
+            "- Make the viewer need to know how this happened.\n\n"
+        )
 
+    user = f"""
+{opening_directive}
 SCRIPT CONTEXT:
 {script}
 
@@ -320,16 +233,8 @@ CURRENT SCRIPT CHUNK:
 TASK:
 Generate {count} distinct image prompts that visually advance this moment.
 
-Each image must focus on ONE observable, physical detail.
-
-MANDATORY:
-- Every image must include at least one of:
-  - the place
-  - the entity
-  - a human figure
-- No symbolic, abstract, or metaphorical imagery
-- No “visions”, “dreamlike”, or internal imagery
-- Everything shown must plausibly exist in the scene
+Each image must focus on ONE observable detail only.
+Do NOT combine multiple story beats into a single image.
 """.strip()
 
     for attempt in range(2):
@@ -478,12 +383,11 @@ Determine the most effective subtle visual anomaly for this image.
 # Post-processing
 # ============================================================
 
-def inject_canon(prompt: str, *, entity: str | None, witness: str | None) -> str:
-    if entity and "{{ENTITY_CANON}}" in prompt:
-        prompt = prompt.replace("{{ENTITY_CANON}}", entity)
-    if witness and "{{WITNESS_CANON}}" in prompt:
-        prompt = prompt.replace("{{WITNESS_CANON}}", witness)
-    return prompt
+def inject_entity(prompt: str, entity: str) -> Tuple[str, bool]:
+    uses_entity = "{{ENTITY_BEHAVIOR}}" in prompt
+    if uses_entity:
+        prompt = prompt.replace("{{ENTITY_BEHAVIOR}}", entity)
+    return prompt, uses_entity
 
 # ============================================================
 # Main
@@ -496,39 +400,24 @@ def main():
     script = load_script_from_run(run)
 
     place, entity = extract_place_entity(script)
-    entity_canon = extract_entity_canon(script, entity)
 
     chunks = chunk_script(script)
 
     prior_prompts: List[str] = []
     out_chunks = []
-    
-    witness_canon: str | None = None
-    witness_locked = False
-
-    script_so_far = ""
 
     for idx, chunk in enumerate(chunks):
-        script_so_far = f"{script_so_far} {chunk}".strip()
-
-        if not witness_locked and is_witness_chunk_llm(script_so_far, chunk):
-            witness_canon = extract_witness_canon(chunk)
-            witness_locked = True
+        past_script = " ".join(chunks[: idx + 1])
 
         next_chunk = ""
         if idx + 1 < len(chunks):
             next_chunk = chunks[idx + 1]
 
-        script_context = script
-
+        script_context = past_script
+        if next_chunk:
+            script_context += "\n\nUPCOMING (FORESHADOW ONLY):\n" + next_chunk
         wc = len(chunk.split())
         img_count = images_for_chunk(wc)
-
-        phase = get_story_phase(
-            chunk,
-            witness_locked=witness_locked,
-            is_opening=(idx == 0),
-        )
 
         images = gpt_image_prompts(
             script_context,
@@ -537,33 +426,30 @@ def main():
             entity,
             prior_prompts,
             img_count,
-            phase=phase,
+            is_opening=(idx == 0),
         )
 
         processed = []
         for img in images:
-            p = inject_canon(
+            p, u_e = inject_entity(
                 img["prompt"],
-                entity=entity_canon,
-                witness=witness_canon,
+                entity,
             )
 
-            anomaly = "NONE"
-
-            if phase in ("HOOK", "LEGEND") and not witness_locked:
-                anomaly = detect_visual_anomaly(
-                    base_prompt=p,
-                    script_context=chunk,
-                    place=place,
-                    is_opening=(phase == "HOOK"),
-                    escalation_level=0
-                )
+            anomaly = detect_visual_anomaly(
+                base_prompt=p,
+                script_context=chunk,
+                place=place,
+                is_opening=(idx == 0),
+                escalation_level=3 if idx == 0 else min(3, idx + 1),
+            )
 
             if anomaly != "NONE":
                 p = f"{p}, subtle irregularity: {anomaly}"
 
             processed.append({
                 "prompt": p,
+                "uses_entity": u_e,
                 "uses_anomaly": anomaly != "NONE",
                 "anomaly": None if anomaly == "NONE" else anomaly,
             })
@@ -574,7 +460,6 @@ def main():
 
         out_chunks.append({
             "chunk_index": idx,
-            "story_phase": phase,
             "script_text": chunk,
             "word_count": wc,
             "image_prompts": processed,
@@ -583,8 +468,6 @@ def main():
     output = {
         "place": place,
         "entity": entity,
-        "entity_canon": entity_canon,
-        "witness_canon": witness_canon,
         "chunks": out_chunks,
     }
 
