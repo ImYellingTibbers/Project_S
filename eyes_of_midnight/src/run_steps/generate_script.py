@@ -19,6 +19,8 @@ from story_arcs import get_random_story_arc
 
 from idea_generator import generate_best_horror_idea
 
+from create_vo import generate_wav
+
 # ============================================================
 # Environment
 # ============================================================
@@ -598,9 +600,24 @@ def generate_full_story() -> str:
     full_script += "\n\n" + act_5_text
 
 
-    return full_script
+    return {
+        "act_1": act_1_text,
+        "act_2": act_2_text,
+        "act_3": act_3_text,
+        "act_4": act_4_text,
+        "act_5": act_5_text,
+        "full_script": full_script,
+    }
 
 
 if __name__ == "__main__":
-    script = generate_full_story()
-    print(script)
+    result = generate_full_story()
+    script_dir = Path("runs/scripts")
+    script_dir.mkdir(parents=True, exist_ok=True)
+
+    script_path = script_dir / "full_script.txt"
+    script_path.write_text(result["full_script"], encoding="utf-8")
+
+    print(f"[SCRIPT] wrote {script_path.resolve()}", flush=True)
+
+    print("All acts generated.")
