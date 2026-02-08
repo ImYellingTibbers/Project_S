@@ -7,9 +7,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 RUNS_DIR = PROJECT_ROOT / "runs"
 
 STEP_1 = {"label": "Step 1 - Generate Script", "script": "run_steps/generate_script.py"}
+STEP_2 = {"label": "Step 2 - Create VO", "script": "run_steps/create_vo.py"}
+STEP_3 = {"label": "Step 3 - Generate Images", "script": "run_steps/generate_images.py"}
 
 STEPS = [
-    STEP_1,
+    # STEP_1,
+    # STEP_2,
+    STEP_3,
 ]
 
 def run_step(label, script_rel_path):

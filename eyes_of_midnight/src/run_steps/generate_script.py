@@ -19,8 +19,6 @@ from story_arcs import get_random_story_arc
 
 from idea_generator import generate_best_horror_idea
 
-from create_vo import generate_wav
-
 # ============================================================
 # Environment
 # ============================================================
@@ -240,7 +238,7 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
             {"role": "user", "content": user},
         ],
         temperature=0.5,
-        max_tokens=800,
+        max_tokens=1800,
     )
 
     act_pattern = re.compile(r"\bACT\s+([1-5])\b", re.IGNORECASE)
@@ -611,13 +609,44 @@ def generate_full_story() -> str:
 
 
 if __name__ == "__main__":
-    result = generate_full_story()
-    script_dir = Path("runs/scripts")
+    from datetime import datetime
+
+    # ------------------------------------------------------------
+    # Run folder setup
+    # ------------------------------------------------------------
+    RUNS_ROOT = Path(__file__).resolve().parents[2] / "runs"
+    run_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    run_dir = RUNS_ROOT / run_id
+
+    script_dir = run_dir / "script"
+    paragraph_dir = script_dir / "paragraphs"
+
     script_dir.mkdir(parents=True, exist_ok=True)
+    paragraph_dir.mkdir(parents=True, exist_ok=True)
 
-    script_path = script_dir / "full_script.txt"
-    script_path.write_text(result["full_script"], encoding="utf-8")
+    # ------------------------------------------------------------
+    # Generate script
+    # ------------------------------------------------------------
+    result = generate_full_story()
+    full_script = result["full_script"].strip()
 
-    print(f"[SCRIPT] wrote {script_path.resolve()}", flush=True)
+    # Write full script
+    full_script_path = script_dir / "full_script.txt"
+    full_script_path.write_text(full_script, encoding="utf-8")
 
-    print("All acts generated.")
+    # ------------------------------------------------------------
+    # Split into paragraphs
+    # Rule: 2+ newlines = paragraph break
+    # ------------------------------------------------------------
+    paragraphs = [
+        p.strip()
+        for p in re.split(r"\n\s*\n+", full_script)
+        if p.strip()
+    ]
+
+    for idx, paragraph in enumerate(paragraphs):
+        p_path = paragraph_dir / f"p{idx:03d}.txt"
+        p_path.write_text(paragraph, encoding="utf-8")
+
+    print(f"[SCRIPT] run created: {run_dir.resolve()}", flush=True)
+    print(f"[SCRIPT] paragraphs written: {len(paragraphs)}", flush=True)
