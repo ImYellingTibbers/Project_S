@@ -56,13 +56,30 @@ NEGATIVE_PROMPT = (
 )
 
 STYLE_PREFIX = (
-    "photorealistic still photograph, realistic interior or exterior, "
-    "modern lived-in environment, ordinary location, "
-    "single practical light source, natural shadows, "
-    "muted color palette, subdued contrast, "
-    "documentary realism, unstaged, observational, "
-    "quiet, tense, uneventful moment, "
-    "eye-level camera, 35mm lens, natural depth of field"
+    "photorealistic nighttime photograph, real-world location, "
+    "quiet residential or urban environment, "
+    "empty but clearly intended for people, "
+    "streetlights, porch lights, traffic signals, or interior lamps as the only light sources, "
+    "deep shadows swallowing detail, limited visibility, "
+    "cool muted color tones, low saturation, "
+    "natural grain, slight sensor noise, realistic exposure, "
+    "human eye-level viewpoint, standing perspective, "
+    "static composition, no motion, no action, "
+    "documentary realism, uncinematic, unstylized, "
+    "uneasy calm, lingering tension, something feels wrong but nothing is happening"
+)
+
+THUMBNAIL_STYLE_PREFIX = (
+    "photorealistic nighttime photograph, "
+    "strong visual contrast, high readability at small size, "
+    "one dominant subject or area of focus, "
+    "heavy surrounding darkness, "
+    "streetlight glow, window light, or doorway light cutting through darkness, "
+    "suggested human presence through distant silhouette or shadow only, "
+    "no visible faces, no detail confirmation, "
+    "quiet but threatening atmosphere, "
+    "simple composition, bold shapes, negative space, "
+    "feels like witnessing something you should not be seeing"
 )
 
 # ============================================================
@@ -116,30 +133,37 @@ def get_latest_run_with_script() -> Path:
 
 def generate_image_prompts(script_text: str) -> Dict[str, str]:
     system = (
-        "You are generating image prompts for a long-form confessional horror video.\n\n"
-        "The story is realistic, first-person, modern, and non-supernatural.\n"
-        "You must avoid faces, people, creatures, action, or obvious horror tropes.\n\n"
+        "You are analyzing a full confessional horror narration script.\n\n"
+        "This is realistic, first-person horror.\n"
+        "No supernatural elements. No monsters. No fantasy.\n\n"
+        "You must FIRST determine the dominant real-world setting that emotionally defines the entire story.\n"
+        "This is the place the listener subconsciously associates with the fear.\n\n"
+        "Then generate image prompts using these rules.\n\n"
         "OUTPUT STRICT JSON ONLY with exactly three fields:\n"
         "- background_prompt\n"
         "- thumbnail_prompt_a\n"
         "- thumbnail_prompt_b\n\n"
         "BACKGROUND PROMPT RULES:\n"
-        "- One static environment\n"
-        "- Realistic, ordinary location\n"
-        "- No characters present\n"
-        "- Designed to hold visual interest for 10–15 minutes with slow pan/zoom\n\n"
+        "- One real location only\n"
+        "- Empty of people, but clearly human-built\n"
+        "- Nighttime or near-darkness\n"
+        "- Ordinary, believable place\n"
+        "- Designed to sit behind narration for long duration\n\n"
         "THUMBNAIL PROMPT RULES:\n"
-        "- Each thumbnail must depict a DIFFERENT scene\n"
-        "- One clear focal object or location\n"
-        "- Implicit tension, unanswered question\n"
-        "- Dark but realistic\n"
-        "- No text, no faces\n"
+        "- Thumbnails are marketing images, not story scenes\n"
+        "- Each thumbnail must present a visual question\n"
+        "- Focus on isolation, distance, or being watched\n"
+        "- Use roads, windows, doorways, alleys, or streetlights\n"
+        "- Strong contrast and immediate clarity\n"
+        "- No text, no faces, no explicit threat"
     )
 
     user = (
-        "Here is the full narration script:\n\n"
+        "Here is the full narration script.\n"
+        "You must analyze the entire script before deciding anything.\n\n"
         f"{script_text}\n\n"
-        "Generate the three image prompts now."
+        "Determine the dominant setting and psychological tension.\n"
+        "Then generate the prompts."
     )
 
     raw = call_llm(
@@ -175,7 +199,11 @@ class ComfyConfig:
 
 def patch_workflow(workflow: dict, prompt: str, seed: int, filename_prefix: str) -> dict:
     wf = json.loads(json.dumps(workflow))
-    wf["92"]["inputs"]["text"] = f"{STYLE_PREFIX}, {prompt}"
+    style = STYLE_PREFIX
+    if "thumbnail" in filename_prefix:
+        style = THUMBNAIL_STYLE_PREFIX
+
+    wf["92"]["inputs"]["text"] = f"{style}, {prompt}"
     wf["50"]["inputs"]["text"] = NEGATIVE_PROMPT
     wf["55"]["inputs"]["seed"] = seed
     wf["55"]["inputs"]["cfg"] = 8.0

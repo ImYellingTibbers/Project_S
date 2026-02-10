@@ -83,34 +83,35 @@ def call_llm(
 
 def generate_long_form_hook(idea: str) -> str:
     system = (
-        "You are writing the opening paragraph of a realistic first-person horror story.\n\n"
-        "This is NOT a teaser, summary, or reflection.\n"
-        "This is how the narrator actually starts telling the story.\n\n"
-        "HOOK REQUIREMENTS:\n"
+        "You are writing the opening paragraph of a Reddit-style first-person horror account.\n\n"
+        "This is NOT a teaser, cold open, or in-the-moment scene.\n"
+        "This is the narrator explaining why they are posting the story.\n\n"
+        "OPENING REQUIREMENTS:\n"
         "- First person\n"
-        "- Sounds like someone explaining how something started\n"
-        "- Natural, conversational, understated\n"
-        "- 2–4 sentences\n"
-        "- ~25–35 words\n\n"
-        "CONTENT RULES:\n"
-        "- Begin in a specific moment, situation, or routine\n"
-        "- Include ONE concrete action the narrator took that mattered\n"
-        "- The narrator does NOT yet understand the full danger\n"
-        "- Unease should be present but not named\n\n"
-        "STYLE CONSTRAINTS:\n"
-        "- No dramatic framing or moral lessons\n"
-        "- No explicit hindsight language like 'I should have known' or 'looking back'\n"
-        "- No abstract metaphors\n"
-        "- No supernatural elements\n\n"
-        "This hook must feel like the first paragraph of a true account someone is about to explain."
+        "- Past tense\n"
+        "- Calm, grounded, conversational\n"
+        "- 3–5 sentences\n"
+        "- ~45–70 words\n\n"
+        "STRUCTURAL REQUIREMENTS:\n"
+        "- Establish time distance (months or years ago)\n"
+        "- Establish life context (job, trip, relationship, routine, age range)\n"
+        "- Make it clear nothing felt dangerous at first\n"
+        "- Imply the story has lingered in the narrator’s mind\n\n"
+        "STYLE RULES:\n"
+        "- No urgency\n"
+        "- No foreshadowing phrases like 'that was the first mistake'\n"
+        "- No moral lessons\n"
+        "- No dramatic framing\n"
+        "- No supernatural language\n"
+        "- Do not mention fear yet\n\n"
+        "This should feel like the first paragraph of a long Reddit post."
     )
 
     user = (
         f"Core horror idea:\n{idea}\n\n"
-        "Write the opening paragraph of the story.\n"
-        "Do not summarize the story.\n"
-        "Do not explain consequences.\n"
-        "Do not reference future events.\n"
+        "Write ONLY the opening paragraph.\n"
+        "Do not describe the main incident yet.\n"
+        "Do not reference later events.\n"
         "Do not use proper nouns.\n"
         "Output ONLY the paragraph text."
     )
@@ -120,8 +121,8 @@ def generate_long_form_hook(idea: str) -> str:
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        temperature=0.5,
-        max_tokens=120,
+        temperature=0.45,
+        max_tokens=250,
     )
 
 
@@ -144,7 +145,8 @@ def generate_concept_and_hook() -> Dict[str, str]:
         "- First-person adult narrator\n"
         "- Realistic modern context\n"
         "- No supernatural elements\n"
-        "- No proper nouns (no full names, no exact street names, no brand names)\n"
+        "- No full names, exact addresses, or brand names\n"
+        "- Broad locations are allowed (regions, states, highways)\n"
         "- Use roles/descriptors only (e.g., 'a coworker', 'my landlord')\n"
         "- The idea must remain recognizable and central\n"
         "- Do NOT rewrite or replace the hook\n\n"
@@ -195,7 +197,6 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
         "Use them ONLY as structural references.\n\n"
         f"{reference_block}\n\n"
         "The story MUST follow this narrative progression:\n\n"
-        "This story is based on the following real-world horror idea and must not introduce new anomalies:\n"
         f"{idea}\n\n"
         "1. Signal: an anomaly appears with no immediate cost\n"
         "2. Pattern: repetition and specificity emerge\n"
@@ -211,11 +212,11 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
         "Create a 5-act structure for a 10–15 minute spoken horror story.\n"
         "Each act MUST include a target word count.\n\n"
         "Acts:\n"
-        "- Act 1: ~180-220 words (hook + anomaly introduction)\n"
-        "- Act 2: ~200-240 words (escalation + pattern recognition)\n"
-        "- Act 3: ~220-260 words (personal cost + discovery)\n"
-        "- Act 4: ~220-260 words (mistake + confrontation)\n"
-        "- Act 5: ~180-220 words (aftermath + unresolved dread)\n\n"
+        "- Act 1: ~220-250 words (hook + anomaly introduction)\n"
+        "- Act 2: ~220-250 words (escalation + pattern recognition)\n"
+        "- Act 3: ~220-250 words (personal cost + discovery)\n"
+        "- Act 4: ~220-250 words (mistake + confrontation)\n"
+        "- Act 5: ~200-240 words (aftermath + unresolved dread)\n\n"
         "Each act should include:\n"
         "- ACT NAME\n"
         "- TARGET WORD COUNT\n"
@@ -238,7 +239,7 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
             {"role": "user", "content": user},
         ],
         temperature=0.5,
-        max_tokens=1800,
+        max_tokens=800,
     )
 
     act_pattern = re.compile(r"\bACT\s+([1-5])\b", re.IGNORECASE)
@@ -286,46 +287,45 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
 # Step 3: Write Each Act
 # ============================================================
 
-def write_act(act: Dict[str, str], context: str, concept: Dict[str, str], act_number: int) -> str:
+def write_act(
+    act: Dict[str, str],
+    context: str,
+    concept: Dict[str, str],
+    act_number: int,
+    target_words: int,
+) -> str:
     system = (
-        "You are writing immersive horror prose for spoken narration.\n"
-        "Language must be natural, restrained, and emotionally believable.\n"
-        "Avoid explaining the horror. Show consequences instead.\n\n"
-        "Each act MUST reflect its emotional phase:\n"
-        "- Act 1: mild unease, rationalization, subtle discomfort\n"
-        "- Act 2: anxiety, vigilance, pattern awareness\n"
-        "- Act 3: isolation, sleep disruption, emotional cost\n"
-        "- Act 4: panic, urgency, loss of composure\n"
-        "- Act 5: exhaustion, resignation, unresolved dread\n\n"
-        "IMPORTANT CLARIFICATION:\n"
-        "- Physical danger MAY occur before Act 4 if it is contained, interrupted, or escaped\n"
-        "- Containment examples: locked doors, distance, witnesses, speed, police arrival\n"
-        "- Danger is NOT resolution if the threat remains unidentified or unresolved\n\n"
-        "Do NOT reuse events, locations, situations, or phrasing from any prior examples."
+        "You are writing a continuous first-person horror account intended for spoken narration.\n\n"
+        "Write naturally, as if recalling a real event without awareness of structure or rules.\n"
+        "Maintain a grounded, conversational tone.\n"
+        "Do not explain or analyze events in a generalized or instructional way.\n"
+        "Brief hindsight framing is allowed if it reflects uncertainty, rationalization, or memory gaps.\n"
+        "Let scenes unfold through memory, action, and reaction.\n\n"
+        "The story is realistic and non-supernatural.\n"
+        "The narrator does not know the full truth.\n\n"
+        "IMPORTANT:\n"
+        "- Write as if this is a real experience being recalled.\n"
+        "- Prioritize flow, causality, and lived detail over compliance.\n\n"
+        "After the midpoint of the story, do not introduce new recurring motifs. "
+        "Only reuse, intensify, or recontextualize motifs already established.\n\n"
+        "OUTPUT RULE:\n"
+        "- Output ONLY prose. No labels. No explanations."
     )
 
     user = (
         f"Context so far:\n{context}\n\n"
         f"Core idea that must remain central:\n{concept['CORE ANOMALY']}\n\n"
         f"Write the following act as prose:\n"
-        f"{json.dumps(act, indent=2)}\n\n"
-        "CRITICAL CONSTRAINTS:\n"
-        "- Write CLOSE to the target word count specified above\n"
-        "- Do NOT underwrite\n"
-        "- Do NOT restate the core anomaly; only show its effects\n"
-        "- Natural pacing, spoken narration\n"
-        "- First person\n"
-        "- No proper nouns (no full names, no exact addresses, no brand names)\n"
-        "- Keep antagonist deniable: no explicit admissions like 'I was watching you'\n"
-        "- Implicit intent is allowed if inferred through actions, timing, or proximity\n"
-        "- No exposition dumps\n"
-        "- No moralizing\n"
-        "- End the act with unease, not resolution\n\n"
-        "- At least once, the narrator consciously chooses not to tell someone or not to say something aloud\n"
-        f"ACT-SCOPE HARD RULES:\n"
-        f"- Follow ONLY the scope rules for Act {act_number}.\n"
-        f"- Do NOT introduce events reserved for later acts.\n"
-        f"- Do NOT resolve or climax early.\n\n"
+        f"Act purpose:\n{act.get('PURPOSE', '')}\n\nKey events to cover:\n{act.get('KEY EVENTS', '')}\n\n"
+        f"TARGET LENGTH:\n"
+        f"- Write approximately {target_words} words.\n"
+        f"- Hard stop at {target_words + 40} words.\n"
+        f"- Do NOT exceed this length.\n\n"
+        "Write this act according to the outline below.\n"
+        "Do not summarize or foreshadow future acts.\n"
+        "Stay inside the narrator's limited perspective.\n"
+        "At least once in this act, the narrator must draw a reasonable but incorrect conclusion about what is happening.\n"
+        "Do not correct it within the same paragraph.\n\n"
     )
 
     return call_llm(
@@ -334,7 +334,7 @@ def write_act(act: Dict[str, str], context: str, concept: Dict[str, str], act_nu
             {"role": "user", "content": user},
         ],
         temperature=0.7,
-        max_tokens=1500,
+        max_tokens=800,
     )
     
     
@@ -343,23 +343,15 @@ def _arc_key(arc: Dict[str, str], act_number: int, suffix: str) -> str:
     
 def judge_act_scope(act_text: str, arc: Dict[str, str], act_number: int) -> bool:
     system = (
-        "You are a strict scope judge for a horror story act.\n\n"
-        "Your job is to decide whether the act STAYS WITHIN ITS ASSIGNED ARC PHASE.\n"
-        "Do NOT judge quality, prose, tone, or scariness.\n\n"
-        f"This is ACT {act_number}.\n\n"
-        "PASS ONLY IF:\n"
-        "- The act follows the ARC RULES provided\n"
-        "- The act does NOT resolve, climax, or escalate beyond its phase\n"
-        "- The act does NOT introduce events meant for later acts\n\n"
-        "- Expressions of internal discomfort, anxiety, or unease are allowed if no external escalation occurs\n"
-        "FAIL IF:\n"
-        "- The act includes confrontation intended to resolve or expose the antagonist\n"
-        "- The act includes accusation that forces explanation or admission\n"
-        "- The act introduces irreversible consequences meant for later acts\n"
-        "- The antagonist explicitly admits intent, motive, or surveillance\n"
-        "- The act resolves uncertainty rather than deepening it\n\n"
-        "OUTPUT RULES:\n"
-        "- Output ONLY one word: PASS or FAIL."
+        "You are checking whether an act violates its narrative phase.\n\n"
+        "Judge ONLY based on major events, not tone, prose, or emotion.\n"
+        "Do NOT penalize natural reflection, memory, or internal narration.\n\n"
+        "FAIL ONLY IF:\n"
+        "- A future act's core event clearly occurs early\n"
+        "- The central anomaly is explained or resolved\n"
+        "- The antagonist explicitly admits intent\n\n"
+        "PASS if escalation remains incomplete.\n\n"
+        "Output ONLY: PASS or FAIL."
     )
 
     act_rules = _arc_key(arc, act_number, "rules")
@@ -394,7 +386,7 @@ def generate_full_story() -> str:
     concept = generate_concept_and_hook()
     acts = generate_act_outline(concept)
 
-    full_script = f"{concept['HOOK']}\n\n"
+    full_script = f"{concept['HOOK']}\n"
     
     # ============================================================
     # ACT 1
@@ -409,9 +401,11 @@ def generate_full_story() -> str:
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 1 RULES: {arc['act_1_rules']}\n"
         f"ACT 1 FOCUS: {arc['act_1_focus']}\n\n"
+        "ACT 1 OPENING NOTE:\n"
+        "- Begin with routine continuation before the anomaly appears.\n\n"
         "ACT 1 MANDATE:\n"
-        "- Introduce an event or behavior that is IMMEDIATELY wrong or unsafe.\n"
-        "- The narrator recognizes danger in the moment.\n"
+        "- Introduce an event or behavior that is unusual or socially off.\n"
+        "- The narrator notices it, but rationalizes it at the time.\n"
         "- This is not subtle, symbolic, or 'almost-right'. It is socially or physically invalid.\n\n"
         "ACT 1 REQUIRED ELEMENTS:\n"
         "- One concrete action by another person that forces a physical or instinctive response.\n"
@@ -427,7 +421,13 @@ def generate_full_story() -> str:
     act_1_text = None
 
     for _ in range(3):
-        candidate = write_act(act_1, act_1_context, concept, act_number=1)
+        candidate = write_act(
+            act_1,
+            act_1_context,
+            concept,
+            act_number=1,
+            target_words=235,
+        )
         if judge_act_scope(candidate, arc, act_number=1):
             act_1_text = candidate
             break
@@ -444,7 +444,7 @@ def generate_full_story() -> str:
     act_2 = acts[1]
 
     act_2_context = (
-        f"{full_script}\n\n"
+        "\n\n".join(full_script.split("\n\n")[-8:]) + "\n\n"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 2 RULES: {arc['act_2_rules']}\n"
@@ -467,7 +467,13 @@ def generate_full_story() -> str:
     act_2_text = None
 
     for _ in range(3):
-        candidate = write_act(act_2, act_2_context, concept, act_number=2)
+        candidate = write_act(
+            act_2,
+            act_2_context,
+            concept,
+            act_number=2,
+            target_words=235,
+        )
         if judge_act_scope(candidate, arc, act_number=2):
             act_2_text = candidate
             break
@@ -484,18 +490,18 @@ def generate_full_story() -> str:
     act_3 = acts[2]
 
     act_3_context = (
-        f"{full_script}\n\n"
+        "\n\n".join(full_script.split("\n\n")[-8:]) + "\n\n"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 3 RULES: {arc['act_3_rules']}\n"
         f"ACT 3 FOCUS: {arc['act_3_focus']}\n\n"
         "ACT 3 MANDATE:\n"
         "- The narrator is forced into an immediate survival decision.\n"
-        "- Physical danger is real and present, not implied.\n\n"
+        "- A concrete, time-bound danger event occurs in this act.\n"
+        "- The narrator narrowly avoids harm through chance, interruption, or escape.\n"
+        "- The outcome leaves physical evidence, witnesses, or lasting consequences.\n\n"
         "ACT 3 REQUIRED EVENTS:\n"
-        "- A moment of flight, hiding, locking, barricading, or escaping.\n"
-        "- The narrator misinterprets at least one critical detail in the moment.\n"
-        "- The narrator acts on instinct, not logic.\n\n"
+        "- ONE concrete, time-bound danger event related to the existing anomaly.\n\n"
         "ACT 3 CONSTRAINTS:\n"
         "- No resolution.\n"
         "- Any discovery must raise more questions than it answers.\n"
@@ -507,8 +513,14 @@ def generate_full_story() -> str:
 
     act_3_text = None
 
-    for _ in range(3):
-        candidate = write_act(act_3, act_3_context, concept, act_number=3)
+    for _ in range(2):
+        candidate = write_act(
+            act_3,
+            act_3_context,
+            concept,
+            act_number=3,
+            target_words=235,
+        )
         if judge_act_scope(candidate, arc, act_number=3):
             act_3_text = candidate
             break
@@ -525,7 +537,7 @@ def generate_full_story() -> str:
     act_4 = acts[3]
 
     act_4_context = (
-        f"{full_script}\n\n"
+        "\n\n".join(full_script.split("\n\n")[-8:]) + "\n\n"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 4 RULES: {arc['act_4_rules']}\n"
@@ -534,8 +546,8 @@ def generate_full_story() -> str:
         "- The narrator gains certainty they are unsafe, not why.\n"
         "- This certainty comes from actions, not confessions.\n\n"
         "ACT 4 REQUIRED EVENTS:\n"
-        "- A failed attempt to regain control (reporting, confronting, documenting, testing).\n"
-        "- A demonstration that the antagonist anticipated or neutralized this attempt.\n\n"
+        "- ONE failed attempt to regain control related directly to the established anomaly.\n"
+        "- Demonstrate escalation through anticipation or denial, not new behaviors.\n\n"
         "ACT 4 CONSTRAINTS:\n"
         "- No clean confrontation.\n"
         "- The antagonist must not verbally confirm the narrator’s interpretation.\n"
@@ -548,8 +560,14 @@ def generate_full_story() -> str:
 
     act_4_text = None
 
-    for _ in range(3):
-        candidate = write_act(act_4, act_4_context, concept, act_number=4)
+    for _ in range(2):
+        candidate = write_act(
+            act_4,
+            act_4_context,
+            concept,
+            act_number=4,
+            target_words=235,
+        )
         if judge_act_scope(candidate, arc, act_number=4):
             act_4_text = candidate
             break
@@ -566,28 +584,36 @@ def generate_full_story() -> str:
     act_5 = acts[4]
 
     act_5_context = (
-        f"{full_script}\n\n"
+        "\n\n".join(full_script.split("\n\n")[-8:]) + "\n\n"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 5 RULES: {arc['act_5_rules']}\n"
         f"ACT 5 FOCUS: {arc['act_5_focus']}\n\n"
         "ACT 5 MANDATE:\n"
-        "- The danger is no longer active in the moment, but never resolved.\n"
-        "- The narrator has changed permanently.\n\n"
+        "- The immediate danger is over.\n"
+        "- The narrator is physically safe in the present.\n"
+        "- The story is being told well after the events ended.\n"
+        "- The threat was never fully explained or confronted.\n\n"
         "ACT 5 REQUIRED ELEMENTS:\n"
-        "- Ongoing vigilance, avoidance, or altered behavior.\n"
-        "- At least one new habit formed to avoid future violations.\n"
-        "- This habit unintentionally enables continued control.\n"
-        "- Evidence the antagonist could still reappear.\n\n"
+        "- A permanent behavioral change caused by the event.\n"
+        "- A specific place, situation, or routine the narrator avoids.\n"
+        "- A clear sense that the narrator survived, but was affected.\n\n"
         "ACT 5 ENDING RULE:\n"
-        "- End on a behavioral detail, not an explanation.\n"
-        "- The last line should imply continued threat.\n"
+        "- End on reflection or habit, not danger.\n"
+        "- The last line should acknowledge distance from the event.\n"
+        "- Unease comes from memory, not immediate risk.\n"
     )
 
     act_5_text = None
 
-    for _ in range(3):
-        candidate = write_act(act_5, act_5_context, concept, act_number=5)
+    for _ in range(2):
+        candidate = write_act(
+            act_5,
+            act_5_context,
+            concept,
+            act_number=5,
+            target_words=220,
+        )
         if judge_act_scope(candidate, arc, act_number=5):
             act_5_text = candidate
             break

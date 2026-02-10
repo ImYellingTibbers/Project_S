@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 import sys
+import random
 
 # ============================================================
 # Paths
@@ -10,6 +11,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNS_DIR = ROOT / "runs"
+MUSIC_DIR = ROOT / "src" / "assets" / "music"
+SFX_DIR = ROOT / "src" / "assets" / "sfx"
 
 # ============================================================
 # Helpers
@@ -46,6 +49,20 @@ def main():
 
     img_path = run_dir / "img" / "background_img.png"
     audio_path = run_dir / "audio" / "full_narration.wav"
+    bass_sting_path = SFX_DIR / "spooky_bass_start.mp3"
+    if not bass_sting_path.exists():
+        raise RuntimeError(f"Missing bass sting file: {bass_sting_path}")
+    # --------------------------------------------------------
+    # Select random ambient background audio
+    # --------------------------------------------------------
+    ambient_tracks = sorted(
+        p for p in MUSIC_DIR.iterdir()
+        if p.suffix.lower() in {".wav", ".mp3"}
+    )
+    if not ambient_tracks:
+        raise RuntimeError(f"No ambient audio files found in {MUSIC_DIR}")
+    bg_audio_path = random.choice(ambient_tracks)
+    print(f"[AUDIO] Using ambient bed: {bg_audio_path.name}")
     out_path = run_dir / "video_test_background.mp4"
 
     duration = get_audio_duration(audio_path)
@@ -87,11 +104,57 @@ def main():
     cmd = [
         "ffmpeg",
         "-y",
+
+        # ---------------------------
+        # Inputs
+        # ---------------------------
+
+        # Background image (looped)
         "-stream_loop", "-1",
         "-i", str(img_path),
+        
+        # Bass sting (one-shot)
+        "-i", str(bass_sting_path),
+
+        # Narration (main audio)
         "-i", str(audio_path),
-        "-shortest",
+
+        # Ambient bed (looped)
+        "-stream_loop", "-1",
+        "-i", str(bg_audio_path),
+
+        # ---------------------------
+        # Filters
+        # ---------------------------
+
+        "-filter_complex",
+        (
+            # Narration: untouched, dominant
+            "[2:a]volume=1.0[vo];"
+
+            # Ambient bed: very subtle
+            "[3:a]volume=0.06,lowpass=f=4200[amb];"
+
+            # Bass sting: restrained
+            "[1:a]volume=0.1,lowpass=f=3000[bass];"
+
+            # Mix VO + ambient + bass (VO first, no normalization)
+            "[vo][amb][bass]amix="
+            "inputs=3:"
+            "weights=1 1 1:"
+            "dropout_transition=0:"
+            "normalize=0[a]"
+        ),
+
+        # ---------------------------
+        # Video
+        # ---------------------------
+
+        "-t", f"{duration}",
         "-vf", vf,
+        "-map", "0:v",
+        "-map", "[a]",
+
         "-c:v", "h264_nvenc",
         "-preset", "p7",
         "-tune", "hq",
@@ -99,8 +162,14 @@ def main():
         "-cq", "19",
         "-profile:v", "high",
         "-pix_fmt", "yuv420p",
+
+        # ---------------------------
+        # Audio
+        # ---------------------------
+
         "-c:a", "aac",
         "-b:a", "192k",
+
         "-movflags", "+faststart",
         str(out_path),
     ]

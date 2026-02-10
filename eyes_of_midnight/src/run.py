@@ -12,9 +12,9 @@ STEP_3 = {"label": "Step 3 - Generate Images", "script": "run_steps/generate_ima
 STEP_4 = {"label": "Step 4 - Render Video", "script": "run_steps/render_video.py"}
 
 STEPS = [
-    STEP_1,
-    STEP_2,
-    STEP_3,
+    # STEP_1,
+    # STEP_2,
+    # STEP_3,
     STEP_4,
 ]
 

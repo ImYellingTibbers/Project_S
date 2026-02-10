@@ -65,6 +65,73 @@ MAX_NEW_TOKENS = 8192
 # Paragraph synthesis
 # ============================================================
 
+def apply_compression(
+    audio: np.ndarray,
+    sample_rate: int,
+    threshold_db: float = -22.0,
+    ratio: float = 2.0,
+    attack_ms: float = 10.0,
+    release_ms: float = 120.0,
+) -> np.ndarray:
+    """
+    Very gentle RMS compressor for narration.
+    """
+
+    audio = audio.astype(np.float32)
+    eps = 1e-8
+
+    attack_coeff = np.exp(-1.0 / (sample_rate * attack_ms / 1000.0))
+    release_coeff = np.exp(-1.0 / (sample_rate * release_ms / 1000.0))
+
+    env = 0.0
+    gain = 1.0
+    out = np.zeros_like(audio)
+
+    threshold_lin = 10 ** (threshold_db / 20.0)
+
+    for i, sample in enumerate(audio):
+        level = abs(sample)
+        if level > env:
+            env = attack_coeff * env + (1 - attack_coeff) * level
+        else:
+            env = release_coeff * env + (1 - release_coeff) * level
+
+        if env > threshold_lin:
+            gain = (threshold_lin + (env - threshold_lin) / ratio) / (env + eps)
+        else:
+            gain = 1.0
+
+        out[i] = sample * gain
+
+    return out
+
+
+def normalize_to_lufs(
+    audio: np.ndarray,
+    sample_rate: int,
+    target_lufs: float = -18.0,
+    peak_ceiling_db: float = -3.0,
+) -> np.ndarray:
+    """
+    Normalize audio to target LUFS with a true-peak safety ceiling.
+    """
+
+    import pyloudnorm as pyln
+
+    meter = pyln.Meter(sample_rate)  # ITU-R BS.1770
+    loudness = meter.integrated_loudness(audio)
+
+    normalized = pyln.normalize.loudness(audio, loudness, target_lufs)
+
+    # Safety peak clamp
+    peak = np.max(np.abs(normalized))
+    peak_limit = 10 ** (peak_ceiling_db / 20)
+
+    if peak > peak_limit:
+        normalized = normalized * (peak_limit / peak)
+
+    return normalized.astype(np.float32)
+
 def synthesize_paragraph(
     model: Qwen3TTSModel,
     text: str,
@@ -82,7 +149,28 @@ def synthesize_paragraph(
         repetition_penalty=REPETITION_PENALTY,
     )
 
-    audio = wavs[0]
+    audio = wavs[0].astype(np.float32)
+
+    # Gentle dynamic control
+    audio = apply_compression(
+        audio=audio,
+        sample_rate=sr,
+        threshold_db=-18.0,
+        ratio=2.0,
+        attack_ms=10.0,
+        release_ms=120.0,
+    )
+
+    # Loudness normalization
+    audio = normalize_to_lufs(
+        audio=audio,
+        sample_rate=sr,
+        target_lufs=-20.0,
+        peak_ceiling_db=-1.0,
+    )
+    
+    audio = np.clip(audio, -1.0, 1.0)
+
     sf.write(str(output_wav), audio, sr)
     
 
