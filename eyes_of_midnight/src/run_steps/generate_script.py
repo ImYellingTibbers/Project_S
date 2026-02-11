@@ -78,6 +78,53 @@ def call_llm(
     return content
 
 # ============================================================
+# TTS Polish Helper
+# ============================================================
+
+def tts_polish_pass(
+    text: str,
+    enabled: bool = True,
+) -> str:
+    if not enabled:
+        return text
+
+    system = (
+        "You are performing a text-to-speech readability pass for a single paragraph.\n\n"
+        "STRICT RULES:\n"
+        "- Treat this text as ONE paragraph\n"
+        "- Do NOT split or merge paragraphs\n"
+        "- Do NOT rewrite content\n"
+        "- Do NOT add or remove information\n"
+        "- Do NOT change word choice\n"
+        "- Preserve original meaning exactly\n\n"
+        "ALLOWED CHANGES ONLY:\n"
+        "- Adjust punctuation for spoken clarity\n"
+        "- Break long sentences into shorter sentences\n"
+        "- Replace commas with periods when clauses are independent\n"
+        "- Remove ambiguous pauses that confuse TTS\n\n"
+        "FORBIDDEN:\n"
+        "- Adding or removing sentences overall\n"
+        "- Changing narrative voice\n"
+        "- Adding emphasis or drama\n\n"
+        "Output ONLY the revised paragraph."
+    )
+
+    user = (
+        "Apply a TTS readability polish to the following text.\n\n"
+        f"{text}"
+    )
+
+    return call_llm(
+        [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        temperature=0.0,
+        max_tokens=len(text.split()) + 100,
+    )
+
+
+# ============================================================
 # Step 1: Concept + Hook
 # ============================================================
 
@@ -239,7 +286,7 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
             {"role": "user", "content": user},
         ],
         temperature=0.5,
-        max_tokens=800,
+        max_tokens=1200,
     )
 
     act_pattern = re.compile(r"\bACT\s+([1-5])\b", re.IGNORECASE)
@@ -296,6 +343,10 @@ def write_act(
 ) -> str:
     system = (
         "You are writing a continuous first-person horror account intended for spoken narration.\n\n"
+        "This is for a longform YouTube horror story channel.\n"
+        "The story must be truly scary, not just unsettling, don't hold back.\n"
+        "There must be a real, dangerous threat capable of causing serious harm or death.\n"
+        "Keep it realistic and monetization safe (no graphic gore, no explicit sexual violence).\n\n"
         "Write naturally, as if recalling a real event without awareness of structure or rules.\n"
         "Maintain a grounded, conversational tone.\n"
         "Do not explain or analyze events in a generalized or instructional way.\n"
@@ -434,6 +485,12 @@ def generate_full_story() -> str:
 
     if act_1_text is None:
         act_1_text = candidate  # fallback, never hard-fail
+        
+    # TTS Polish Pass        
+    act_1_text = tts_polish_pass(
+        act_1_text,
+        enabled=True,
+    )
 
     full_script += "\n\n" + act_1_text
     
@@ -480,6 +537,12 @@ def generate_full_story() -> str:
 
     if act_2_text is None:
         act_2_text = candidate  # fallback, never hard-fail
+    
+    # TTS Polish Pass        
+    act_2_text = tts_polish_pass(
+        act_2_text,
+        enabled=True,
+    )
 
     full_script += "\n\n" + act_2_text
     
@@ -527,6 +590,12 @@ def generate_full_story() -> str:
 
     if act_3_text is None:
         act_3_text = candidate
+        
+    # TTS Polish Pass        
+    act_3_text = tts_polish_pass(
+        act_3_text,
+        enabled=True,
+    )
 
     full_script += "\n\n" + act_3_text
     
@@ -574,6 +643,12 @@ def generate_full_story() -> str:
 
     if act_4_text is None:
         act_4_text = candidate
+    
+    # TTS Polish Pass        
+    act_4_text = tts_polish_pass(
+        act_4_text,
+        enabled=True,
+    )
 
     full_script += "\n\n" + act_4_text
 
@@ -620,6 +695,12 @@ def generate_full_story() -> str:
 
     if act_5_text is None:
         act_5_text = candidate
+    
+    # TTS Polish Pass        
+    act_5_text = tts_polish_pass(
+        act_5_text,
+        enabled=True,
+    )
 
     full_script += "\n\n" + act_5_text
 
@@ -632,6 +713,46 @@ def generate_full_story() -> str:
         "act_5": act_5_text,
         "full_script": full_script,
     }
+
+
+def build_visual_chunks(paragraph_count: int) -> list[dict]:
+    """
+    Split paragraphs into visual chunks using strict rules:
+    - Base size: 3 paragraphs
+    - Remainder 1: last chunk becomes 4
+    - Remainder 2: first and last chunks become 4
+    """
+
+    indices = list(range(paragraph_count))
+    chunks = []
+
+    remainder = paragraph_count % 3
+
+    i = 0
+
+    if remainder == 2 and paragraph_count >= 4:
+        chunks.append(indices[0:4])
+        i = 4
+
+    while i < paragraph_count:
+        remaining = paragraph_count - i
+
+        if remainder == 1 and remaining == 4:
+            chunks.append(indices[i:i+4])
+            break
+
+        chunks.append(indices[i:i+3])
+        i += 3
+
+    return [
+        {
+            "chunk_id": idx,
+            "paragraph_start": c[0],
+            "paragraph_end": c[-1],
+            "paragraph_ids": c,
+        }
+        for idx, c in enumerate(chunks)
+    ]
 
 
 if __name__ == "__main__":
@@ -655,6 +776,16 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     result = generate_full_story()
     full_script = result["full_script"].strip()
+    
+    acts_dir = script_dir / "acts"
+    acts_dir.mkdir(parents=True, exist_ok=True)
+
+    for i in range(1, 6):
+        act_key = f"act_{i}"
+        act_text = result[act_key].strip()
+
+        act_path = acts_dir / f"{act_key}.txt"
+        act_path.write_text(act_text, encoding="utf-8")
 
     # Write full script
     full_script_path = script_dir / "full_script.txt"
@@ -669,10 +800,49 @@ if __name__ == "__main__":
         for p in re.split(r"\n\s*\n+", full_script)
         if p.strip()
     ]
-
+    
     for idx, paragraph in enumerate(paragraphs):
         p_path = paragraph_dir / f"p{idx:03d}.txt"
         p_path.write_text(paragraph, encoding="utf-8")
+    
+    paragraph_index = []
+
+    for idx in range(len(paragraphs)):
+        paragraph_index.append({
+            "paragraph_id": idx,
+            "filename": f"p{idx:03d}.txt",
+            "text": paragraphs[idx]
+        })
+
+    paragraph_index_path = script_dir / "paragraph_index.json"
+    paragraph_index_path.write_text(
+        json.dumps(
+            {
+                "paragraph_count": len(paragraphs),
+                "paragraphs": paragraph_index,
+            },
+            indent=2
+        ),
+        encoding="utf-8",
+    )
+    
+    # ------------------------------------------------------------
+    # Visual chunk plan (image timing groups)
+    # ------------------------------------------------------------
+    visual_chunks = build_visual_chunks(len(paragraphs))
+
+    visual_chunks_path = script_dir / "visual_chunks.json"
+    visual_chunks_path.write_text(
+        json.dumps(
+            {
+                "total_paragraphs": len(paragraphs),
+                "base_chunk_size": 3,
+                "chunks": visual_chunks,
+            },
+            indent=2
+        ),
+        encoding="utf-8",
+    )
 
     print(f"[SCRIPT] run created: {run_dir.resolve()}", flush=True)
     print(f"[SCRIPT] paragraphs written: {len(paragraphs)}", flush=True)

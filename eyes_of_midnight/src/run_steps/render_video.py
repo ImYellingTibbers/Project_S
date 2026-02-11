@@ -5,6 +5,8 @@ from pathlib import Path
 import sys
 import random
 
+from timing_plan import build_image_timing_plan
+
 # ============================================================
 # Paths
 # ============================================================
@@ -19,15 +21,35 @@ SFX_DIR = ROOT / "src" / "assets" / "sfx"
 # ============================================================
 
 def get_latest_run() -> Path:
-    runs = [
-        d for d in RUNS_DIR.iterdir()
-        if d.is_dir()
-        and (d / "img" / "background_img.png").exists()
-        and (d / "audio" / "full_narration.wav").exists()
-    ]
-    if not runs:
-        raise RuntimeError("No run with background image and p000.wav found")
-    return max(runs, key=lambda p: p.stat().st_mtime)
+    if not RUNS_DIR.exists():
+        raise RuntimeError(f"Runs directory does not exist: {RUNS_DIR}")
+
+    run_dirs = sorted(
+        [d for d in RUNS_DIR.iterdir() if d.is_dir()],
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+
+    if not run_dirs:
+        raise RuntimeError(f"No run directories found in {RUNS_DIR}")
+
+    for run_dir in run_dirs:
+        audio_ok = (run_dir / "audio" / "full_narration.wav").exists()
+        script_ok = (run_dir / "script" / "paragraph_index.json").exists()
+        visuals_ok = (run_dir / "script" / "visual_chunks.json").exists()
+        img_dir_ok = (run_dir / "img").exists()
+
+        if audio_ok and script_ok and visuals_ok and img_dir_ok:
+            return run_dir
+
+    raise RuntimeError(
+        "No run directory contains required files:\n"
+        "Required:\n"
+        "  audio/full_narration.wav\n"
+        "  script/paragraph_index.json\n"
+        "  script/visual_chunks.json\n"
+        "  img/ (directory)"
+    )
 
 def get_audio_duration(audio_path: Path) -> float:
     cmd = [
@@ -40,14 +62,80 @@ def get_audio_duration(audio_path: Path) -> float:
     out = subprocess.check_output(cmd).decode().strip()
     return float(out)
 
+def build_video_segments(run_dir: Path, image_timing: list[dict], fps: int) -> list[str]:
+    segments = []
+
+    for idx, item in enumerate(image_timing):
+        img_path = run_dir / "img" / item["image"]
+        duration = item["duration"]
+
+        if not img_path.exists():
+            raise RuntimeError(f"Missing image: {img_path}")
+
+        segment_path = run_dir / "video" / f"seg_{idx:02d}.mp4"
+        segment_path.parent.mkdir(parents=True, exist_ok=True)
+
+        total_frames = int(duration * fps)
+
+        vf = (
+            f"zoompan="
+            f"z='1+0.045*on/{total_frames}':"
+            f"x='iw/2-(iw/zoom/2)+sin(on*0.003)*2':"
+            f"y='ih/2-(ih/zoom/2)+cos(on*0.002)*2':"
+            f"d=1:s=3840x2160,"
+            f"fps={fps},"
+            f"vignette=PI/3,"
+            f"fade=t=in:st=0:d=0.5,"
+            f"noise=alls=4:allf=t"
+        )
+
+        cmd = [
+            "ffmpeg", "-y",
+            "-loop", "1",
+            "-i", str(img_path),
+            "-t", f"{duration}",
+            "-vf", vf,
+            "-c:v", "h264_nvenc",
+            "-preset", "p7",
+            "-pix_fmt", "yuv420p",
+            str(segment_path),
+        ]
+
+        subprocess.run(cmd, check=True)
+        segments.append(str(segment_path))
+
+    return segments
+
+def concat_video_segments(segments: list[str], out_path: Path):
+    list_file = out_path.parent / "segments.txt"
+    list_file.write_text(
+        "\n".join(f"file '{s}'" for s in segments),
+        encoding="utf-8",
+    )
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", str(list_file),
+        "-c", "copy",
+        str(out_path),
+    ]
+
+    subprocess.run(cmd, check=True)
+
 # ============================================================
 # Main
 # ============================================================
 
 def main():
     run_dir = get_latest_run()
+    
+    image_timing = build_image_timing_plan(run_dir)
 
-    img_path = run_dir / "img" / "background_img.png"
+    if not image_timing:
+        raise RuntimeError("Image timing plan is empty")
+
     audio_path = run_dir / "audio" / "full_narration.wav"
     bass_sting_path = SFX_DIR / "spooky_bass_start.mp3"
     if not bass_sting_path.exists():
@@ -63,112 +151,52 @@ def main():
         raise RuntimeError(f"No ambient audio files found in {MUSIC_DIR}")
     bg_audio_path = random.choice(ambient_tracks)
     print(f"[AUDIO] Using ambient bed: {bg_audio_path.name}")
-    out_path = run_dir / "video_test_background.mp4"
+    
+    fps = 30
+
+    print("[VIDEO] Building image segments...")
+    segments = build_video_segments(run_dir, image_timing, fps)
+
+    video_only_path = run_dir / "video" / "video_only.mp4"
+    concat_video_segments(segments, video_only_path)
+
+    out_path = run_dir / "video_final.mp4"
 
     duration = get_audio_duration(audio_path)
 
     print(f"[VIDEO] Run: {run_dir.name}")
     print(f"[VIDEO] Duration: {duration:.2f}s")
 
-    # --------------------------------------------------------
-    # Visual design parameters (tuned for confessional horror)
-    # --------------------------------------------------------
-
-    zoom_start = 1.00
-    zoom_end = 1.06
-    fps = 30
-
-    zoom_expr = (
-        f"{zoom_start}"
-        f"+({zoom_end}-{zoom_start})"
-        f"*(t/{duration})"
-    )
-
-    x_expr = "iw/2-(iw/zoom/2)+sin(t*0.003)+sin(t*0.0007)*2"
-    y_expr = "ih/2-(ih/zoom/2)+cos(t*0.002)+cos(t*0.0009)*2"
-
-    total_frames = int(duration * fps)
-
-    vf = (
-        f"zoompan="
-        f"z='1+0.045*on/{total_frames}':"
-        f"x='iw/2-(iw/zoom/2)+sin(on*0.003)*2':"
-        f"y='ih/2-(ih/zoom/2)+cos(on*0.002)*2':"
-        f"d=1:s=1920x1080,"
-        f"fps={fps},"
-        f"vignette=PI/3,"
-        f"fade=t=in:st=0:d=0.75,"
-        f"noise=alls=4:allf=t"
-    )
-
     cmd = [
         "ffmpeg",
         "-y",
 
-        # ---------------------------
-        # Inputs
-        # ---------------------------
-
-        # Background image (looped)
-        "-stream_loop", "-1",
-        "-i", str(img_path),
-        
-        # Bass sting (one-shot)
+        "-i", str(video_only_path),
         "-i", str(bass_sting_path),
-
-        # Narration (main audio)
         "-i", str(audio_path),
-
-        # Ambient bed (looped)
         "-stream_loop", "-1",
         "-i", str(bg_audio_path),
 
-        # ---------------------------
-        # Filters
-        # ---------------------------
-
         "-filter_complex",
         (
-            # Narration: untouched, dominant
             "[2:a]volume=1.0[vo];"
-
-            # Ambient bed: very subtle
             "[3:a]volume=0.06,lowpass=f=4200[amb];"
-
-            # Bass sting: restrained
             "[1:a]volume=0.1,lowpass=f=3000[bass];"
-
-            # Mix VO + ambient + bass (VO first, no normalization)
-            "[vo][amb][bass]amix="
-            "inputs=3:"
-            "weights=1 1 1:"
-            "dropout_transition=0:"
-            "normalize=0[a]"
+            "[vo][amb][bass]amix=inputs=3:normalize=0[a]"
         ),
 
-        # ---------------------------
-        # Video
-        # ---------------------------
-
-        "-t", f"{duration}",
-        "-vf", vf,
         "-map", "0:v",
         "-map", "[a]",
 
         "-c:v", "h264_nvenc",
         "-preset", "p7",
-        "-tune", "hq",
-        "-rc", "vbr",
         "-cq", "19",
-        "-profile:v", "high",
         "-pix_fmt", "yuv420p",
-
-        # ---------------------------
-        # Audio
-        # ---------------------------
 
         "-c:a", "aac",
         "-b:a", "192k",
+
+        "-t", f"{duration}",
 
         "-movflags", "+faststart",
         str(out_path),

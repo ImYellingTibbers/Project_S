@@ -3,9 +3,7 @@ from __future__ import annotations
 import os
 import json
 import sys
-import time
 from pathlib import Path
-from typing import Dict, Optional
 from dataclasses import dataclass
 
 import requests
@@ -66,6 +64,7 @@ STYLE_PREFIX = (
     "human eye-level viewpoint, standing perspective, "
     "static composition, no motion, no action, "
     "documentary realism, uncinematic, unstylized, "
+    "minimalist composition, sparse environment, intentional emptiness, restrained detail, "
     "uneasy calm, lingering tension, something feels wrong but nothing is happening"
 )
 
@@ -129,41 +128,36 @@ def get_latest_run_with_script() -> Path:
 
 # ============================================================
 # Prompt generation
-# ============================================================
-
-def generate_image_prompts(script_text: str) -> Dict[str, str]:
+# ============================================================    
+    
+def extract_thumbnail_concepts(script_text: str) -> Dict[str, str]:
     system = (
-        "You are analyzing a full confessional horror narration script.\n\n"
-        "This is realistic, first-person horror.\n"
-        "No supernatural elements. No monsters. No fantasy.\n\n"
-        "You must FIRST determine the dominant real-world setting that emotionally defines the entire story.\n"
-        "This is the place the listener subconsciously associates with the fear.\n\n"
-        "Then generate image prompts using these rules.\n\n"
-        "OUTPUT STRICT JSON ONLY with exactly three fields:\n"
-        "- background_prompt\n"
-        "- thumbnail_prompt_a\n"
-        "- thumbnail_prompt_b\n\n"
-        "BACKGROUND PROMPT RULES:\n"
-        "- One real location only\n"
-        "- Empty of people, but clearly human-built\n"
-        "- Nighttime or near-darkness\n"
-        "- Ordinary, believable place\n"
-        "- Designed to sit behind narration for long duration\n\n"
-        "THUMBNAIL PROMPT RULES:\n"
-        "- Thumbnails are marketing images, not story scenes\n"
-        "- Each thumbnail must present a visual question\n"
-        "- Focus on isolation, distance, or being watched\n"
-        "- Use roads, windows, doorways, alleys, or streetlights\n"
-        "- Strong contrast and immediate clarity\n"
-        "- No text, no faces, no explicit threat"
+        "You are extracting thumbnail concepts for a YouTube horror video.\n\n"
+        "This is NOT story writing.\n"
+        "This is marketing abstraction.\n\n"
+        "Rules:\n"
+        "- Ignore narrative order\n"
+        "- Ignore specific scenes\n"
+        "- Identify the SINGLE biggest implied threat\n"
+        "- Identify the SINGLE most visually recognizable location\n"
+        "- Generate short warning-style text that implies danger\n\n"
+        "The result must be usable for a YouTube thumbnail.\n\n"
+        "OUTPUT STRICT JSON ONLY:\n"
+        "{\n"
+        '  "location": "...",\n'
+        '  "threat": "...",\n'
+        '  "warning_text_a": "...",\n'
+        '  "warning_text_b": "..."\n'
+        "}"
     )
 
     user = (
-        "Here is the full narration script.\n"
-        "You must analyze the entire script before deciding anything.\n\n"
+        "Here is the full narration script.\n\n"
         f"{script_text}\n\n"
-        "Determine the dominant setting and psychological tension.\n"
-        "Then generate the prompts."
+        "Extract thumbnail concepts.\n"
+        "- Location must be a place, not a scene\n"
+        "- Threat must be implied, not explained\n"
+        "- Warning text must be 2–5 words, imperative or cautionary\n"
     )
 
     raw = call_llm(
@@ -171,21 +165,98 @@ def generate_image_prompts(script_text: str) -> Dict[str, str]:
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        temperature=0.45,
-        max_tokens=700,
+        temperature=0.3,
+        max_tokens=300,
         require_json=True,
     )
 
     data = json.loads(raw)
 
-    for key in ("background_prompt", "thumbnail_prompt_a", "thumbnail_prompt_b"):
+    for key in ("location", "threat", "warning_text_a", "warning_text_b"):
         if key not in data or not data[key].strip():
-            raise RuntimeError(f"Missing required prompt: {key}")
+            raise RuntimeError(f"Missing thumbnail concept field: {key}")
 
     return {
-        "background": data["background_prompt"].strip(),
-        "thumbnail_a": data["thumbnail_prompt_a"].strip(),
-        "thumbnail_b": data["thumbnail_prompt_b"].strip(),
+        "location": data["location"].strip(),
+        "threat": data["threat"].strip(),
+        "warning_a": data["warning_text_a"].strip(),
+        "warning_b": data["warning_text_b"].strip(),
+    }
+    
+def generate_chunk_background_prompt(
+    chunk_id: int,
+    chunk_text: str,
+) -> str:
+    system = (
+        "You are generating a background image prompt for a chunk of a "
+        "realistic, first-person confessional horror narration.\n\n"
+        "This image will sit behind narration for several minutes.\n\n"
+        "RULES:\n"
+        "- No people or faces\n"
+        "- No monsters or supernatural elements\n"
+        "- No action or events\n"
+        "- One real-world location only\n"
+        "- One primary surface only (counter, street, hallway, desk, road)\n"
+        "- At most 1–2 man-made objects total\n"
+        "- No repeated objects\n"
+        "- Large areas of empty space\n"
+        "- Nighttime or very low light\n"
+        "- Static, quiet, believable setting\n"
+        "- Designed to support narration, not distract\n\n"
+        "Output STRICT JSON ONLY:\n"
+        "{ \"prompt\": \"...\" }"
+    )
+
+    user = (
+        f"This is VISUAL CHUNK {chunk_id}.\n\n"
+        "Analyze only the text below.\n\n"
+        f"{chunk_text}\n\n"
+        "Generate ONE background image prompt."
+    )
+
+    raw = call_llm(
+        [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        temperature=0.35,
+        max_tokens=300,
+        require_json=True,
+    )
+
+    data = json.loads(raw)
+
+    prompt = data.get("prompt", "").strip()
+    if not prompt:
+        raise RuntimeError(f"Empty prompt for chunk {chunk_id}")
+
+    return prompt    
+
+def generate_thumbnail_prompts_from_concepts(concepts: Dict[str, str]) -> Dict[str, str]:
+    base = (
+        "Dark, realistic nighttime photograph of {location}, "
+        "heavily shadowed, minimal detail visible, "
+        "one strong light source, extreme contrast, "
+        "large areas of darkness and negative space, "
+        "no visible people or faces, "
+        "quiet but threatening atmosphere"
+    )
+
+    prompt_a = (
+        base.format(location=concepts["location"])
+        + f", implies danger related to {concepts['threat']}, "
+        f"composition leaves space for bold text reading '{concepts['warning_a']}'"
+    )
+
+    prompt_b = (
+        base.format(location=concepts["location"])
+        + f", implies danger related to {concepts['threat']}, "
+        f"composition leaves space for bold text reading '{concepts['warning_b']}'"
+    )
+
+    return {
+        "thumbnail_a": prompt_a,
+        "thumbnail_b": prompt_b,
     }
 
 # ============================================================
@@ -257,10 +328,43 @@ def main():
     run_dir = get_latest_run_with_script()
     script_path = run_dir / "script" / "full_script.txt"
     script_text = script_path.read_text(encoding="utf-8").strip()
-
+    
     print(f"[IMG] Using run: {run_dir.name}", flush=True)
 
-    prompts = generate_image_prompts(script_text)
+    thumbnail_concepts = extract_thumbnail_concepts(script_text)
+    thumbnail_prompts = generate_thumbnail_prompts_from_concepts(thumbnail_concepts)
+    
+    paragraph_index_path = run_dir / "script" / "paragraph_index.json"
+    visual_chunks_path = run_dir / "script" / "visual_chunks.json"
+
+    paragraph_index = json.loads(
+        paragraph_index_path.read_text(encoding="utf-8")
+    )["paragraphs"]
+
+    visual_chunks = json.loads(
+        visual_chunks_path.read_text(encoding="utf-8")
+    )["chunks"]
+    
+    chunk_prompts = {}
+
+    for chunk in visual_chunks:
+        chunk_id = chunk["chunk_id"]
+        texts = []
+
+        for pid in chunk["paragraph_ids"]:
+            if pid >= len(paragraph_index):
+                raise RuntimeError(
+                    f"Paragraph ID {pid} out of range for chunk {chunk_id}"
+                )
+            texts.append(paragraph_index[pid]["text"])
+
+        chunk_text = "\n\n".join(texts)
+
+        chunk_prompts[chunk_id] = generate_chunk_background_prompt(
+            chunk_id=chunk_id,
+            chunk_text=chunk_text,
+        )
+
 
     img_dir = run_dir / "img"
     img_dir.mkdir(parents=True, exist_ok=True)
@@ -268,11 +372,20 @@ def main():
     with open(WORKFLOW_PATH, "r") as f:
         base_workflow = json.load(f)
 
-    jobs = [
-        ("background_img", prompts["background"], 910001),
-        ("thumbnail_a", prompts["thumbnail_a"], 910101),
-        ("thumbnail_b", prompts["thumbnail_b"], 910201),
-    ]
+    jobs = []
+
+    seed_base = 910000
+
+    for chunk_id in sorted(chunk_prompts.keys()):
+        prompt = chunk_prompts[chunk_id]
+        name = f"chunk_{chunk_id:02d}"
+        seed = seed_base + chunk_id * 100
+        jobs.append((name, prompt, seed))
+
+    jobs.extend([
+        ("thumbnail_a", thumbnail_prompts["thumbnail_a"], 920101),
+        ("thumbnail_b", thumbnail_prompts["thumbnail_b"], 920201),
+    ])
 
     for name, prompt, seed in jobs:
         print(f"[IMG] Rendering {name}.png", flush=True)

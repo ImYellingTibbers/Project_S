@@ -178,7 +178,16 @@ def synthesize_paragraph(
 # Audio stitching
 # ============================================================
 
-def stitch_audio_paragraphs(audio_dir: Path, output_path: Path):
+def make_silence(duration_seconds: float, sample_rate: int) -> np.ndarray:
+    length = int(duration_seconds * sample_rate)
+    return np.zeros(length, dtype=np.float32)
+
+
+def stitch_audio_paragraphs(
+    audio_dir: Path,
+    output_path: Path,
+    silence_seconds: float = 0.75,
+):
     wav_files = sorted(audio_dir.glob("p*.wav"))
 
     if not wav_files:
@@ -187,7 +196,7 @@ def stitch_audio_paragraphs(audio_dir: Path, output_path: Path):
     audio_blocks = []
     sample_rate = None
 
-    for wav in wav_files:
+    for idx, wav in enumerate(wav_files):
         data, sr = sf.read(wav, dtype="float32")
 
         if sample_rate is None:
@@ -198,7 +207,13 @@ def stitch_audio_paragraphs(audio_dir: Path, output_path: Path):
                 f"{sr} != {sample_rate}"
             )
 
+        # Append paragraph audio
         audio_blocks.append(data)
+
+        # Append silence after paragraph unless it's the last one
+        if idx < len(wav_files) - 1:
+            silence = make_silence(silence_seconds, sample_rate)
+            audio_blocks.append(silence)
 
     full_audio = np.concatenate(audio_blocks, axis=0)
     sf.write(output_path, full_audio, sample_rate)
