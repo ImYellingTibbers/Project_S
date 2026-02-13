@@ -44,7 +44,7 @@ HEADERS = {
 def call_llm(
     messages: List[Dict],
     temperature: float = 0.6,
-    max_tokens: int = 2048,
+    max_tokens: int = 4000,
     require_json: bool = False,
 ) -> str:
     payload = {
@@ -126,7 +126,7 @@ def tts_polish_pass(
             {"role": "user", "content": user},
         ],
         temperature=0.0,
-        max_tokens=len(text.split()) + 100,
+        max_tokens=len(text.split()) + 1000,
     )
 
 
@@ -175,7 +175,7 @@ def generate_long_form_hook(idea: str) -> str:
             {"role": "user", "content": user},
         ],
         temperature=0.45,
-        max_tokens=250,
+        max_tokens=2500,
     )
 
 
@@ -217,7 +217,7 @@ def generate_concept_and_hook() -> Dict[str, str]:
             {"role": "user", "content": user},
         ],
         temperature=0.5,
-        max_tokens=400,
+        max_tokens=4000,
         require_json=True,
     )
 
@@ -292,7 +292,7 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
             {"role": "user", "content": user},
         ],
         temperature=0.5,
-        max_tokens=1200,
+        max_tokens=2000,
     )
 
     act_pattern = re.compile(r"\bACT\s+([1-5])\b", re.IGNORECASE)
@@ -376,8 +376,7 @@ def write_act(
         f"Act purpose:\n{act.get('PURPOSE', '')}\n\nKey events to cover:\n{act.get('KEY EVENTS', '')}\n\n"
         f"TARGET LENGTH:\n"
         f"- Write approximately {target_words} words.\n"
-        f"- Hard stop at {target_words + 40} words.\n"
-        f"- Do NOT exceed this length.\n\n"
+        f"- Do not artificially cut off the act to meet a number.\n\n"
         "Write this act according to the outline below.\n"
         "Do not summarize or foreshadow future acts.\n"
         "Stay inside the narrator's limited perspective.\n"
@@ -391,7 +390,7 @@ def write_act(
             {"role": "user", "content": user},
         ],
         temperature=0.7,
-        max_tokens=800,
+        max_tokens=2000,
     )
     
     
@@ -430,7 +429,7 @@ def judge_act_scope(act_text: str, arc: Dict[str, str], act_number: int) -> bool
             {"role": "user", "content": user},
         ],
         temperature=0.0,
-        max_tokens=5,
+        max_tokens=500,
     )
 
     return verdict.strip().upper() == "PASS"

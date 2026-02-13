@@ -180,7 +180,7 @@ def main():
         "-filter_complex",
         (
             "[2:a]volume=1.0[vo];"
-            "[3:a]volume=0.06,lowpass=f=4200[amb];"
+            "[3:a]volume=0.1,lowpass=f=4200[amb];"
             "[1:a]volume=0.1,lowpass=f=3000[bass];"
             "[vo][amb][bass]amix=inputs=3:normalize=0[a]"
         ),
