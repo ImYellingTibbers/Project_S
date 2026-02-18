@@ -107,6 +107,7 @@ def tts_polish_pass(
         "- Break long sentences into shorter sentences\n"
         "- Convert numbers, times, ordinals, money amounts, and numeric phrases into natural spoken English.\n"
         "- Replace commas with periods when clauses are independent\n"
+        "- Absolutely no emojis are allowed, you MUST remove any emojis that are present in the text.\n"
         "- Remove ambiguous pauses that confuse TTS\n\n"
         "FORBIDDEN:\n"
         "- Adding or removing sentences overall\n"
@@ -128,8 +129,31 @@ def tts_polish_pass(
         temperature=0.0,
         max_tokens=len(text.split()) + 1000,
     )
-
-
+    
+# ============================================================
+# Summarizers
+# ============================================================
+    
+def summarize_act(act_text: str) -> str:
+    """Creates a concise summary of the act, focusing on setting, characters, and key events."""
+    system = (
+        "You are a concise summarizer, extracting core details from a horror story act.\n"
+        "Your summary will be used to provide context to the LLM for subsequent acts.\n"
+        "Focus exclusively on the setting, key characters (descriptors only - no names!), and a brief overview of the plot events.\n"
+        "Do NOT include opinions, interpretations, or emotional tone.\n"
+        "Keep the summary brief: approximately 3-5 sentences.\n"
+        "Output ONLY the summary text."
+    )
+    user = f"Summarize the following horror story act:\n{act_text}"
+    return call_llm(
+        [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        temperature=0.1,
+        max_tokens=600,
+    )
+    
 # ============================================================
 # Step 1: Concept + Hook
 # ============================================================
@@ -140,11 +164,11 @@ def generate_long_form_hook(idea: str) -> str:
         "This is NOT a teaser, cold open, or in-the-moment scene.\n"
         "This is the narrator explaining why they are posting the story.\n\n"
         "OPENING REQUIREMENTS:\n"
-        "- First person\n"
-        "- Past tense\n"
-        "- Calm, grounded, conversational\n"
-        "- 3–5 sentences\n"
-        "- ~45–70 words\n\n"
+        "- First person, past tense, conversational.\n"
+        "- Focus on establishing the narrator's *routine* and *ordinary* life before *anything* unsettling happens.\n"
+        "- 3–5 sentences, ~45–70 words.\n"
+        "- Imply the story lingered in the narrator’s mind.\n"
+        "- *Avoid hinting at danger. The tone should be one of reflection, not foreboding.*\n\n"
         "STRUCTURAL REQUIREMENTS:\n"
         "- Establish time distance (months or years ago)\n"
         "- Establish life context (job, trip, relationship, routine, age range)\n"
@@ -369,11 +393,19 @@ def write_act(
         "- Output ONLY prose. No labels. No explanations."
     )
 
+    # Create Summary of Previous Act
+    previous_act_summary = summarize_act(context)
+
+    # Get last 8 paragraphs from previous context.
+    previous_paragraphs = "\n\n".join(context.split("\n\n")[-8:]) if context else ""
+
     user = (
-        f"Context so far:\n{context}\n\n"
-        f"Core idea that must remain central:\n{concept['CORE ANOMALY']}\n\n"
+        f"Core idea:\n{concept['CORE ANOMALY']}\n\n"
+        f"Previous act summary:\n{previous_act_summary}\n\n"
+        f"Recent paragraphs from previous act:\n{previous_paragraphs}\n\n"
         f"Write the following act as prose:\n"
         f"Act purpose:\n{act.get('PURPOSE', '')}\n\nKey events to cover:\n{act.get('KEY EVENTS', '')}\n\n"
+        "Maintain a consistent narrative voice.\n\n"
         f"TARGET LENGTH:\n"
         f"- Write approximately {target_words} words.\n"
         f"- Do not artificially cut off the act to meet a number.\n\n"

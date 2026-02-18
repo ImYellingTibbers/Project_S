@@ -13,9 +13,9 @@ STEP_4 = {"label": "Step 4 - Render Video", "script": "run_steps/render_video.py
 
 STEPS = [
     STEP_1,
-    STEP_2,
-    STEP_3,
-    STEP_4,
+    # STEP_2,
+    # STEP_3,
+    # STEP_4,
 ]
 
 def run_step(label, script_rel_path):

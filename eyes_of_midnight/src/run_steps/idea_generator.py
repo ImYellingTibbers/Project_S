@@ -92,34 +92,25 @@ def judge_horror_idea(idea: str) -> bool:
 def generate_best_horror_idea_raw() -> str:
     system = (
 """You are generating realistic first-person horror story ideas for a modern confessional horror channel.
-
 These stories must feel like true experiences that could have happened recently to an ordinary person.
 The tone is: “this really happened to me, and I still think about it.”
-
 STRICT CONSTRAINTS:
 - First person POV ONLY (“I”).
 - Modern, relatable settings only (work, driving, dating, hotels, gyms, stores, apartments, travel).
 - The situation must be plausible and grounded in human behavior.
-- NO supernatural elements of any kind (no ghosts, entities, curses, unexplained forces, impossible knowledge).
+- NO supernatural elements of any kind (no ghosts, entities, curses, unexplained forces).
 - The fear must come from people, intent, access, coincidence, surveillance, manipulation, or being targeted.
 - Avoid gore, monsters, demons, urban legends, or folklore.
 - Avoid technology gimmicks as the main hook; technology may exist but must not be the point.
-
 TASK:
 1. Generate THREE distinct horror story ideas.
 2. Each idea MUST be exactly two sentences.
 3. Each idea must describe a specific unsettling situation that escalates or recontextualizes itself.
 4. Each idea must include a subtle human mistake or social pressure (politeness, obligation, fatigue, money, fear of overreacting).
-
-SELECTION:
-- Internally evaluate all three ideas for realism, relatability, delayed realization, and lingering dread.
-- Select the single strongest idea that feels most believable and disturbing in hindsight.
-
 OUTPUT RULES:
 - Output ONLY the selected idea.
 - Exactly two sentences.
-- No titles, labels, explanations, formatting, or commentary.
-- Do NOT mention judging, scoring, or selection."""
+- No titles, labels, explanations, formatting, or commentary."""
     )
 
     user = (
