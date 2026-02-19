@@ -361,7 +361,20 @@ def build_act_context(
             "that something about this place is slightly off in a way they can't name."
         )
         lines.append("")
-        lines.append("ALL RULES FOR THIS STORY (present these as the rules document, in order):")
+        lines.append(
+            "ALL RULES FOR THIS STORY (present these as the rules document, in order):\n"
+            "IMPORTANT: Some rules contain bracketed placeholders such as "
+            "[specific location], [specific warning sign], or [specific sound]. "
+            "Before writing, replace every bracketed placeholder with a specific, "
+            "concrete detail that fits this exact place and narrator. "
+            "Examples: [specific location] at a school becomes 'the boiler room' or "
+            "'the custodial closet at the end of the east wing'. "
+            "[specific warning sign] becomes 'the emergency exit light above the gym "
+            "doors flashes three times'. "
+            "[specific sound] becomes 'something dragging across linoleum'. "
+            "The rules in the story must read as if a real person wrote them for this "
+            "specific building. No brackets should appear in the final prose."
+        )
         all_rules = established + [
             {"id": r["id"], "name": r["name"], "template": r["template"]}
             for r in pending

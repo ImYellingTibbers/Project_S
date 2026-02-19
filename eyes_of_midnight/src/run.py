@@ -26,7 +26,10 @@ def run_step(label, script_rel_path):
 
     print(f"\n=== {label} ===")
     cmd = [sys.executable, str(script_path)]
-    env = {"PYTHONPATH": str(PROJECT_ROOT), "PYTHONUNBUFFERED": "1"}
+    
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(PROJECT_ROOT)
+    env["PYTHONUNBUFFERED"] = "1"
     
     result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), env=env)
     return result.returncode == 0

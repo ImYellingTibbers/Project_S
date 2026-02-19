@@ -7,7 +7,7 @@ from qwen_tts import Qwen3TTSModel
 # Paths
 # ------------------------------------------------------------
 ROOT = Path(__file__).resolve().parents[2] 
-REFERENCE_WAV = ROOT / "src" / "assets" / "voice_ref" / "jacob_whisper_ref_2.wav"
+REFERENCE_WAV = ROOT / "src" / "assets" / "voice_ref" / "jacob_rulebook_ref.wav"
 OUTPUT_WAV = ROOT / "runs" / "audio" / "vo_test_clone.wav"
 
 # ------------------------------------------------------------
@@ -43,7 +43,7 @@ def main():
         ref_audio=str(REFERENCE_WAV),
         x_vector_only_mode=True, 
         max_new_tokens=8192,
-        temperature=0.5,
+        temperature=.65,
         top_p=0.9,
         repetition_penalty=1.1
     )
@@ -54,7 +54,8 @@ def main():
     print(f"✅ Success! Output: {OUTPUT_WAV.resolve()}")
 
 TEST_TEXT = (
-    """I think that the stars are the most fantastic things in the whole wide world!""" + "            "
+    """I read the list one more time, trying to make sense of it. It felt like a collection of anxieties, a paranoid person’s guidebook to a haunted house. Probably just some old employee who’d gotten spooked and written it all down to make themselves feel better. Honestly, it was kind of pathetic.
+""" + "            "
 )
 
 if __name__ == "__main__":

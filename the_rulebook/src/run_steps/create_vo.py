@@ -21,7 +21,7 @@ REFERENCE_WAV = (
     / "src"
     / "assets"
     / "voice_ref"
-    / "jacob_whisper_ref.wav"
+    / "jacob_rulebook_ref.wav"
 )
 
 # ============================================================
@@ -43,12 +43,12 @@ def get_model() -> Qwen3TTSModel:
     return _MODEL
 
 # ============================================================
-# Voice parameters (Mr Nightmare–style restraint)
+# Voice parameters 
 # ============================================================
 # temperature:
 #   Lower = flatter, more monotone delivery
 #   Raise slightly for more emotional variation
-TEMPERATURE = 0.45
+TEMPERATURE = 0.5
 
 # top_p:
 #   Controls randomness ceiling
@@ -186,7 +186,7 @@ def make_silence(duration_seconds: float, sample_rate: int) -> np.ndarray:
 def stitch_audio_paragraphs(
     audio_dir: Path,
     output_path: Path,
-    silence_seconds: float = 0.75,
+    silence_seconds: float = 1.0,
 ):
     wav_files = sorted(audio_dir.glob("p*.wav"))
 
@@ -260,6 +260,10 @@ def main():
     for idx, p_file in enumerate(paragraph_files):
         text = p_file.read_text(encoding="utf-8").strip()
         out_wav = audio_dir / f"{p_file.stem}.wav"
+        
+        if out_wav.exists():
+            print(f"[TTS] ({idx+1}/{len(paragraph_files)}) {p_file.name} — skipping (already done)")
+            continue
 
         print(f"[TTS] ({idx+1}/{len(paragraph_files)}) {p_file.name}")
 

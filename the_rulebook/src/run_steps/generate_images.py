@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Dict
 
 import requests
 import websocket
@@ -54,31 +55,35 @@ NEGATIVE_PROMPT = (
 )
 
 STYLE_PREFIX = (
-    "photorealistic nighttime photograph, real-world location, "
-    "quiet residential or urban environment, "
-    "empty but clearly intended for people, "
-    "streetlights, porch lights, traffic signals, or interior lamps as the only light sources, "
-    "deep shadows swallowing detail, limited visibility, "
-    "cool muted color tones, low saturation, "
-    "natural grain, slight sensor noise, realistic exposure, "
-    "human eye-level viewpoint, standing perspective, "
-    "static composition, no motion, no action, "
+    "photorealistic interior photograph, real institutional or workplace environment, "
+    "empty building interior, clearly intended for occupation but currently abandoned, "
+    "fluorescent overhead lighting, emergency exit signs, utility lamps, "
+    "or a single desk lamp as the only light sources, "
+    "harsh flat light in some areas, deep unlit corners in others, "
+    "cold color temperature, institutional greens and grays, low saturation, "
+    "linoleum floors, drop ceilings, concrete block walls, industrial carpeting, "
+    "natural grain, slight sensor noise, hand-held documentary feel, "
+    "human eye-level viewpoint, standing or slightly crouched perspective, "
+    "static composition, no motion, no action, nothing moving, "
+    "the specific emptiness of a workplace at three in the morning, "
+    "something feels procedurally wrong, rules have been broken or followed here, "
     "documentary realism, uncinematic, unstylized, "
-    "minimalist composition, sparse environment, intentional emptiness, restrained detail, "
-    "uneasy calm, lingering tension, something feels wrong but nothing is happening"
+    "restrained detail, intentional negative space, "
+    "the feeling of being the only person in a building that expects more people"
 )
 
 THUMBNAIL_STYLE_PREFIX = (
-    "photorealistic nighttime photograph, "
-    "strong visual contrast, high readability at small size, "
-    "one dominant subject or area of focus, "
-    "heavy surrounding darkness, "
-    "streetlight glow, window light, or doorway light cutting through darkness, "
-    "suggested human presence through distant silhouette or shadow only, "
-    "no visible faces, no detail confirmation, "
-    "quiet but threatening atmosphere, "
-    "simple composition, bold shapes, negative space, "
-    "feels like witnessing something you should not be seeing"
+    "photorealistic interior photograph, institutional workplace setting, "
+    "strong contrast between harsh fluorescent light and deep shadow, "
+    "high readability at small size, one dominant focal area, "
+    "long empty corridor, open doorway to a dark room, or abandoned workstation "
+    "as the primary compositional element, "
+    "emergency lighting or single overhead fixture as light source, "
+    "institutional color palette — sickly green, cold gray, muted beige, "
+    "no visible faces, no people, no confirmed threat, "
+    "sense that someone was just here, or is about to arrive, "
+    "simple composition, bold shapes, large dark negative space for text overlay, "
+    "feels like the moment before a rule gets broken"
 )
 
 # ============================================================
@@ -277,7 +282,7 @@ def patch_workflow(workflow: dict, prompt: str, seed: int, filename_prefix: str)
     wf["92"]["inputs"]["text"] = f"{style}, {prompt}"
     wf["50"]["inputs"]["text"] = NEGATIVE_PROMPT
     wf["55"]["inputs"]["seed"] = seed
-    wf["55"]["inputs"]["cfg"] = 8.0
+    wf["55"]["inputs"]["cfg"] = 7.0
     wf["57"]["inputs"]["filename_prefix"] = filename_prefix
     return wf
 
@@ -374,12 +379,14 @@ def main():
 
     jobs = []
 
-    seed_base = 910000
+    import random as _random
+    seed_base = _random.randint(100000, 899999)
+    print(f"[IMG] Seed base: {seed_base}", flush=True)
 
     for chunk_id in sorted(chunk_prompts.keys()):
         prompt = chunk_prompts[chunk_id]
         name = f"chunk_{chunk_id:02d}"
-        seed = seed_base + chunk_id * 100
+        seed = seed_base + chunk_id
         jobs.append((name, prompt, seed))
 
     jobs.extend([

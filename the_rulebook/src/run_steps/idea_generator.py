@@ -180,7 +180,7 @@ def generate_narrator_backstory_raw(place: Dict) -> str:
         "The backstory must feel grounded, specific, and real — like something that could "
         "actually happen to someone.\n\n"
         "STRICT CONSTRAINTS:\n"
-        "- The narrator must be an adult (25-55 years old).\n"
+        "- The narrator must be a male adult (25-55 years old).\n"
         "- The financial situation must be specific and relatable (medical bills, eviction, "
         "divorce, job loss, supporting family, student debt).\n"
         "- The reason they took THIS specific job must make sense given their situation.\n"
