@@ -82,10 +82,10 @@ def build_video_segments(run_dir: Path, image_timing: list[dict], fps: int) -> l
             f"z='1+0.025*on/{total_frames}':"
             f"x='iw/2-(iw/zoom/2)+sin(on*0.002)*1.5':"
             f"y='ih/2-(ih/zoom/2)+cos(on*0.0015)*1.5':"
-            f"d=1:s=3840x2160,"
+            f"d=1:s=1920x1080,"
             f"fps={fps},"
             f"vignette=PI/2,"
-            f"curves=r='0/0 0.9/0.82 1/1':g='0/0 0.9/0.88 1/1':b='0/0 1/1.08',"
+            f"curves=r='0/0 0.9/0.80 1/0.95':g='0/0 0.9/0.86 1/0.94':b='0/0 0.9/0.95 1/1.0',"
             f"fade=t=in:st=0:d=0.4,"
             f"noise=alls=6:allf=t"
         )
