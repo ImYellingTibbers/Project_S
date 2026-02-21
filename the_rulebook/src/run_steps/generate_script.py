@@ -44,8 +44,6 @@ def call_llm(
     max_tokens: int = 4000,
     require_json: bool = False,
 ) -> str:
-    import time
-
     payload = {
         "model": MODEL,
         "messages": messages,
@@ -56,42 +54,25 @@ def call_llm(
     if require_json:
         payload["response_format"] = {"type": "json_object"}
 
-    max_retries = 5
-    base_wait = 10  # seconds
+    response = requests.post(
+        OPENROUTER_URL,
+        headers=HEADERS,
+        json=payload,
+        timeout=180,
+    )
+    response.raise_for_status()
 
-    for attempt in range(1, max_retries + 1):
-        response = requests.post(
-            OPENROUTER_URL,
-            headers=HEADERS,
-            json=payload,
-            timeout=180,
-        )
+    data = response.json()
+    content = data["choices"][0]["message"].get("content")
 
-        if response.status_code == 429:
-            wait = base_wait * (2 ** (attempt - 1))  # 10, 20, 40, 80, 160
-            print(
-                f"[LLM] Rate limited (429). Waiting {wait}s before retry "
-                f"({attempt}/{max_retries})...",
-                flush=True,
-            )
-            time.sleep(wait)
-            continue
+    if content is None:
+        raise RuntimeError("LLM returned no content (null message)")
 
-        response.raise_for_status()
+    content = content.strip()
+    if not content:
+        raise RuntimeError("LLM returned empty content")
 
-        data = response.json()
-        content = data["choices"][0]["message"].get("content")
-
-        if content is None:
-            raise RuntimeError("LLM returned no content (null message)")
-
-        content = content.strip()
-        if not content:
-            raise RuntimeError("LLM returned empty content")
-
-        return content
-
-    raise RuntimeError(f"LLM call failed after {max_retries} retries due to rate limiting.")
+    return content
 
 # ============================================================
 # TTS Polish
@@ -277,131 +258,6 @@ def summarize_and_update_rules(
     }
 
 # ============================================================
-# Locked Facts Generator
-# (called once after act 1 — never updated)
-# ============================================================
-
-def generate_locked_facts(
-    act_text: str,
-    narrator: Dict,
-    place: Dict,
-) -> str:
-    """
-    Extracts immutable story facts from the setup act.
-    Called exactly once after act 1 completes.
-    Passed verbatim into every subsequent act. Never modified.
-    """
-
-    system = (
-        "You are extracting locked continuity facts from the opening act of a horror story.\n"
-        "These facts will be injected into every subsequent act to prevent contradictions.\n"
-        "Be specific and concrete. Vague entries cause continuity errors.\n"
-        "Output ONLY valid JSON. No commentary, no markdown fences."
-    )
-
-    user = (
-        f"NARRATOR INFO (ground truth from story frame):\n"
-        f"Name: {narrator['first_name']}, Age: {narrator['age']}\n"
-        f"Financial situation: {narrator['financial_situation']}\n"
-        f"Reason for job: {narrator['reason_for_job']}\n"
-        f"Personal detail: {narrator['one_personal_detail']}\n\n"
-        f"PLACE: {place['name']}\n"
-        f"NARRATOR ROLE: {place['role']}\n\n"
-        f"SETUP ACT TEXT:\n{act_text}\n\n"
-        "Extract the following. If something is not explicitly in the act text, "
-        "derive it from the narrator info above. Be specific — vague entries cause drift.\n\n"
-        "OUTPUT FORMAT — respond with this exact JSON schema:\n"
-        "{\n"
-        '  "narrator_name": "first name only",\n'
-        '  "narrator_age": "age as words e.g. thirty-two",\n'
-        '  "narrator_situation": "1-2 sentences on financial pressure and why they need this job",\n'
-        '  "narrator_personal_history": "bullet list of every personal memory, relationship, '
-        "or biographical detail introduced in the act. One bullet per detail. Include: "
-        "family members mentioned and their status (living/deceased), past jobs or hobbies, "
-        "any sensory memory tied to a specific person (e.g. blues music reminds them of their "
-        "FATHER — not grandfather, not uncle — be exact), any loss or grief introduced. "
-        'Format each as: - [detail]",\n'
-        '  "named_characters": "every named person who appeared, their role, gender, and '
-        "last known status. Format: Name — role, gender, status. One per line. "
-        'Only include characters who actually appeared in the act.",\n'
-        '  "place_details": "specific physical details established: layout, key rooms, '
-        'equipment, smells, sounds, lighting. 2-3 sentences.",\n'
-        '  "rules_document_name": "exact name the rules document was called in the act",\n'
-        '  "shift_hours": "when shift starts and ends as established in act, or unknown"\n'
-        "}"
-    )
-
-    raw = call_llm(
-        [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        temperature=0.0,
-        max_tokens=900,
-        require_json=True,
-    )
-
-    cleaned = raw.strip()
-    if cleaned.startswith("```"):
-        cleaned = cleaned.split("```")[1]
-        if cleaned.startswith("json"):
-            cleaned = cleaned[4:]
-        cleaned = cleaned.strip()
-
-    try:
-        parsed = json.loads(cleaned)
-    except json.JSONDecodeError:
-        parsed = {
-            "narrator_name": narrator["first_name"],
-            "narrator_age": str(narrator["age"]),
-            "narrator_situation": narrator["financial_situation"],
-            "narrator_personal_history": f"- {narrator['one_personal_detail']}",
-            "named_characters": "None established.",
-            "place_details": f"{place['name']}.",
-            "rules_document_name": "Night Shift Rules",
-            "shift_hours": "Unknown",
-        }
-
-    # Normalize any list fields to strings — LLM sometimes returns arrays
-    for key in ("narrator_personal_history", "named_characters"):
-        val = parsed.get(key, "")
-        if isinstance(val, list):
-            parsed[key] = "\n".join(str(item) for item in val)
-        elif not isinstance(val, str):
-            parsed[key] = str(val)
-
-    lines = [
-        "=" * 60,
-        "LOCKED FACTS — DO NOT CONTRADICT THESE UNDER ANY CIRCUMSTANCES.",
-        "These are established canon. Do not restate, re-introduce, or",
-        "re-explain any of these as if the narrator is discovering them",
-        "for the first time. The narrator already knows all of this.",
-        "=" * 60,
-        "",
-        f"Narrator: {parsed.get('narrator_name')}, {parsed.get('narrator_age')} years old.",
-        f"Situation: {parsed.get('narrator_situation')}",
-        f"Place: {place['name']} | Role: {place['role']}",
-        f"Shift hours: {parsed.get('shift_hours')}",
-        f"Rules document called: {parsed.get('rules_document_name')}",
-        "",
-        "NARRATOR PERSONAL HISTORY — established in act 1.",
-        "Do not repeat these as new discoveries. Do not contradict them.",
-        "If music, smells, or other sensory details recur, they must reference",
-        "the SAME person/memory established here — not a different family member:",
-        parsed.get("narrator_personal_history", "None recorded."),
-        "",
-        "NAMED CHARACTERS — gender and role are fixed, do not change:",
-        parsed.get("named_characters", "None established."),
-        "",
-        "PHYSICAL SPACE — established in act 1, use these details, do not reinvent:",
-        parsed.get("place_details", ""),
-        "=" * 60,
-    ]
-
-    return "\n".join(lines)
-
-
-# ============================================================
 # Context Builder
 # ============================================================
 
@@ -417,21 +273,15 @@ def build_act_context(
     narrator: Dict,
     place: Dict,
     total_acts: int,
-    locked_facts: Optional[str] = None,
-    full_script_so_far: Optional[str] = None,
 ) -> str:
     """
     Assembles the full context string passed into each act writing call.
-    Acts 1-4: locked facts + per-act summaries + last 8 paragraphs of prose.
-    Acts 5+:  locked facts + full script so far (replaces rolling summary).
+    Acts 1-4: per-act summaries of all previous acts.
+    Acts 5+: single rolling full-story summary.
+    Always includes: last 8 paragraphs of prose + rules state.
     """
 
     lines = []
-
-    # ---- Locked facts (act 2 onward — immutable continuity anchor) ----
-    if locked_facts and act_number > 1:
-        lines.append(locked_facts)
-        lines.append("")
 
     # ---- Narrator + Place (always present) ----
     lines.append("STORY CONTEXT:")
@@ -444,46 +294,31 @@ def build_act_context(
     )
     lines.append("")
 
-    # ---- Story history ----
+    # ---- Summary context ----
     if act_number == 1:
         pass  # No prior context for the first act
-
     elif act_number <= 4:
         lines.append("PREVIOUS ACT SUMMARIES:")
         for i, summary in enumerate(per_act_summaries, start=1):
             lines.append(f"Act {i}: {summary}")
         lines.append("")
-
-        if recent_prose:
-            lines.append("RECENT PROSE (last 8 paragraphs — match this voice exactly):")
-            lines.append(recent_prose)
-            lines.append("")
-
     else:
-        # Acts 5+: full script passthrough replaces rolling summary entirely
-        if full_script_so_far:
-            lines.append(
-                "FULL STORY SO FAR — READ THIS CAREFULLY BEFORE WRITING.\n"
-                "Do not repeat any sensory trigger, emotional beat, personal memory "
-                "callback, or plot detail that already appears in this text.\n"
-                "Do not re-introduce anything established here as if it is new.\n"
-                "Do not re-establish any rules that have already been triggered.\n"
-                "The narrator is continuing from where this story left off.\n"
-                "Match the voice and tone of the final paragraphs exactly."
-            )
-            lines.append("")
-            lines.append(full_script_so_far)
-            lines.append("")
+        lines.append("STORY SO FAR:")
+        lines.append(full_story_summary or "Story is underway.")
+        lines.append("")
+
+    # ---- Recent prose (always present except act 1) ----
+    if recent_prose:
+        lines.append("RECENT PROSE (last 8 paragraphs — match this voice exactly):")
+        lines.append(recent_prose)
+        lines.append("")
 
     # ---- Rules state ----
     established = rules_state.get("established", [])
     pending = rules_state.get("pending", [])
 
     if established:
-        lines.append(
-            "RULES AND HOW THEY HAVE MANIFESTED — "
-            "do not repeat these exact manifestations. Each encounter must be distinct:"
-        )
+        lines.append("RULES ESTABLISHED SO FAR (narrator has encountered these):")
         for r in established:
             lines.append(f"- [{r['id']}] {r['name']}: {r['trigger_note']}")
         lines.append("")
@@ -532,8 +367,13 @@ def build_act_context(
             "[specific location], [specific warning sign], or [specific sound]. "
             "Before writing, replace every bracketed placeholder with a specific, "
             "concrete detail that fits this exact place and narrator. "
-            "The rules must read as if a real person wrote them for this specific building. "
-            "No brackets should appear in the final prose."
+            "Examples: [specific location] at a school becomes 'the boiler room' or "
+            "'the custodial closet at the end of the east wing'. "
+            "[specific warning sign] becomes 'the emergency exit light above the gym "
+            "doors flashes three times'. "
+            "[specific sound] becomes 'something dragging across linoleum'. "
+            "The rules in the story must read as if a real person wrote them for this "
+            "specific building. No brackets should appear in the final prose."
         )
         all_rules = established + [
             {"id": r["id"], "name": r["name"], "template": r["template"]}
@@ -608,6 +448,11 @@ def build_act_context(
             "Something they can't stop doing. Something they can no longer do. "
             "A habit that formed without them deciding to form it. "
             "These should feel specific and involuntary, not chosen coping mechanisms.\n\n"
+            # ADDITION 1: no summary narration — write in scene, not retrospective telling
+            "Write in scene, not in summary. Do not compress time with phrases like "
+            "'Over the following months' or 'In the weeks after.' "
+            "Every paragraph must be a specific moment the narrator is present inside. "
+            "Reflection is shown through what they do and notice, not through telling.\n\n"
             "The narrator is functional. They went back to their life. "
             "But the life they went back to has a different texture now — "
             "ordinary things carry a weight they didn't before.\n\n"
@@ -615,7 +460,14 @@ def build_act_context(
             "The threat is not present. It doesn't need to be.\n\n"
             "The final lines should imply the cycle continues — "
             "the job will be posted again, someone else will take it, "
-            "someone else will get the rules. Not as a twist. As a fact."
+            "someone else will get the rules. Not as a twist. As a fact.\n\n"
+            # ADDITION 2: ending hook — sharp final image
+            "ENDING HOOK: Your absolute final paragraph must contain one specific, "
+            "concrete, unexpected detail — something the narrator notices or does "
+            "that the listener will not have anticipated. Not a twist. A sharp, "
+            "precise final image that lands and stays. It should feel inevitable "
+            "in retrospect but not telegraphed. This is the last thing the listener "
+            "hears. Make it count."
         )
         if active_rules:
             lines.append("")
@@ -628,7 +480,6 @@ def build_act_context(
                 lines.append(f"- [{r['id']}] {r['name']}")
 
     return "\n".join(lines)
-
 
 # ============================================================
 # Act Writer
@@ -700,13 +551,7 @@ def write_act(
         "OUTPUT RULE:\n"
         "- Output ONLY prose paragraphs separated by blank lines.\n"
         "- No act labels, headers, or metadata.\n"
-        "- No markdown formatting of any kind.\n"
-        "- PARAGRAPH LENGTH — CRITICAL: Every paragraph must be at least 3-4 sentences "
-        "and at least 60 words. Do NOT write single-sentence paragraphs. Do NOT use "
-        "dramatic one-liners as standalone paragraphs (e.g. 'Silence.' or 'I froze.' "
-        "or 'It was gone.'). These must be folded into the surrounding paragraph. "
-        "Short punchy lines belong inside longer paragraphs, not as their own blocks. "
-        "The goal is 8-12 substantial paragraphs per act, not 40-60 fragments."
+        "- No markdown formatting of any kind."
     )
 
     user = (
@@ -798,7 +643,6 @@ def generate_full_story() -> Dict:
     # ---- Step 3: Initialize tracking variables ----
     per_act_summaries: List[str] = []
     full_story_summary: Optional[str] = None
-    locked_facts: Optional[str] = None
     full_script = ""
     act_texts: Dict[str, str] = {}
 
@@ -814,9 +658,9 @@ def generate_full_story() -> Dict:
         # Calculate target word count
         target_words = get_target_words(act_number, act_type, total_acts)
 
-        # Get recent prose (last 8 paragraphs) — used for acts 2-4 only
+        # Get recent prose (last 8 paragraphs)
         recent_prose = ""
-        if full_script and act_number <= 4:
+        if full_script:
             paragraphs = [
                 p.strip()
                 for p in re.split(r"\n\s*\n+", full_script)
@@ -837,8 +681,6 @@ def generate_full_story() -> Dict:
             narrator=narrator,
             place=place,
             total_acts=total_acts,
-            locked_facts=locked_facts,
-            full_script_so_far=full_script if act_number >= 5 else None,
         )
 
         # Write the act — retry once if it comes in more than 20% under target
@@ -908,20 +750,10 @@ def generate_full_story() -> Dict:
         # Update tracking state
         rules_state = summary_result["rules_state"]
 
-        # Acts 2-4: keep per-act summaries. Acts 5+: full script passed directly,
-        # rolling summary no longer needed.
         if act_number <= 4:
             per_act_summaries.append(summary_result["act_summary"])
-
-        # Generate locked facts exactly once after act 1 completes
-        if act_number == 1 and locked_facts is None:
-            print("[ACT 1] Extracting locked facts...", flush=True)
-            locked_facts = generate_locked_facts(
-                act_text=act_text,
-                narrator=narrator,
-                place=place,
-            )
-            print("[ACT 1] Locked facts extracted.", flush=True)
+        else:
+            full_story_summary = summary_result["full_story_summary"]
 
         print(f"[ACT {act_number}/{total_acts}] Done.", flush=True)
 
@@ -1012,24 +844,11 @@ if __name__ == "__main__":
     full_script_path.write_text(full_script, encoding="utf-8")
 
     # ---- Split into paragraphs ----
-    raw_paragraphs = [
+    paragraphs = [
         p.strip()
         for p in re.split(r"\n\s*\n+", full_script)
         if p.strip()
     ]
-
-    # ---- Merge short paragraphs into preceding paragraph ----
-    # Prevents single-sentence fragments from becoming their own TTS files and image chunks.
-    MIN_PARAGRAPH_WORDS = 40
-    paragraphs = []
-    for p in raw_paragraphs:
-        if paragraphs and len(p.split()) < MIN_PARAGRAPH_WORDS:
-            paragraphs[-1] = paragraphs[-1] + " " + p
-        else:
-            paragraphs.append(p)
-
-    print(f"[SCRIPT] Paragraphs before merge: {len(raw_paragraphs)}", flush=True)
-    print(f"[SCRIPT] Paragraphs after merge:  {len(paragraphs)}", flush=True)
 
     for idx, paragraph in enumerate(paragraphs):
         p_path = paragraph_dir / f"p{idx:03d}.txt"

@@ -27,13 +27,13 @@ RUNS = [
         "label": "The Rulebook",
         "script": ROOT / "the_rulebook" / "src" / "run.py",
         "enabled": True,
-        "repeat": 1,
+        "repeat": 2,
     },
     {
         "label": "Eyes of Midnight",
         "script": ROOT / "eyes_of_midnight" / "src" / "run.py",
         "enabled": True,
-        "repeat": 2,
+        "repeat": 3,
     },
 ]
 
