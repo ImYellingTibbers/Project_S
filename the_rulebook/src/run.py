@@ -7,12 +7,14 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent
 RUNS_DIR = PROJECT_ROOT / "runs"
 
+STEP_0 = {"label": "Step 0 - Kill GPU Users", "script": "tools/kill_gpu_users.py"}
 STEP_1 = {"label": "Step 1 - Generate Script", "script": "run_steps/generate_script.py"}
 STEP_2 = {"label": "Step 2 - Create VO", "script": "run_steps/create_vo.py"}
 STEP_3 = {"label": "Step 3 - Generate Images", "script": "run_steps/generate_images.py"}
 STEP_4 = {"label": "Step 4 - Render Video", "script": "run_steps/render_video.py"}
 
 STEPS = [
+    STEP_0,
     STEP_1,
     STEP_2,
     STEP_3,

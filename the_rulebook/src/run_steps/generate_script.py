@@ -448,7 +448,6 @@ def build_act_context(
             "Something they can't stop doing. Something they can no longer do. "
             "A habit that formed without them deciding to form it. "
             "These should feel specific and involuntary, not chosen coping mechanisms.\n\n"
-            # ADDITION 1: no summary narration — write in scene, not retrospective telling
             "Write in scene, not in summary. Do not compress time with phrases like "
             "'Over the following months' or 'In the weeks after.' "
             "Every paragraph must be a specific moment the narrator is present inside. "
@@ -461,7 +460,6 @@ def build_act_context(
             "The final lines should imply the cycle continues — "
             "the job will be posted again, someone else will take it, "
             "someone else will get the rules. Not as a twist. As a fact.\n\n"
-            # ADDITION 2: ending hook — sharp final image
             "ENDING HOOK: Your absolute final paragraph must contain one specific, "
             "concrete, unexpected detail — something the narrator notices or does "
             "that the listener will not have anticipated. Not a twist. A sharp, "
@@ -515,7 +513,16 @@ def write_act(
         "this is essential and realistic. They are not a horror protagonist. "
         "They are a tired, financially stressed person trying to get through a shift.\n"
         "- Internal monologue should feel genuine — practical concerns, "
-        "embarrassment at overreacting, self-doubt. Not cinematic dread.\n\n"
+        "embarrassment at overreacting, self-doubt. Not cinematic dread.\n"
+        # FIX 1: ban the three default dread signals and the rationalization phrase
+        "- BANNED PHRASES — these have become lazy defaults and must not appear: "
+        "'I couldn't shake the feeling', "
+        "'my heart hammered/pounded/raced', "
+        "'my hands were trembling/shaking', "
+        "'a metallic smell/scent', "
+        "'the smell of pennies'. "
+        "Find a physical response specific to this narrator and this moment. "
+        "Every act of fear must be expressed differently.\n\n"
 
         "RULE HANDLING — CRITICAL:\n"
         "- A rule is introduced ONCE in Act 1 when the narrator reads the document. "
@@ -525,11 +532,26 @@ def write_act(
         "Example: not 'Rule 4 stated: if your shadow behaves differently...' "
         "but 'something about shadows — don't go to the shed if — I couldn't "
         "remember the exact wording.'\n"
+        # FIX 2: keep the rationalization phase short
+        "- The rationalization phase — where the narrator tries to explain away what "
+        "they are experiencing — must be brief. One paragraph maximum. "
+        "The narrator dismisses it once, then the situation forces their hand. "
+        "Do not let the narrator circle the same doubt for multiple paragraphs.\n"
         "- Never explain why a rule exists. The narrator does not know. "
         "The listener does not know. It stays that way.\n"
         "- Rules are a cage, not a safety net. Following a rule should cost "
         "the narrator something — they have to leave someone, stay still while "
         "something passes, watch without intervening. Survival is not comfortable.\n\n"
+
+        "NARRATOR FACTS — TREAT AS IMMUTABLE:\n"
+        # FIX 3: lock narrator personal details against drift across acts
+        "The narrator's name, age, family members and their names, financial situation, "
+        "and personal history are established in the STORY CONTEXT above. "
+        "These facts do not change between acts. "
+        "A spouse named in act one is named the same thing in the resolution. "
+        "A detail about a child, a illness, a hobby introduced early must remain "
+        "consistent throughout. Do not invent new personal details that contradict "
+        "or replace what is already established.\n\n"
 
         "THREAT RULES — CRITICAL:\n"
         "- The threat is NEVER seen directly or described clearly.\n"

@@ -23,11 +23,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 
 RUNS = [
+    # {
+    #     "label": "Kill GPU",
+    #     "script": ROOT / "the_rulebook" / "src" / "tools" / "kill_gpu_users",
+    #     "enabled": True,
+    #     "repeat": 1,
+    # },
     {
         "label": "The Rulebook",
         "script": ROOT / "the_rulebook" / "src" / "run.py",
         "enabled": True,
-        "repeat": 2,
+        "repeat": 1,
     },
     {
         "label": "Eyes of Midnight",
