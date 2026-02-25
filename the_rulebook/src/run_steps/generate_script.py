@@ -337,7 +337,33 @@ def build_act_context(
     if act_type == "setup":
         lines.append("ACT DIRECTIVE:")
         lines.append(
-            "This is the opening act. Spend real time establishing the physical space — "
+            # OPENING PARAGRAPH GUIDANCE — replaces the cinematic establishing-shot default
+            # The model was consistently opening with physical surface descriptions
+            # ('the chipped Formica felt cold under my elbows') across every run.
+            # This guidance steers it toward how a real person begins a story they're telling.
+            "OPENING PARAGRAPH — THIS IS THE MOST IMPORTANT PARAGRAPH IN THE STORY:\n"
+            "This story is being told by a real person recounting something that happened "
+            "to them. Write the opening paragraph the way that person would actually begin "
+            "talking — not with a description of the room, not with the furniture or the "
+            "lighting, but with whatever is most alive in their memory about walking into "
+            "that situation for the first time.\n\n"
+            "The opening paragraph must do one of the following:\n"
+            "  A) Start with why the narrator took the job — the specific pressure, "
+            "the specific number, the specific thing they were trying to fix — and let "
+            "the place arrive through that lens. The listener should feel the desperation "
+            "before they see the building.\n"
+            "  B) Start with the first thing that felt wrong — not explained, not named, "
+            "just the specific detail that stuck. The thing the narrator noticed and filed "
+            "away and only understood later. Let the place build around that detail.\n"
+            "  C) Start with the person handing over the keys — their manner, something "
+            "they said or didn't say, the way they left. The handoff is the first signal "
+            "that this place has a history. Begin there and let the narrator's arrival "
+            "unfold from that moment.\n\n"
+            "The opening paragraph should feel like someone leaning forward and saying "
+            "'So here's the thing about that job.' It should pull the listener in "
+            "because the narrator's voice is already specific and human, not because "
+            "the scene has been visually established.\n\n"
+            "After the opening paragraph, establish the physical space — "
             "the narrator has just arrived for their first shift and is taking everything in. "
             "Describe the building, the equipment, the smell, the sounds, the light. "
             "Make it specific enough that a listener could picture exactly where they are. "
@@ -358,7 +384,9 @@ def build_act_context(
             "Nothing dangerous happens in this act. "
             "End with the narrator alone, shift beginning, rules set aside. "
             "The last beat should carry a quiet unease — not dread, just the feeling "
-            "that something about this place is slightly off in a way they can't name."
+            "that something about this place is slightly off in a way they can't name. "
+            "Do not name or describe this unease directly. "
+            "Show it through a specific physical detail or action, not through a stated feeling."
         )
         lines.append("")
         lines.append(
@@ -416,7 +444,13 @@ def build_act_context(
                 "almost — have another explanation. But it can't quite.\n\n"
                 "END STATE: The narrator has survived this act but is more unsettled "
                 "than before. They cannot go back to dismissing the rules. "
-                "They believe them now, even if they don't understand them."
+                "They believe them now, even if they don't understand them.\n\n"
+                "BEFORE WRITING YOUR FINAL PARAGRAPH, confirm all three are true:\n"
+                "1. The narrator is in a specific physical location doing a specific thing.\n"
+                "2. The rule encounter has reached a definite outcome — followed or failed, "
+                "with a consequence. Do not end on 'I waited to see what happened.'\n"
+                "3. One concrete thing has changed — a belief, a habit, a physical state — "
+                "that the narrator will carry into the next act."
             )
 
         if active_rules:
@@ -509,13 +543,16 @@ def write_act(
         "- No foreshadowing phrases like 'that was my first mistake' or "
         "'looking back, I should have known'.\n"
         "- No moral lessons or tidy conclusions within the act.\n"
+        "- The narrator NEVER explains what the rules mean, what the threat is, "
+        "or what the experience has taught them. They do not arrive at conclusions. "
+        "They survive and move on. Meaning is the listener's job, not the narrator's.\n"
         "- The narrator rationalizes, dismisses, and misinterprets — "
         "this is essential and realistic. They are not a horror protagonist. "
         "They are a tired, financially stressed person trying to get through a shift.\n"
         "- Internal monologue should feel genuine — practical concerns, "
         "embarrassment at overreacting, self-doubt. Not cinematic dread.\n"
-        # FIX 1: ban the three default dread signals and the rationalization phrase
-        "- BANNED PHRASES — these have become lazy defaults and must not appear: "
+        "- BANNED PHRASES — these have become lazy defaults and must not appear "
+        "in any act, including the setup act: "
         "'I couldn't shake the feeling', "
         "'my heart hammered/pounded/raced', "
         "'my hands were trembling/shaking', "
@@ -532,7 +569,6 @@ def write_act(
         "Example: not 'Rule 4 stated: if your shadow behaves differently...' "
         "but 'something about shadows — don't go to the shed if — I couldn't "
         "remember the exact wording.'\n"
-        # FIX 2: keep the rationalization phase short
         "- The rationalization phase — where the narrator tries to explain away what "
         "they are experiencing — must be brief. One paragraph maximum. "
         "The narrator dismisses it once, then the situation forces their hand. "
@@ -544,12 +580,11 @@ def write_act(
         "something passes, watch without intervening. Survival is not comfortable.\n\n"
 
         "NARRATOR FACTS — TREAT AS IMMUTABLE:\n"
-        # FIX 3: lock narrator personal details against drift across acts
         "The narrator's name, age, family members and their names, financial situation, "
         "and personal history are established in the STORY CONTEXT above. "
         "These facts do not change between acts. "
         "A spouse named in act one is named the same thing in the resolution. "
-        "A detail about a child, a illness, a hobby introduced early must remain "
+        "A detail about a child, an illness, a hobby introduced early must remain "
         "consistent throughout. Do not invent new personal details that contradict "
         "or replace what is already established.\n\n"
 
