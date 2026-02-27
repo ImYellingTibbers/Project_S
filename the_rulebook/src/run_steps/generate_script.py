@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 import re
+import time
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
 import requests
@@ -54,25 +55,44 @@ def call_llm(
     if require_json:
         payload["response_format"] = {"type": "json_object"}
 
-    response = requests.post(
-        OPENROUTER_URL,
-        headers=HEADERS,
-        json=payload,
-        timeout=180,
-    )
+    max_attempts = 10
+    backoff = 15
+
+    for attempt in range(1, max_attempts + 1):
+        response = requests.post(
+            OPENROUTER_URL,
+            headers=HEADERS,
+            json=payload,
+            timeout=180,
+        )
+
+        if response.status_code in (429, 500, 502, 503, 504):
+            if attempt < max_attempts:
+                print(
+                    f"[LLM] HTTP {response.status_code} — waiting {backoff}s "
+                    f"before retry {attempt + 1}/{max_attempts}...",
+                    flush=True,
+                )
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+
+        response.raise_for_status()
+
+        data = response.json()
+        content = data["choices"][0]["message"].get("content")
+
+        if content is None:
+            raise RuntimeError("LLM returned no content (null message)")
+
+        content = content.strip()
+        if not content:
+            raise RuntimeError("LLM returned empty content")
+
+        return content
+
+    # Final raise if all retries exhausted
     response.raise_for_status()
-
-    data = response.json()
-    content = data["choices"][0]["message"].get("content")
-
-    if content is None:
-        raise RuntimeError("LLM returned no content (null message)")
-
-    content = content.strip()
-    if not content:
-        raise RuntimeError("LLM returned empty content")
-
-    return content
 
 # ============================================================
 # TTS Polish

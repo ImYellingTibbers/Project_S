@@ -14,12 +14,19 @@ STEP_3 = {"label": "Step 3 - Generate Images", "script": "run_steps/generate_ima
 STEP_4 = {"label": "Step 4 - Render Video", "script": "run_steps/render_video.py"}
 
 STEPS = [
-    STEP_0,
-    STEP_1,
-    STEP_2,
+    # STEP_0,
+    # STEP_1,
+    # STEP_2,
     STEP_3,
     STEP_4,
 ]
+
+# Steps that get one automatic retry after a kill_all() if they fail.
+RETRYABLE_STEPS = {"Step 3 - Generate Images"}
+
+sys.path.insert(0, str(PROJECT_ROOT))
+from tools.kill_gpu_users import kill_all
+
 
 def run_step(label, script_rel_path):
     script_path = (PROJECT_ROOT / script_rel_path).resolve()
@@ -28,27 +35,40 @@ def run_step(label, script_rel_path):
         return False
 
     print(f"\n=== {label} ===")
-    cmd = [sys.executable, str(script_path)]
-    
     env = os.environ.copy()
     env["PYTHONPATH"] = str(PROJECT_ROOT)
     env["PYTHONUNBUFFERED"] = "1"
-    
-    result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), env=env)
+
+    result = subprocess.run(
+        [sys.executable, str(script_path)],
+        cwd=str(PROJECT_ROOT),
+        env=env,
+    )
     return result.returncode == 0
+
 
 def main():
     RUNS_DIR.mkdir(exist_ok=True)
     start_time = time.time()
 
     for step in STEPS:
-        success = run_step(step["label"], step["script"])
+        label = step["label"]
+        success = run_step(label, step["script"])
+
+        if not success and label in RETRYABLE_STEPS:
+            print(f"\n⚠️  {label} failed — clearing GPU stack and retrying...")
+            kill_all()
+            time.sleep(15)
+            print(f"\n=== {label} (retry) ===")
+            success = run_step(label, step["script"])
+
         if not success:
-            print(f"\n🛑 Pipeline FAILED at {step['label']}")
+            print(f"\n🛑 Pipeline FAILED at {label}")
             sys.exit(1)
 
     elapsed = time.time() - start_time
     print(f"\n✅ Pipeline completed successfully in {elapsed:.2f}s.")
+
 
 if __name__ == "__main__":
     main()
