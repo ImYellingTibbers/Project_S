@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import json
 import sys
+import time
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Dict
@@ -100,20 +101,52 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
     if require_json:
         payload["response_format"] = {"type": "json_object"}
 
-    r = requests.post(
-        OPENROUTER_URL,
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=120,
-    )
+    max_attempts = 6
+    backoff = 15
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            r = requests.post(
+                OPENROUTER_URL,
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=120,
+            )
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
+            if attempt < max_attempts:
+                wait = min(backoff, 60)
+                print(
+                    f"[LLM] {type(e).__name__} — waiting {wait}s "
+                    f"before retry {attempt + 1}/{max_attempts}...",
+                    flush=True,
+                )
+                time.sleep(wait)
+                backoff *= 2
+                continue
+            raise
+
+        if r.status_code in (429, 500, 502, 503, 504):
+            if attempt < max_attempts:
+                wait = min(backoff, 60)
+                print(
+                    f"[LLM] HTTP {r.status_code} — waiting {wait}s "
+                    f"before retry {attempt + 1}/{max_attempts}...",
+                    flush=True,
+                )
+                time.sleep(wait)
+                backoff *= 2
+                continue
+
+        r.raise_for_status()
+        content = r.json()["choices"][0]["message"]["content"]
+        if not content:
+            raise RuntimeError("LLM returned empty content")
+        return content.strip()
+
     r.raise_for_status()
-    content = r.json()["choices"][0]["message"]["content"]
-    if not content:
-        raise RuntimeError("LLM returned empty content")
-    return content.strip()
 
 # ============================================================
 # Run discovery
