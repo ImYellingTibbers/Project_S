@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from dataclasses import dataclass
 
+import time
 import requests
 import websocket
 from dotenv import load_dotenv
@@ -95,20 +96,33 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
     if require_json:
         payload["response_format"] = {"type": "json_object"}
 
-    r = requests.post(
-        OPENROUTER_URL,
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=120,
-    )
-    r.raise_for_status()
-    content = r.json()["choices"][0]["message"]["content"]
-    if not content:
-        raise RuntimeError("LLM returned empty content")
-    return content.strip()
+    for attempt in range(6):
+        try:
+            r = requests.post(
+                OPENROUTER_URL,
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=120,
+            )
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
+            wait = 30 * (attempt + 1)
+            print(f"[IMG] Network error ({type(e).__name__}) — waiting {wait}s before retry {attempt + 1}/6")
+            time.sleep(wait)
+            continue
+        if r.status_code == 429:
+            wait = 30 * (attempt + 1)
+            print(f"[IMG] 429 rate limit — waiting {wait}s before retry {attempt + 1}/6")
+            time.sleep(wait)
+            continue
+        r.raise_for_status()
+        content = r.json()["choices"][0]["message"]["content"]
+        if not content:
+            raise RuntimeError("LLM returned empty content")
+        return content.strip()
+    raise RuntimeError("call_llm failed after 6 retries")
 
 # ============================================================
 # Run discovery
@@ -321,14 +335,27 @@ def download_image(cfg: ComfyConfig, pid: str) -> bytes:
 # Main execution
 # ============================================================
 
+def free_comfyui_vram():
+    try:
+        r = requests.post(
+            f"{COMFY_URL}/free",
+            json={"unload_models": True, "free_memory": True},
+            timeout=10,
+        )
+        print(f"[IMG] ComfyUI /free: {r.status_code}", flush=True)
+    except Exception as e:
+        print(f"[IMG] ComfyUI /free skipped: {e}", flush=True)
+
+
 def main():
     start_comfyui()
+    free_comfyui_vram()
     cfg = ComfyConfig()
 
     run_dir = get_latest_run_with_script()
     script_path = run_dir / "script" / "full_script.txt"
     script_text = script_path.read_text(encoding="utf-8").strip()
-    
+
     print(f"[IMG] Using run: {run_dir.name}", flush=True)
 
     thumbnail_concepts = extract_thumbnail_concepts(script_text)

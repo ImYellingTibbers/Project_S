@@ -1,0 +1,30 @@
+{
+  "main_title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Marketplaces",
+  "sanitized_title": "3_Unsettling_Stories_of_College_Students_Who_Were_Scammed_by_Fake_Online_Marketplaces",
+  "created_at": "2026-03-19T11:11:13.297392+00:00",
+  "stories": [
+    {
+      "index": 0,
+      "mini_title": "\"My Online Deal\"",
+      "seed": "I thought I'd found an amazing laptop deal through a Facebook Marketplace seller, but when I met him at the campus coffee shop to exchange cash, he seemed overly interested in my class schedule. As I walked back to my dorm, I realized he'd been casually asking me questions about my alone time and daily habits, and now I'm convinced he's been watching me ever since.",
+      "summary": "A college student's attempt to buy a laptop online turns into a stalking nightmare when the seller becomes obsessed with their daily routine."
+    },
+    {
+      "index": 1,
+      "mini_title": "\"Ride Share Nightmare\"",
+      "seed": "I booked a ride through a sketchy online carpooling service to get to my part-time job at a restaurant on the outskirts of town, and the driver, who claimed to be a fellow student, took a detour down a deserted road, saying his GPS was malfunctioning. As we drove further into the woods, I realized his ID didn't match the one on the service's website, and he started asking me invasive questions about my financial situation.",
+      "summary": "A college student's daily commute turns into a terrifying ordeal when their ride share driver takes a detour into the woods with sinister intentions."
+    },
+    {
+      "index": 2,
+      "mini_title": "\"The House Sitting Scam\"",
+      "seed": "I responded to an ad on a college forum to house sit for a professor over winter break, but when I arrived at the mansion, I discovered it was actually a group of strangers running some kind of fake rental scam, and they expected me to stay and \"watch the house\" in exchange for a place to stay. As I tried to leave, they became aggressive, insisting I'd signed a contract and owed them money, and now I'm trapped in this huge, creepy house with no phone signal.",
+      "summary": "A college student falls prey to a house sitting scam and finds themselves trapped in a strange mansion with a group of hostile strangers who refuse to let them leave."
+    }
+  ],
+  "run_folders": [
+    "2026-03-19_05-11-13",
+    "2026-03-19_06-05-00",
+    "2026-03-19_07-04-47"
+  ]
+}

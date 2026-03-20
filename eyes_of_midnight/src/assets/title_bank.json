@@ -1,0 +1,2506 @@
+{
+  "total": 500,
+  "available": 495,
+  "titles": [
+    {
+      "id": 1,
+      "title": "3 Terrifying Stories of Women Who Received Unwanted Packages at Their Homes",
+      "used": false
+    },
+    {
+      "id": 2,
+      "title": "3 Disturbing Accounts of Men Who Were Conned by Fake Online Profiles",
+      "used": false
+    },
+    {
+      "id": 3,
+      "title": "3 Chilling Experiences of College Students Who Were Stalked by Classmates",
+      "used": false
+    },
+    {
+      "id": 4,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Encountered Hostile Customers",
+      "used": false
+    },
+    {
+      "id": 5,
+      "title": "3 True Confessions From People Who Discovered Hidden Messages in Their Homes",
+      "used": false
+    },
+    {
+      "id": 6,
+      "title": "3 Unsettling Stories of Gym-Goers Who Were Watched by Fellow Members",
+      "used": false
+    },
+    {
+      "id": 7,
+      "title": "3 Harrowing Experiences of Travelers Who Were Scammed by Taxi Drivers",
+      "used": false
+    },
+    {
+      "id": 8,
+      "title": "3 Disturbing Encounters With Strangers Who Refused to Leave People Alone",
+      "used": false
+    },
+    {
+      "id": 9,
+      "title": "3 Real Stories of Employees Who Were Manipulated by Their Managers",
+      "used": false
+    },
+    {
+      "id": 10,
+      "title": "3 Terrifying Accounts of People Who Were Followed Home from Work",
+      "used": false
+    },
+    {
+      "id": 11,
+      "title": "3 Chilling Stories of Campers Who Woke Up to Find Intruders in Their Campsite",
+      "used": false
+    },
+    {
+      "id": 12,
+      "title": "3 Horrifying Experiences of Women Who Were Harassed by Ex-Partners",
+      "used": false
+    },
+    {
+      "id": 13,
+      "title": "3 True Stories of People Who Found Evidence of Break-Ins While They Were Away",
+      "used": false
+    },
+    {
+      "id": 14,
+      "title": "3 Unsettling Accounts of Rideshare Passengers Who Were Taken to Wrong Locations",
+      "used": false
+    },
+    {
+      "id": 15,
+      "title": "3 Disturbing Stories of Hospital Patients Who Were Mishandled by Staff",
+      "used": false
+    },
+    {
+      "id": 16,
+      "title": "3 Harrowing Encounters With People Who Claimed to Be Someone They Were Not",
+      "used": false
+    },
+    {
+      "id": 17,
+      "title": "3 Terrifying Experiences of Runners Who Were Chased by Unknown Individuals",
+      "used": true
+    },
+    {
+      "id": 18,
+      "title": "3 Chilling Stories of Retail Workers Who Dealt with Difficult Customers",
+      "used": false
+    },
+    {
+      "id": 19,
+      "title": "3 Horrifying Accounts of People Who Received Threatening Messages Online",
+      "used": false
+    },
+    {
+      "id": 20,
+      "title": "3 True Confessions From People Who Were Trapped in Their Own Homes",
+      "used": false
+    },
+    {
+      "id": 21,
+      "title": "3 Unsettling Stories of People Who Were Watched in Public Restrooms",
+      "used": false
+    },
+    {
+      "id": 22,
+      "title": "3 Disturbing Experiences of College Students Who Were Blackmailed by Peers",
+      "used": false
+    },
+    {
+      "id": 23,
+      "title": "3 Harrowing Stories of People Who Were Stranded in Remote Areas with Strangers",
+      "used": false
+    },
+    {
+      "id": 24,
+      "title": "3 Terrifying Accounts of People Who Discovered Hidden Cameras in Their Hotel Rooms",
+      "used": false
+    },
+    {
+      "id": 25,
+      "title": "3 Chilling Encounters With Service Workers Who Overstepped Boundaries",
+      "used": false
+    },
+    {
+      "id": 26,
+      "title": "3 Horrifying Stories of Women Who Were Stalked by Former Friends",
+      "used": false
+    },
+    {
+      "id": 27,
+      "title": "3 True Stories of People Who Found Suspicious Items in Their Food or Drinks",
+      "used": false
+    },
+    {
+      "id": 28,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Ex-Partners at Work",
+      "used": false
+    },
+    {
+      "id": 29,
+      "title": "3 Disturbing Accounts of People Who Were Scammed by Fake Charities",
+      "used": false
+    },
+    {
+      "id": 30,
+      "title": "3 Harrowing Stories of Travelers Who Got Lost in Unfamiliar Areas at Night",
+      "used": false
+    },
+    {
+      "id": 31,
+      "title": "3 Terrifying Stories of People Who Were Chased by Drivers on the Highway",
+      "used": false
+    },
+    {
+      "id": 32,
+      "title": "3 Chilling Experiences of People Who Were Trapped in Elevators with Strangers",
+      "used": false
+    },
+    {
+      "id": 33,
+      "title": "3 Horrifying Accounts of People Who Were Manipulated into Sending Money Online",
+      "used": false
+    },
+    {
+      "id": 34,
+      "title": "3 True Confessions From People Who Were Forced to Hide in Their Own Homes",
+      "used": false
+    },
+    {
+      "id": 35,
+      "title": "3 Unsettling Stories of People Who Were Accosted by Strangers in Parking Garages",
+      "used": false
+    },
+    {
+      "id": 36,
+      "title": "3 Disturbing Encounters With People Who Refused to Respect Personal Space",
+      "used": false
+    },
+    {
+      "id": 37,
+      "title": "3 Harrowing Experiences of People Who Were Stalked by Coworkers",
+      "used": false
+    },
+    {
+      "id": 38,
+      "title": "3 Terrifying Stories of People Who Discovered They Were Being Spied on by Neighbors",
+      "used": false
+    },
+    {
+      "id": 39,
+      "title": "3 Chilling Accounts of People Who Were Lured into Isolated Areas by Strangers",
+      "used": false
+    },
+    {
+      "id": 40,
+      "title": "3 Horrifying Stories of People Who Were Targeted by Scammers Posing as Authorities",
+      "used": false
+    },
+    {
+      "id": 41,
+      "title": "3 True Stories of People Who Were Held Against Their Will in Public Places",
+      "used": false
+    },
+    {
+      "id": 42,
+      "title": "3 Unsettling Experiences of People Who Were Stalked by Former Classmates",
+      "used": false
+    },
+    {
+      "id": 43,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Someone from Their Past",
+      "used": false
+    },
+    {
+      "id": 44,
+      "title": "3 Harrowing Stories of People Who Were Trapped in Their Cars with Strangers",
+      "used": false
+    },
+    {
+      "id": 45,
+      "title": "3 Terrifying Encounters With People Who Claimed to Have Information About Them",
+      "used": false
+    },
+    {
+      "id": 46,
+      "title": "3 Chilling Stories of People Who Discovered Someone Had Been Living in Their Attic",
+      "used": false
+    },
+    {
+      "id": 47,
+      "title": "3 Horrifying Accounts of People Who Were Manipulated into Meeting Strangers in Person",
+      "used": false
+    },
+    {
+      "id": 48,
+      "title": "3 True Confessions From People Who Were Stalked by Someone They Met Online",
+      "used": false
+    },
+    {
+      "id": 49,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Grocery Stores",
+      "used": false
+    },
+    {
+      "id": 50,
+      "title": "3 Disturbing Stories of People Who Were Forced to Flee Their Homes Due to Harassment",
+      "used": false
+    },
+    {
+      "id": 51,
+      "title": "3 Terrifying Stories of People Who Were Stalked by Former Roommates",
+      "used": false
+    },
+    {
+      "id": 52,
+      "title": "3 Disturbing Accounts of Women Who Received Unwanted Flowers at Work",
+      "used": false
+    },
+    {
+      "id": 53,
+      "title": "3 Chilling Experiences of Hikers Who Found Strange Markings on Trees",
+      "used": false
+    },
+    {
+      "id": 54,
+      "title": "3 Horrifying Stories of Night Shift Workers Who Were Confronted by Aggressive Customers",
+      "used": false
+    },
+    {
+      "id": 55,
+      "title": "3 True Confessions From People Who Discovered Hidden Keys to Their Homes",
+      "used": false
+    },
+    {
+      "id": 56,
+      "title": "3 Unsettling Stories of Couples Who Were Watched by Their Neighbors",
+      "used": false
+    },
+    {
+      "id": 57,
+      "title": "3 Disturbing Encounters With People Who Claimed to Be Utility Workers",
+      "used": false
+    },
+    {
+      "id": 58,
+      "title": "3 Harrowing Experiences of Travelers Who Were Scammed by Fake Tour Guides",
+      "used": false
+    },
+    {
+      "id": 59,
+      "title": "3 Terrifying Stories of People Who Were Followed by Cars with Tinted Windows",
+      "used": false
+    },
+    {
+      "id": 60,
+      "title": "3 Chilling Accounts of College Students Who Were Blackmailed by Hackers",
+      "used": false
+    },
+    {
+      "id": 61,
+      "title": "3 Horrifying Stories of People Who Found Strange Objects in Their Mail",
+      "used": false
+    },
+    {
+      "id": 62,
+      "title": "3 True Stories of Employees Who Were Manipulated by Their HR Departments",
+      "used": false
+    },
+    {
+      "id": 63,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Libraries",
+      "used": false
+    },
+    {
+      "id": 64,
+      "title": "3 Disturbing Accounts of Women Who Were Stalked by Men They Met at Gyms",
+      "used": false
+    },
+    {
+      "id": 65,
+      "title": "3 Harrowing Stories of People Who Were Trapped in Their Own Backyards",
+      "used": false
+    },
+    {
+      "id": 66,
+      "title": "3 Terrifying Encounters With People Who Claimed to Have Been Sent to Help",
+      "used": false
+    },
+    {
+      "id": 67,
+      "title": "3 Chilling Stories of Retail Workers Who Were Harassed by Regular Customers",
+      "used": false
+    },
+    {
+      "id": 68,
+      "title": "3 Horrifying Accounts of People Who Received Threatening Letters at Home",
+      "used": false
+    },
+    {
+      "id": 69,
+      "title": "3 True Confessions From People Who Were Forced to Move Due to Stalking",
+      "used": false
+    },
+    {
+      "id": 70,
+      "title": "3 Unsettling Stories of People Who Were Watched by Strangers in Coffee Shops",
+      "used": true
+    },
+    {
+      "id": 71,
+      "title": "3 Disturbing Experiences of College Students Who Were Scammed by Fake Landlords",
+      "used": false
+    },
+    {
+      "id": 72,
+      "title": "3 Harrowing Stories of Travelers Who Got Lost in Airports at Night",
+      "used": false
+    },
+    {
+      "id": 73,
+      "title": "3 Terrifying Stories of People Who Were Chased on Foot by Unknown Individuals",
+      "used": false
+    },
+    {
+      "id": 74,
+      "title": "3 Chilling Accounts of People Who Found Hidden Microphones in Their Homes",
+      "used": false
+    },
+    {
+      "id": 75,
+      "title": "3 Horrifying Stories of Women Who Were Stalked by Men They Met at Bars",
+      "used": false
+    },
+    {
+      "id": 76,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Off the Clock",
+      "used": false
+    },
+    {
+      "id": 77,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Rest Stops",
+      "used": false
+    },
+    {
+      "id": 78,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Employers",
+      "used": false
+    },
+    {
+      "id": 79,
+      "title": "3 Harrowing Stories of People Who Were Trapped in Elevators with No Phone Signal",
+      "used": false
+    },
+    {
+      "id": 80,
+      "title": "3 Terrifying Encounters With People Who Claimed to Be Police Officers",
+      "used": false
+    },
+    {
+      "id": 81,
+      "title": "3 Chilling Stories of People Who Found Strange Messages on Their Cars",
+      "used": false
+    },
+    {
+      "id": 82,
+      "title": "3 Horrifying Accounts of People Who Were Manipulated into Sending Personal Info Online",
+      "used": false
+    },
+    {
+      "id": 83,
+      "title": "3 True Confessions From People Who Were Stalked by Someone They Trusted",
+      "used": false
+    },
+    {
+      "id": 84,
+      "title": "3 Unsettling Stories of People Who Were Watched by Strangers in Bookstores",
+      "used": false
+    },
+    {
+      "id": 85,
+      "title": "3 Disturbing Experiences of College Students Who Were Scammed by Fake Scholarship Offers",
+      "used": false
+    },
+    {
+      "id": 86,
+      "title": "3 Harrowing Stories of Travelers Who Were Robbed in Their Hotel Rooms",
+      "used": false
+    },
+    {
+      "id": 87,
+      "title": "3 Terrifying Stories of People Who Were Followed by Bicyclists at Night",
+      "used": false
+    },
+    {
+      "id": 88,
+      "title": "3 Chilling Accounts of People Who Found Hidden Cameras in Their Rental Cars",
+      "used": false
+    },
+    {
+      "id": 89,
+      "title": "3 Horrifying Stories of Women Who Were Harassed by Men in Online Gaming Communities",
+      "used": false
+    },
+    {
+      "id": 90,
+      "title": "3 True Stories of Employees Who Were Forced to Work in Unsafe Conditions",
+      "used": false
+    },
+    {
+      "id": 91,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Museums",
+      "used": false
+    },
+    {
+      "id": 92,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Someone from Their Social Media",
+      "used": false
+    },
+    {
+      "id": 93,
+      "title": "3 Harrowing Stories of People Who Were Trapped in Abandoned Buildings",
+      "used": false
+    },
+    {
+      "id": 94,
+      "title": "3 Terrifying Encounters With People Who Claimed to Have Information About Their Families",
+      "used": false
+    },
+    {
+      "id": 95,
+      "title": "3 Chilling Stories of People Who Found Strange Symbols on Their Property",
+      "used": false
+    },
+    {
+      "id": 96,
+      "title": "3 Horrifying Accounts of People Who Were Manipulated into Meeting Strangers for Fake Interviews",
+      "used": false
+    },
+    {
+      "id": 97,
+      "title": "3 True Confessions From People Who Were Stalked by Someone They Met at a Concert",
+      "used": false
+    },
+    {
+      "id": 98,
+      "title": "3 Unsettling Stories of People Who Were Watched by Strangers in Public Transportation",
+      "used": false
+    },
+    {
+      "id": 99,
+      "title": "3 Disturbing Experiences of College Students Who Were Scammed by Fake Internship Offers",
+      "used": false
+    },
+    {
+      "id": 100,
+      "title": "3 Harrowing Stories of People Who Were Forced to Escape from Their Own Homes Through Windows",
+      "used": false
+    },
+    {
+      "id": 101,
+      "title": "3 Terrifying Stories of Women Who Discovered Hidden GPS Trackers on Their Cars",
+      "used": false
+    },
+    {
+      "id": 102,
+      "title": "3 Disturbing Accounts of Men Who Were Catfished by Women on Dating Apps",
+      "used": false
+    },
+    {
+      "id": 103,
+      "title": "3 Chilling Experiences of College Students Who Were Stalked by Former Roommates",
+      "used": false
+    },
+    {
+      "id": 104,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Dogs at Customer Homes",
+      "used": false
+    },
+    {
+      "id": 105,
+      "title": "3 True Confessions From People Who Found Strange Footprints in Their Backyards",
+      "used": false
+    },
+    {
+      "id": 106,
+      "title": "3 Unsettling Stories of Gym-Goers Who Were Harassed by Personal Trainers",
+      "used": false
+    },
+    {
+      "id": 107,
+      "title": "3 Harrowing Experiences of Travelers Who Were Scammed by Fake Travel Agents",
+      "used": false
+    },
+    {
+      "id": 108,
+      "title": "3 Disturbing Encounters With Strangers Who Took Pictures of People Without Consent",
+      "used": false
+    },
+    {
+      "id": 109,
+      "title": "3 Real Stories of Employees Who Were Bullied by Their Colleagues",
+      "used": false
+    },
+    {
+      "id": 110,
+      "title": "3 Terrifying Accounts of People Who Were Followed Home from the Grocery Store",
+      "used": false
+    },
+    {
+      "id": 111,
+      "title": "3 Chilling Stories of Campers Who Found Abandoned Camping Gear with Strange Symbols",
+      "used": false
+    },
+    {
+      "id": 112,
+      "title": "3 Horrifying Experiences of Women Who Were Harassed by Men in Online Forums",
+      "used": false
+    },
+    {
+      "id": 113,
+      "title": "3 True Stories of People Who Discovered Hidden Rooms in Their New Homes",
+      "used": false
+    },
+    {
+      "id": 114,
+      "title": "3 Unsettling Accounts of Rideshare Drivers Who Were Threatened by Passengers",
+      "used": false
+    },
+    {
+      "id": 115,
+      "title": "3 Disturbing Stories of Hospital Patients Who Were Given Wrong Medications",
+      "used": false
+    },
+    {
+      "id": 116,
+      "title": "3 Harrowing Encounters With People Who Claimed to Be Long-Lost Relatives",
+      "used": false
+    },
+    {
+      "id": 117,
+      "title": "3 Terrifying Experiences of Runners Who Were Chased by People on Skateboards",
+      "used": false
+    },
+    {
+      "id": 118,
+      "title": "3 Chilling Stories of Retail Workers Who Were Stalked by Regular Customers",
+      "used": false
+    },
+    {
+      "id": 119,
+      "title": "3 Horrifying Accounts of People Who Received Fake Eviction Notices",
+      "used": false
+    },
+    {
+      "id": 120,
+      "title": "3 True Confessions From People Who Were Trapped in Their Own Basements",
+      "used": false
+    },
+    {
+      "id": 121,
+      "title": "3 Unsettling Stories of People Who Were Watched by Strangers in Laundromats",
+      "used": false
+    },
+    {
+      "id": 122,
+      "title": "3 Disturbing Experiences of College Students Who Were Scammed by Fake Tutoring Services",
+      "used": false
+    },
+    {
+      "id": 123,
+      "title": "3 Harrowing Stories of People Who Were Stranded in Remote Areas with No Cell Service",
+      "used": false
+    },
+    {
+      "id": 124,
+      "title": "3 Terrifying Accounts of People Who Discovered Hidden Cameras in Their Airbnb Rentals",
+      "used": false
+    },
+    {
+      "id": 125,
+      "title": "3 Chilling Encounters With Service Workers Who Had Unusual Access to Homes",
+      "used": false
+    },
+    {
+      "id": 126,
+      "title": "3 Horrifying Stories of Women Who Were Stalked by Men They Met at Volunteer Events",
+      "used": false
+    },
+    {
+      "id": 127,
+      "title": "3 True Stories of People Who Found Suspicious Packages on Their Doorsteps",
+      "used": false
+    },
+    {
+      "id": 128,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Parking Garages at Night",
+      "used": false
+    },
+    {
+      "id": 129,
+      "title": "3 Disturbing Accounts of People Who Were Scammed by Fake Tech Support",
+      "used": false
+    },
+    {
+      "id": 130,
+      "title": "3 Harrowing Stories of Travelers Who Got Lost in Foreign Countries with No Language Skills",
+      "used": false
+    },
+    {
+      "id": 131,
+      "title": "3 Terrifying Stories of People Who Were Chased by Drivers with Expired Licenses",
+      "used": false
+    },
+    {
+      "id": 132,
+      "title": "3 Chilling Experiences of People Who Were Trapped in Stairwells with No Exit",
+      "used": false
+    },
+    {
+      "id": 133,
+      "title": "3 Horrifying Accounts of People Who Were Manipulated into Sending Money to Fake Charities",
+      "used": false
+    },
+    {
+      "id": 134,
+      "title": "3 True Confessions From People Who Were Forced to Move to a New City Due to Stalking",
+      "used": false
+    },
+    {
+      "id": 135,
+      "title": "3 Unsettling Stories of People Who Were Watched by Strangers in Food Courts",
+      "used": false
+    },
+    {
+      "id": 136,
+      "title": "3 Harrowing Stories of People Who Were Trapped in Their Cars During Natural Disasters",
+      "used": false
+    },
+    {
+      "id": 137,
+      "title": "3 Terrifying Encounters With People Who Claimed to Be Undercover Police Officers",
+      "used": false
+    },
+    {
+      "id": 138,
+      "title": "3 Chilling Stories of People Who Found Strange Messages on Their Answering Machines",
+      "used": false
+    },
+    {
+      "id": 139,
+      "title": "3 Horrifying Accounts of People Who Were Manipulated into Meeting Strangers for Fake Job Interviews",
+      "used": false
+    },
+    {
+      "id": 140,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Long Hours Without Pay",
+      "used": false
+    },
+    {
+      "id": 141,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Rest Areas",
+      "used": false
+    },
+    {
+      "id": 142,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Business Partners",
+      "used": false
+    },
+    {
+      "id": 143,
+      "title": "3 Harrowing Stories of People Who Were Trapped in Abandoned Buildings with No Exit",
+      "used": false
+    },
+    {
+      "id": 144,
+      "title": "3 Terrifying Stories of People Who Were Followed by People on Motorcycles",
+      "used": false
+    },
+    {
+      "id": 145,
+      "title": "3 Chilling Accounts of People Who Found Hidden Keyloggers on Their Computers",
+      "used": false
+    },
+    {
+      "id": 146,
+      "title": "3 True Confessions From People Who Were Stalked by Someone They Met at a Gym",
+      "used": false
+    },
+    {
+      "id": 147,
+      "title": "3 Unsettling Stories of People Who Were Watched by Strangers in Public Pools",
+      "used": false
+    },
+    {
+      "id": 148,
+      "title": "3 Disturbing Experiences of College Students Who Were Scammed by Fake Online Courses",
+      "used": false
+    },
+    {
+      "id": 149,
+      "title": "3 Harrowing Experiences of Solo Female Travelers Who Were Approached by Strangers in Airport Lounges",
+      "used": false
+    },
+    {
+      "id": 150,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Hostile Colleagues",
+      "used": false
+    },
+    {
+      "id": 151,
+      "title": "3 Disturbing Accounts of People Who Received Suspicious Packages at Their Workplace",
+      "used": false
+    },
+    {
+      "id": 152,
+      "title": "3 Chilling Encounters With Strangers Who Followed People Home from the Gym",
+      "used": false
+    },
+    {
+      "id": 153,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Sellers",
+      "used": false
+    },
+    {
+      "id": 154,
+      "title": "3 True Confessions From People Who Were Stalked by Someone They Met at a Music Festival",
+      "used": false
+    },
+    {
+      "id": 155,
+      "title": "3 Horrifying Experiences of Women Who Were Harassed by Strangers in Parking Garages During the Day",
+      "used": false
+    },
+    {
+      "id": 156,
+      "title": "3 Disturbing Stories of Delivery Drivers Who Were Attacked by Dogs at Customer Homes",
+      "used": false
+    },
+    {
+      "id": 157,
+      "title": "3 Terrifying Accounts of People Who Were Trapped in Elevators with No Phone Signal for Hours",
+      "used": false
+    },
+    {
+      "id": 158,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Hotel Lobbies",
+      "used": false
+    },
+    {
+      "id": 159,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Off the Clock Without Pay",
+      "used": false
+    },
+    {
+      "id": 160,
+      "title": "3 Chilling Experiences of People Who Were Confronted by Strangers in Rest Areas",
+      "used": false
+    },
+    {
+      "id": 161,
+      "title": "3 Unsettling Stories of People Who Were Confronted by Strangers in Laundromats",
+      "used": false
+    },
+    {
+      "id": 162,
+      "title": "3 Harrowing Stories of Travelers Who Were Scammed by Fake Travel Agents",
+      "used": false
+    },
+    {
+      "id": 163,
+      "title": "3 True Stories of Employees Who Were Bullied by Their Colleagues",
+      "used": false
+    },
+    {
+      "id": 164,
+      "title": "3 Unsettling Experiences of People Who Were Watched by Strangers in Public Pools",
+      "used": false
+    },
+    {
+      "id": 165,
+      "title": "3 Chilling Experiences of People Who Found Strange Messages on Their Answering Machines",
+      "used": false
+    },
+    {
+      "id": 166,
+      "title": "3 Unsettling Stories of People Who Were Confronted by Strangers in Museums",
+      "used": false
+    },
+    {
+      "id": 167,
+      "title": "3 Disturbing Accounts of People Who Were Scammed by Fake Online Courses",
+      "used": false
+    },
+    {
+      "id": 168,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Property",
+      "used": false
+    },
+    {
+      "id": 169,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers",
+      "used": false
+    },
+    {
+      "id": 170,
+      "title": "3 Terrifying Stories of Solo Female Hikers Who Were Followed by Unknown Men on Trails",
+      "used": false
+    },
+    {
+      "id": 171,
+      "title": "3 Disturbing Accounts of People Who Received Mysterious Letters at Their Workplace",
+      "used": false
+    },
+    {
+      "id": 172,
+      "title": "3 Chilling Experiences of Couples Who Were Stalked by Their Neighbors",
+      "used": false
+    },
+    {
+      "id": 173,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Strangers at Delivery Locations",
+      "used": false
+    },
+    {
+      "id": 174,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Job Postings",
+      "used": false
+    },
+    {
+      "id": 175,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Therapists",
+      "used": false
+    },
+    {
+      "id": 176,
+      "title": "3 Harrowing Stories of Travelers Who Were Robbed in Hotel Rooms by Staff Members",
+      "used": false
+    },
+    {
+      "id": 177,
+      "title": "3 Disturbing Encounters With Strangers Who Approached People at Bus Stops",
+      "used": false
+    },
+    {
+      "id": 178,
+      "title": "3 Terrifying Accounts of People Who Were Trapped in Parking Garages with No Exit",
+      "used": false
+    },
+    {
+      "id": 179,
+      "title": "3 Chilling Stories of Retail Workers Who Were Harassed by Customers",
+      "used": false
+    },
+    {
+      "id": 180,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Airport Terminals",
+      "used": false
+    },
+    {
+      "id": 181,
+      "title": "3 Horrifying Stories of Women Who Were Stalked by Men They Met at Coffee Shops",
+      "used": false
+    },
+    {
+      "id": 182,
+      "title": "3 True Stories of Employees Who Were Forced to Work in Hazardous Conditions",
+      "used": false
+    },
+    {
+      "id": 183,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Friends",
+      "used": false
+    },
+    {
+      "id": 184,
+      "title": "3 Harrowing Stories of People Who Were Stranded on the Side of the Road with No Phone Signal",
+      "used": false
+    },
+    {
+      "id": 185,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Hostile Coworkers",
+      "used": false
+    },
+    {
+      "id": 186,
+      "title": "3 Chilling Experiences of People Who Found Hidden Cameras in Their Dressing Rooms",
+      "used": false
+    },
+    {
+      "id": 187,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Guns",
+      "used": false
+    },
+    {
+      "id": 188,
+      "title": "3 Disturbing Stories of Hospital Patients Who Were Given Wrong Medications by Unqualified Staff",
+      "used": false
+    },
+    {
+      "id": 189,
+      "title": "3 Terrifying Encounters With Strangers Who Claimed to Be Undercover Police Officers",
+      "used": false
+    },
+    {
+      "id": 190,
+      "title": "3 Chilling Stories of People Who Found Strange Messages on Their Social Media Accounts",
+      "used": false
+    },
+    {
+      "id": 191,
+      "title": "3 Unsettling Experiences of People Who Were Confronted by Strangers in Library Study Rooms",
+      "used": false
+    },
+    {
+      "id": 192,
+      "title": "3 Terrifying Stories of People Who Were Followed by Drivers with Expired Licenses",
+      "used": false
+    },
+    {
+      "id": 193,
+      "title": "3 Disturbing Stories of College Students Who Were Scammed by Fake Scholarship Offers",
+      "used": false
+    },
+    {
+      "id": 194,
+      "title": "3 Terrifying Stories of People Who Were Chased by People on Skateboards",
+      "used": false
+    },
+    {
+      "id": 195,
+      "title": "3 Chilling Experiences of People Who Found Hidden Keyloggers on Their Computers",
+      "used": false
+    },
+    {
+      "id": 196,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Approached by Strangers in Airport Lounges",
+      "used": false
+    },
+    {
+      "id": 197,
+      "title": "3 Horrifying Accounts of People Who Received Suspicious Packages at Their Workplace",
+      "used": false
+    },
+    {
+      "id": 198,
+      "title": "3 Disturbing Stories of Women Who Were Followed Home from Yoga Classes",
+      "used": false
+    },
+    {
+      "id": 199,
+      "title": "3 Terrifying Accounts of Men Who Were Stalked by Ex-Partners at Their New Jobs",
+      "used": false
+    },
+    {
+      "id": 200,
+      "title": "3 Chilling Experiences of College Students Who Were Scammed by Fake Landlords",
+      "used": false
+    },
+    {
+      "id": 201,
+      "title": "3 Harrowing Stories of Solo Female Hikers Who Were Confronted by Strangers on Trails",
+      "used": false
+    },
+    {
+      "id": 202,
+      "title": "3 Unsettling Stories of People Who Found Hidden Microphones in Their Homes",
+      "used": false
+    },
+    {
+      "id": 203,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Coworkers",
+      "used": false
+    },
+    {
+      "id": 204,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Strangers in Alleys",
+      "used": false
+    },
+    {
+      "id": 205,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Smart Home Devices",
+      "used": false
+    },
+    {
+      "id": 206,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Hostile Customers",
+      "used": false
+    },
+    {
+      "id": 207,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Cars",
+      "used": false
+    },
+    {
+      "id": 208,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Badges",
+      "used": false
+    },
+    {
+      "id": 209,
+      "title": "3 True Stories of Employees Who Were Coerced into Working in Isolated Areas",
+      "used": false
+    },
+    {
+      "id": 210,
+      "title": "3 Harrowing Stories of Travelers Who Were Scammed by Fake Hotel Staff",
+      "used": false
+    },
+    {
+      "id": 211,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Classmates",
+      "used": false
+    },
+    {
+      "id": 212,
+      "title": "3 Terrifying Stories of Solo Female Travelers Who Were Approached by Strangers in Train Stations",
+      "used": false
+    },
+    {
+      "id": 213,
+      "title": "3 Chilling Experiences of People Who Found Hidden Cameras in Their Locker Rooms",
+      "used": false
+    },
+    {
+      "id": 214,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Career Coaches",
+      "used": false
+    },
+    {
+      "id": 215,
+      "title": "3 Horrifying Stories of Women Who Were Stalked by Men They Met at Book Clubs",
+      "used": false
+    },
+    {
+      "id": 216,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Therapists into Revealing Personal Secrets",
+      "used": false
+    },
+    {
+      "id": 217,
+      "title": "3 Disturbing Accounts of People Who Received Mysterious Packages with No Return Address",
+      "used": false
+    },
+    {
+      "id": 218,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Abandoned Buildings",
+      "used": false
+    },
+    {
+      "id": 219,
+      "title": "3 Chilling Experiences of People Who Found Strange Messages on Their Voicemails",
+      "used": false
+    },
+    {
+      "id": 220,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Pepper Spray",
+      "used": false
+    },
+    {
+      "id": 221,
+      "title": "3 True Stories of Employees Who Were Forced to Work Long Hours Without Breaks",
+      "used": false
+    },
+    {
+      "id": 222,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Tour Guides",
+      "used": false
+    },
+    {
+      "id": 223,
+      "title": "3 Terrifying Stories of People Who Were Followed by Strangers on Bicycles",
+      "used": false
+    },
+    {
+      "id": 224,
+      "title": "3 Chilling Experiences of People Who Found Hidden Keyloggers on Their Work Computers",
+      "used": false
+    },
+    {
+      "id": 225,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Internship Programs",
+      "used": false
+    },
+    {
+      "id": 226,
+      "title": "3 Horrifying Stories of Women Who Were Harassed by Strangers in Coffee Shops",
+      "used": false
+    },
+    {
+      "id": 227,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Friends into Lending Money",
+      "used": false
+    },
+    {
+      "id": 228,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Letters at Their Workplaces",
+      "used": false
+    },
+    {
+      "id": 229,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Hostile Managers",
+      "used": false
+    },
+    {
+      "id": 230,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Mailboxes",
+      "used": false
+    },
+    {
+      "id": 231,
+      "title": "3 True Stories of Employees Who Were Coerced into Working in Hazardous Conditions Without Protective Gear",
+      "used": false
+    },
+    {
+      "id": 232,
+      "title": "3 Harrowing Stories of Travelers Who Were Scammed by Fake Travel Insurance Companies",
+      "used": false
+    },
+    {
+      "id": 233,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Neighbors",
+      "used": false
+    },
+    {
+      "id": 234,
+      "title": "3 Terrifying Stories of Solo Female Travelers Who Were Approached by Strangers in Museums",
+      "used": false
+    },
+    {
+      "id": 235,
+      "title": "3 Chilling Experiences of People Who Found Hidden Cameras in Their Hotel Rooms",
+      "used": false
+    },
+    {
+      "id": 236,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Marketplaces",
+      "used": true
+    },
+    {
+      "id": 237,
+      "title": "3 Horrifying Stories of Women Who Were Stalked by Men They Met at Gyms",
+      "used": false
+    },
+    {
+      "id": 238,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Family Members into Revealing Personal Secrets",
+      "used": false
+    },
+    {
+      "id": 239,
+      "title": "3 Disturbing Accounts of People Who Received Mysterious Packages with Strange Odors",
+      "used": false
+    },
+    {
+      "id": 240,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Parking Garages",
+      "used": false
+    },
+    {
+      "id": 241,
+      "title": "3 Chilling Experiences of People Who Found Strange Messages on Their Social Media Accounts",
+      "used": false
+    },
+    {
+      "id": 242,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Police Badges",
+      "used": false
+    },
+    {
+      "id": 243,
+      "title": "3 True Stories of Employees Who Were Forced to Work Without Pay for Extended Periods",
+      "used": false
+    },
+    {
+      "id": 244,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Airbnb Hosts",
+      "used": false
+    },
+    {
+      "id": 245,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Roommates",
+      "used": false
+    },
+    {
+      "id": 246,
+      "title": "3 Terrifying Stories of Women Who Were Followed Home from Grocery Stores by Strangers in Masks",
+      "used": false
+    },
+    {
+      "id": 247,
+      "title": "3 Disturbing Accounts of College Students Who Were Scammed by Fake Online Tutors",
+      "used": false
+    },
+    {
+      "id": 248,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Janitors",
+      "used": false
+    },
+    {
+      "id": 249,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Baseball Bats",
+      "used": false
+    },
+    {
+      "id": 250,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Taxi Drivers",
+      "used": false
+    },
+    {
+      "id": 251,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Coworkers into Revealing Company Secrets",
+      "used": false
+    },
+    {
+      "id": 252,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Medications by Unqualified Interns",
+      "used": false
+    },
+    {
+      "id": 253,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Home Security Systems",
+      "used": false
+    },
+    {
+      "id": 254,
+      "title": "3 Terrifying Stories of Men Who Were Stalked by Ex-Partners at Their New Gyms",
+      "used": false
+    },
+    {
+      "id": 255,
+      "title": "3 Chilling Experiences of People Who Found Hidden Cameras in Their Airbnb Rentals",
+      "used": false
+    },
+    {
+      "id": 256,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Job Recruiters",
+      "used": false
+    },
+    {
+      "id": 257,
+      "title": "3 True Stories of Employees Who Were Forced to Work in Isolated Areas with No Cell Service",
+      "used": false
+    },
+    {
+      "id": 258,
+      "title": "3 Harrowing Stories of Travelers Who Were Robbed in Hotel Rooms by Staff Members with Master Keys",
+      "used": false
+    },
+    {
+      "id": 259,
+      "title": "3 Terrifying Stories of Solo Female Hikers Who Were Confronted by Strangers on Remote Trails",
+      "used": false
+    },
+    {
+      "id": 260,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Car Windshields",
+      "used": false
+    },
+    {
+      "id": 261,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Identification",
+      "used": false
+    },
+    {
+      "id": 262,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Therapists into Revealing Dark Secrets",
+      "used": false
+    },
+    {
+      "id": 263,
+      "title": "3 Horrifying Stories of Women Who Were Harassed by Strangers in Library Study Rooms",
+      "used": false
+    },
+    {
+      "id": 264,
+      "title": "3 Disturbing Accounts of People Who Received Mysterious Packages with No Return Address or Note",
+      "used": false
+    },
+    {
+      "id": 265,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Hostile Security Guards",
+      "used": false
+    },
+    {
+      "id": 266,
+      "title": "3 Chilling Experiences of People Who Found Hidden Microphones in Their Home Offices",
+      "used": false
+    },
+    {
+      "id": 267,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Marketplace Sellers",
+      "used": false
+    },
+    {
+      "id": 268,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Long Hours Without Overtime Pay",
+      "used": false
+    },
+    {
+      "id": 269,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Tourist Information Centers",
+      "used": false
+    },
+    {
+      "id": 270,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Classmates on Social Media",
+      "used": false
+    },
+    {
+      "id": 271,
+      "title": "3 Terrifying Stories of People Who Were Followed by Strangers on Foot in Abandoned Neighborhoods",
+      "used": false
+    },
+    {
+      "id": 272,
+      "title": "3 Chilling Experiences of People Who Found Strange Messages on Their Answering Machines at Work",
+      "used": false
+    },
+    {
+      "id": 273,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Sharp Objects",
+      "used": false
+    },
+    {
+      "id": 274,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Friends into Lending Large Sums of Money",
+      "used": false
+    },
+    {
+      "id": 275,
+      "title": "3 Horrifying Stories of Women Who Were Stalked by Men They Met at Book Signings",
+      "used": false
+    },
+    {
+      "id": 276,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Letters at Their Home Addresses",
+      "used": false
+    },
+    {
+      "id": 277,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Parking Garages with No Surveillance",
+      "used": false
+    },
+    {
+      "id": 278,
+      "title": "3 Chilling Experiences of People Who Found Hidden Cameras in Their Gym Locker Rooms",
+      "used": false
+    },
+    {
+      "id": 279,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Scholarship Programs",
+      "used": false
+    },
+    {
+      "id": 280,
+      "title": "3 True Stories of Employees Who Were Forced to Work in Hazardous Conditions Without Proper Training",
+      "used": false
+    },
+    {
+      "id": 281,
+      "title": "3 Harrowing Stories of Travelers Who Were Scammed by Fake Travel Insurance Agencies",
+      "used": false
+    },
+    {
+      "id": 282,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Neighbors on Social Media",
+      "used": false
+    },
+    {
+      "id": 283,
+      "title": "3 Terrifying Stories of Solo Female Travelers Who Were Approached by Strangers in Train Stations at Night",
+      "used": false
+    },
+    {
+      "id": 284,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Mailboxes at Home",
+      "used": true
+    },
+    {
+      "id": 285,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Police Badges and Guns",
+      "used": false
+    },
+    {
+      "id": 286,
+      "title": "3 Horrifying Stories of Women Who Were Harassed by Strangers in Coffee Shops During the Day",
+      "used": false
+    },
+    {
+      "id": 287,
+      "title": "3 Disturbing Accounts of People Who Received Mysterious Packages with Strange Odors and No Return Address",
+      "used": false
+    },
+    {
+      "id": 288,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Abandoned Warehouses",
+      "used": false
+    },
+    {
+      "id": 289,
+      "title": "3 Chilling Experiences of People Who Found Hidden Keyloggers on Their Public Library Computers",
+      "used": false
+    },
+    {
+      "id": 290,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Marketplace Buyers",
+      "used": false
+    },
+    {
+      "id": 291,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Without Pay for Extended Periods by Predatory Employers",
+      "used": false
+    },
+    {
+      "id": 292,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Airbnb Hosts with Fake Profiles",
+      "used": false
+    },
+    {
+      "id": 293,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Roommates on Social Media Using Personal Secrets",
+      "used": false
+    },
+    {
+      "id": 294,
+      "title": "3 Terrifying Stories of Women Who Were Stalked by Strangers They Met at Coffee Shops",
+      "used": false
+    },
+    {
+      "id": 295,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Patients",
+      "used": false
+    },
+    {
+      "id": 296,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Academic Advisors",
+      "used": false
+    },
+    {
+      "id": 297,
+      "title": "3 Horrifying Accounts of People Who Received Threatening Messages on Their Smartwatches",
+      "used": false
+    },
+    {
+      "id": 298,
+      "title": "3 Disturbing Stories of Solo Female Travelers Who Were Approached by Strangers in Airports",
+      "used": false
+    },
+    {
+      "id": 299,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Roommates into Revealing Personal Secrets",
+      "used": false
+    },
+    {
+      "id": 300,
+      "title": "3 Terrifying Stories of Men Who Were Stalked by Ex-Partners at Their New Apartments",
+      "used": false
+    },
+    {
+      "id": 301,
+      "title": "3 Chilling Experiences of People Who Found Hidden Cameras in Their Vacation Rentals",
+      "used": false
+    },
+    {
+      "id": 302,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Tasers",
+      "used": false
+    },
+    {
+      "id": 303,
+      "title": "3 Harrowing Stories of Solo Female Hikers Who Were Confronted by Strangers on Mountain Trails",
+      "used": false
+    },
+    {
+      "id": 304,
+      "title": "3 True Stories of Employees Who Were Coerced into Working in Confined Spaces Without Ventilation",
+      "used": false
+    },
+    {
+      "id": 305,
+      "title": "3 Disturbing Accounts of People Who Received Mysterious Packages with Tracking Devices",
+      "used": false
+    },
+    {
+      "id": 306,
+      "title": "3 Terrifying Stories of Women Who Were Followed Home from Libraries by Strangers",
+      "used": false
+    },
+    {
+      "id": 307,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Car Tires",
+      "used": false
+    },
+    {
+      "id": 308,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Degree Programs",
+      "used": false
+    },
+    {
+      "id": 309,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Medications by Unqualified Nurses",
+      "used": false
+    },
+    {
+      "id": 310,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Coworkers into Revealing Company Financials",
+      "used": false
+    },
+    {
+      "id": 311,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Letters at Their Post Office Boxes",
+      "used": false
+    },
+    {
+      "id": 312,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Abandoned Parking Garages",
+      "used": false
+    },
+    {
+      "id": 313,
+      "title": "3 Chilling Experiences of People Who Found Hidden Microphones in Their Home Security Systems",
+      "used": false
+    },
+    {
+      "id": 314,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Baseball Bats and Masks",
+      "used": false
+    },
+    {
+      "id": 315,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Hotel Staff in Foreign Countries",
+      "used": false
+    },
+    {
+      "id": 316,
+      "title": "3 True Stories of Employees Who Were Forced to Work Without Pay for Extended Periods by Abusive Managers",
+      "used": false
+    },
+    {
+      "id": 317,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Coworkers on Social Media",
+      "used": false
+    },
+    {
+      "id": 318,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Parking Garages at Night",
+      "used": false
+    },
+    {
+      "id": 319,
+      "title": "3 Chilling Experiences of People Who Found Strange Messages on Their Voicemails at Work",
+      "used": false
+    },
+    {
+      "id": 320,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Tutoring Services",
+      "used": false
+    },
+    {
+      "id": 321,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Strangers in Dark Alleys",
+      "used": false
+    },
+    {
+      "id": 322,
+      "title": "3 Disturbing Accounts of People Who Received Mysterious Packages with No Return Address or Postage",
+      "used": false
+    },
+    {
+      "id": 323,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Hostile Janitors in Abandoned Buildings",
+      "used": false
+    },
+    {
+      "id": 324,
+      "title": "3 Chilling Experiences of People Who Found Hidden Cameras in Their Gym Locker Rooms at Night",
+      "used": false
+    },
+    {
+      "id": 325,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Badges and Guns",
+      "used": false
+    },
+    {
+      "id": 326,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Tour Guides in Tourist Areas",
+      "used": false
+    },
+    {
+      "id": 327,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Neighbors Using Personal Secrets",
+      "used": false
+    },
+    {
+      "id": 328,
+      "title": "3 Terrifying Stories of Women Who Were Stalked by Men They Met at Book Clubs",
+      "used": false
+    },
+    {
+      "id": 329,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Front Doors",
+      "used": false
+    },
+    {
+      "id": 330,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Scholarship Programs Online",
+      "used": false
+    },
+    {
+      "id": 331,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Treatments by Incompetent Doctors",
+      "used": false
+    },
+    {
+      "id": 332,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Home Security Cameras",
+      "used": false
+    },
+    {
+      "id": 333,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Abandoned Warehouses at Night",
+      "used": false
+    },
+    {
+      "id": 334,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Sharp Objects and Masks",
+      "used": false
+    },
+    {
+      "id": 335,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Taxi Drivers in Foreign Countries",
+      "used": false
+    },
+    {
+      "id": 336,
+      "title": "3 True Stories of Employees Who Were Forced to Work Without Pay for Extended Periods by Predatory Employers",
+      "used": false
+    },
+    {
+      "id": 337,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Classmates Using Personal Secrets",
+      "used": false
+    },
+    {
+      "id": 338,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Coffee Shops During the Day",
+      "used": false
+    },
+    {
+      "id": 339,
+      "title": "3 Chilling Experiences of People Who Found Strange Messages on Their Answering Machines at Home",
+      "used": false
+    },
+    {
+      "id": 340,
+      "title": "3 True Stories of People Who Were Stalked by Strangers They Met at Music Festivals",
+      "used": false
+    },
+    {
+      "id": 341,
+      "title": "3 Disturbing Accounts of College Students Who Were Scammed by Fake Online Mental Health Services",
+      "used": false
+    },
+    {
+      "id": 342,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Delivery Drivers",
+      "used": false
+    },
+    {
+      "id": 343,
+      "title": "3 Unsettling Stories of Women Who Were Harassed by Strangers in Public Restrooms",
+      "used": false
+    },
+    {
+      "id": 344,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Medications by Overworked Nurses",
+      "used": false
+    },
+    {
+      "id": 345,
+      "title": "3 Terrifying Stories of Men Who Were Stalked by Ex-Partners at Their New Offices",
+      "used": false
+    },
+    {
+      "id": 346,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Landlords into Paying Higher Rents",
+      "used": false
+    },
+    {
+      "id": 347,
+      "title": "3 Chilling Experiences of People Who Found Strange Objects in Their Cars After Using Valet Services",
+      "used": false
+    },
+    {
+      "id": 348,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Weapons",
+      "used": false
+    },
+    {
+      "id": 349,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Travel Blogs",
+      "used": false
+    },
+    {
+      "id": 350,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Long Hours Without Breaks",
+      "used": false
+    },
+    {
+      "id": 351,
+      "title": "3 Terrifying Stories of Women Who Were Followed Home from Night Classes by Strangers",
+      "used": false
+    },
+    {
+      "id": 352,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Friends on Social Media",
+      "used": false
+    },
+    {
+      "id": 353,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Strangers in Isolated Areas",
+      "used": false
+    },
+    {
+      "id": 354,
+      "title": "3 True Confessions From People Who Were Manipulated by Their Coworkers into Revealing Personal Secrets",
+      "used": false
+    },
+    {
+      "id": 355,
+      "title": "3 Disturbing Accounts of People Who Received Mysterious Packages with Strange Substances",
+      "used": false
+    },
+    {
+      "id": 356,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Abandoned Construction Sites",
+      "used": false
+    },
+    {
+      "id": 357,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Garage Doors",
+      "used": false
+    },
+    {
+      "id": 358,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Emergency Situations",
+      "used": false
+    },
+    {
+      "id": 359,
+      "title": "3 Harrowing Stories of Solo Female Hikers Who Were Confronted by Strangers on Desert Trails",
+      "used": false
+    },
+    {
+      "id": 360,
+      "title": "3 True Stories of Employees Who Were Forced to Work in Unhealthy Environments Without Protective Gear",
+      "used": false
+    },
+    {
+      "id": 361,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Roommates Using Compromising Photos",
+      "used": false
+    },
+    {
+      "id": 362,
+      "title": "3 Terrifying Stories of Women Who Were Stalked by Men They Met at Online Dating Events",
+      "used": false
+    },
+    {
+      "id": 363,
+      "title": "3 Chilling Experiences of People Who Found Hidden Microphones in Their Office Computers",
+      "used": false
+    },
+    {
+      "id": 364,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Academic Publishing Companies",
+      "used": false
+    },
+    {
+      "id": 365,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Diagnoses by Inexperienced Doctors",
+      "used": false
+    },
+    {
+      "id": 366,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Fitness Trackers",
+      "used": false
+    },
+    {
+      "id": 367,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Dark Alleys",
+      "used": false
+    },
+    {
+      "id": 368,
+      "title": "3 Chilling Experiences of People Who Found Strange Objects in Their Mailboxes",
+      "used": false
+    },
+    {
+      "id": 369,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Police Reports",
+      "used": false
+    },
+    {
+      "id": 370,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Hotel Reservation Services",
+      "used": false
+    },
+    {
+      "id": 371,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Without Pay for Extended Periods by Abusive Managers",
+      "used": false
+    },
+    {
+      "id": 372,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Coworkers Using Confidential Information",
+      "used": false
+    },
+    {
+      "id": 373,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Transportation",
+      "used": false
+    },
+    {
+      "id": 374,
+      "title": "3 Chilling Experiences of People Who Found Hidden Cameras in Their Vacation Rental Homes",
+      "used": false
+    },
+    {
+      "id": 375,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Language Learning Platforms",
+      "used": false
+    },
+    {
+      "id": 376,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Strangers in Residential Areas",
+      "used": false
+    },
+    {
+      "id": 377,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Letters at Their Workplace Mailboxes",
+      "used": false
+    },
+    {
+      "id": 378,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Car Windows",
+      "used": false
+    },
+    {
+      "id": 379,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Medical Emergencies",
+      "used": false
+    },
+    {
+      "id": 380,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Tourist Information Websites",
+      "used": false
+    },
+    {
+      "id": 381,
+      "title": "3 True Stories of Employees Who Were Forced to Work in Isolated Areas Without Cell Service",
+      "used": false
+    },
+    {
+      "id": 382,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Neighbors Using Security Footage",
+      "used": false
+    },
+    {
+      "id": 383,
+      "title": "3 Terrifying Stories of Women Who Were Stalked by Men They Met at Fitness Classes",
+      "used": false
+    },
+    {
+      "id": 384,
+      "title": "3 Terrifying Stories of Women Who Were Stalked by Strangers They Met at Book Signings",
+      "used": false
+    },
+    {
+      "id": 385,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Tracking Devices on Their Personal Belongings",
+      "used": false
+    },
+    {
+      "id": 386,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Security Guards",
+      "used": false
+    },
+    {
+      "id": 387,
+      "title": "3 Horrifying Stories of Solo Female Travelers Who Were Scammed by Fake Airport Staff",
+      "used": false
+    },
+    {
+      "id": 388,
+      "title": "3 Unsettling Stories of College Students Who Were Blackmailed by Former Classmates Using Compromising Photos",
+      "used": false
+    },
+    {
+      "id": 389,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Long Hours Without Breaks by Abusive Managers",
+      "used": false
+    },
+    {
+      "id": 390,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Beach Towels",
+      "used": false
+    },
+    {
+      "id": 391,
+      "title": "3 Harrowing Stories of Solo Female Hikers Who Were Confronted by Strangers on Coastal Trails",
+      "used": false
+    },
+    {
+      "id": 392,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Restrooms at Malls",
+      "used": false
+    },
+    {
+      "id": 393,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Internship Programs",
+      "used": false
+    },
+    {
+      "id": 394,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Medications by Inexperienced Nurses",
+      "used": false
+    },
+    {
+      "id": 395,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Wearable Fitness Trackers",
+      "used": false
+    },
+    {
+      "id": 396,
+      "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Strangers in Abandoned Office Buildings",
+      "used": false
+    },
+    {
+      "id": 397,
+      "title": "3 Chilling Experiences of People Who Found Strange Objects in Their Rental Cars",
+      "used": false
+    },
+    {
+      "id": 398,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Travel Insurance Companies",
+      "used": false
+    },
+    {
+      "id": 399,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Roommates Using Personal Secrets",
+      "used": false
+    },
+    {
+      "id": 400,
+      "title": "3 Terrifying Stories of Women Who Were Stalked by Men They Met at Online Gaming Communities",
+      "used": false
+    },
+    {
+      "id": 401,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Academic Research Studies",
+      "used": false
+    },
+    {
+      "id": 402,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Smartphones",
+      "used": false
+    },
+    {
+      "id": 403,
+      "title": "3 Terrifying Stories of Women Who Were Followed Home from Grocery Stores by Strangers",
+      "used": false
+    },
+    {
+      "id": 404,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Cameras in Their Hotel Rooms",
+      "used": false
+    },
+    {
+      "id": 405,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Strangers in Abandoned Warehouses",
+      "used": false
+    },
+    {
+      "id": 406,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Hostel Owners",
+      "used": false
+    },
+    {
+      "id": 407,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Libraries",
+      "used": false
+    },
+    {
+      "id": 408,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Airport Staff",
+      "used": false
+    },
+    {
+      "id": 409,
+      "title": "3 Chilling Stories of Women Who Were Followed by Strangers While Jogging at Dawn",
+      "used": false
+    },
+    {
+      "id": 410,
+      "title": "3 Disturbing Accounts of People Who Found Hidden GPS Trackers on Their Vehicles",
+      "used": false
+    },
+    {
+      "id": 411,
+      "title": "3 Unsettling Stories of Couples Who Were Harassed by Neighbors During Home Renovations",
+      "used": false
+    },
+    {
+      "id": 412,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Travel Bloggers",
+      "used": false
+    },
+    {
+      "id": 413,
+      "title": "3 True Stories of Employees Who Were Coerced into Working in Unsafe Conditions by Negligent Managers",
+      "used": false
+    },
+    {
+      "id": 414,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Online Dating Profiles",
+      "used": false
+    },
+    {
+      "id": 415,
+      "title": "3 Chilling Experiences of College Students Who Were Stalked by Classmates in Campus Libraries",
+      "used": false
+    },
+    {
+      "id": 416,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Medical Records by Disorganized Staff",
+      "used": false
+    },
+    {
+      "id": 417,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake IDs",
+      "used": true
+    },
+    {
+      "id": 418,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Parks at Night",
+      "used": false
+    },
+    {
+      "id": 419,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Cameras in Their Airbnb Rentals",
+      "used": false
+    },
+    {
+      "id": 420,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Strangers in Abandoned Factories",
+      "used": false
+    },
+    {
+      "id": 421,
+      "title": "3 True Stories of Employees Who Were Blackmailed by Former Coworkers Using Confidential Information",
+      "used": false
+    },
+    {
+      "id": 422,
+      "title": "3 Terrifying Stories of Women Who Were Stalked by Ex-Partners at Their New Jobs",
+      "used": false
+    },
+    {
+      "id": 423,
+      "title": "3 Chilling Experiences of People Who Found Strange Objects in Their Gym Lockers",
+      "used": false
+    },
+    {
+      "id": 424,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Strangers in Residential Neighborhoods",
+      "used": false
+    },
+    {
+      "id": 425,
+      "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Friends Using Social Media",
+      "used": false
+    },
+    {
+      "id": 426,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Transportation During Rush Hour",
+      "used": false
+    },
+    {
+      "id": 427,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Janitors in Abandoned Buildings",
+      "used": false
+    },
+    {
+      "id": 428,
+      "title": "3 True Stories of Employees Who Were Forced to Work Without Pay for Extended Periods by Abusive Employers",
+      "used": false
+    },
+    {
+      "id": 429,
+      "title": "3 Unsettling Stories of Solo Female Travelers Who Were Scammed by Fake Hotel Staff in Foreign Countries",
+      "used": false
+    },
+    {
+      "id": 430,
+      "title": "3 Chilling Experiences of College Students Who Were Stalked by Classmates in Campus Parking Garages",
+      "used": false
+    },
+    {
+      "id": 431,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Microphones in Their Home Security Systems",
+      "used": false
+    },
+    {
+      "id": 432,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Long Hours Without Breaks by Negligent Managers",
+      "used": false
+    },
+    {
+      "id": 433,
+      "title": "3 Harrowing Stories of Solo Female Travelers Who Were Scammed by Fake Travel Agencies",
+      "used": false
+    },
+    {
+      "id": 434,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Strangers in Abandoned Warehouses at Night",
+      "used": false
+    },
+    {
+      "id": 435,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Online Shopping Accounts",
+      "used": false
+    },
+    {
+      "id": 436,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Restrooms at Shopping Malls",
+      "used": false
+    },
+    {
+      "id": 437,
+      "title": "3 Unsettling Stories of Solo Female Travelers Who Were Scammed by Fake Airport Staff",
+      "used": false
+    },
+    {
+      "id": 438,
+      "title": "3 Chilling Experiences of People Who Found Strange Objects in Their Rental Cars After Using Valet Services",
+      "used": false
+    },
+    {
+      "id": 439,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Cameras in Their Gym Showers",
+      "used": false
+    },
+    {
+      "id": 440,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Strangers in Parking Garages",
+      "used": false
+    },
+    {
+      "id": 441,
+      "title": "3 Unsettling Stories of Solo Female Travelers Who Were Scammed by Fake Taxi Drivers in Foreign Countries",
+      "used": false
+    },
+    {
+      "id": 442,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Treatment by Inexperienced Interns",
+      "used": false
+    },
+    {
+      "id": 443,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Long Hours Without Breaks by Abusive Team Leads",
+      "used": false
+    },
+    {
+      "id": 444,
+      "title": "3 Terrifying Stories of Men Who Were Stalked by Ex-Partners at Their Favorite Bars",
+      "used": false
+    },
+    {
+      "id": 445,
+      "title": "3 Chilling Experiences of College Students Who Were Blackmailed by Former Classmates Using Compromising Videos",
+      "used": false
+    },
+    {
+      "id": 446,
+      "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Realistic Fake Guns",
+      "used": false
+    },
+    {
+      "id": 447,
+      "title": "3 True Stories of Employees Who Were Forced to Work in Unhealthy Environments Without Protective Gear by Negligent Supervisors",
+      "used": false
+    },
+    {
+      "id": 448,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Tracking Devices on Their Personal Laptops",
+      "used": false
+    },
+    {
+      "id": 449,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Pools",
+      "used": false
+    },
+    {
+      "id": 450,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Strangers in Abandoned Stadiums",
+      "used": false
+    },
+    {
+      "id": 451,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Language Exchange Partners",
+      "used": false
+    },
+    {
+      "id": 452,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Strangers in Industrial Areas",
+      "used": false
+    },
+    {
+      "id": 453,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Without Pay for Extended Periods by Abusive CEOs",
+      "used": false
+    },
+    {
+      "id": 454,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Online Forums",
+      "used": false
+    },
+    {
+      "id": 455,
+      "title": "3 Terrifying Stories of Men Who Were Stalked by Obsessive Fans at Comic-Con Events",
+      "used": false
+    },
+    {
+      "id": 456,
+      "title": "3 Chilling Experiences of People Who Found Strange Symbols on Their Apartment Mailboxes",
+      "used": false
+    },
+    {
+      "id": 457,
+      "title": "3 Unsettling Stories of Solo Female Travelers Who Were Scammed by Fake Tour Guides in Tourist Areas",
+      "used": false
+    },
+    {
+      "id": 458,
+      "title": "3 Harrowing Stories of Retail Workers Who Were Harassed by Customers During Holiday Sales",
+      "used": false
+    },
+    {
+      "id": 459,
+      "title": "3 True Stories of Employees Who Were Blackmailed by Former Coworkers Using Confidential Company Information",
+      "used": false
+    },
+    {
+      "id": 460,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Cameras in Their Airbnb Kitchenettes",
+      "used": false
+    },
+    {
+      "id": 461,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Strangers in Abandoned Hospitals",
+      "used": false
+    },
+    {
+      "id": 462,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Scholarship Programs",
+      "used": false
+    },
+    {
+      "id": 463,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Medications by Disorganized Pharmacy Staff",
+      "used": false
+    },
+    {
+      "id": 464,
+      "title": "3 True Stories of Employees Who Were Coerced into Working in Isolated Areas Without Cell Service by Abusive Managers",
+      "used": false
+    },
+    {
+      "id": 465,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Online Gaming Accounts",
+      "used": false
+    },
+    {
+      "id": 466,
+      "title": "3 Chilling Experiences of People Who Found Strange Objects in Their Rental properties",
+      "used": false
+    },
+    {
+      "id": 467,
+      "title": "3 Unsettling Stories of Solo Female Travelers Who Were Scammed by Fake Hostel Staff in Foreign Countries",
+      "used": false
+    },
+    {
+      "id": 468,
+      "title": "3 Harrowing Stories of Night Shift Workers Who Were Confronted by Strangers in Abandoned Theaters",
+      "used": false
+    },
+    {
+      "id": 469,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Parks During Festivals",
+      "used": false
+    },
+    {
+      "id": 470,
+      "title": "3 Chilling Experiences of College Students Who Were Blackmailed by Former Roommates Using Compromising Photos",
+      "used": false
+    },
+    {
+      "id": 471,
+      "title": "3 Horrifying Stories of Delivery Drivers Who Were Attacked by Strangers in Residential Areas at Night",
+      "used": false
+    },
+    {
+      "id": 472,
+      "title": "3 True Stories of Employees Who Were Coerced into Working Long Hours Without Breaks by Negligent Supervisors",
+      "used": false
+    },
+    {
+      "id": 473,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Online Review Accounts",
+      "used": false
+    },
+    {
+      "id": 474,
+      "title": "3 Terrifying Stories of Men Who Were Stalked by Strangers They Met at Music Festivals",
+      "used": false
+    },
+    {
+      "id": 475,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Strangers in Abandoned Warehouses",
+      "used": false
+    },
+    {
+      "id": 476,
+      "title": "3 Unsettling Stories of Solo Female Travelers Who Were Scammed by Fake Travel Insurance Companies",
+      "used": false
+    },
+    {
+      "id": 477,
+      "title": "3 Harrowing Stories of Retail Workers Who Were Harassed by Customers During Black Friday Sales",
+      "used": false
+    },
+    {
+      "id": 478,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Cameras in Their Hotel Room Safes",
+      "used": false
+    },
+    {
+      "id": 479,
+      "title": "3 Terrifying Stories of Women Who Were Followed Home from Night Classes by Strangers in Unmarked Cars",
+      "used": false
+    },
+    {
+      "id": 480,
+      "title": "3 True Stories of Women Who Were Stalked by Strangers They Met at Coffee Shops",
+      "used": false
+    },
+    {
+      "id": 481,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Recordings in Their Therapist's Office",
+      "used": false
+    },
+    {
+      "id": 482,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Aggressive Panhandlers",
+      "used": false
+    },
+    {
+      "id": 483,
+      "title": "3 Horrifying Stories of Solo Travelers Who Were Scammed by Fake Border Patrol Officers",
+      "used": false
+    },
+    {
+      "id": 484,
+      "title": "3 Unsettling Stories of College Students Who Were Blackmailed by Former Professors Using Academic Records",
+      "used": false
+    },
+    {
+      "id": 485,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Saunas",
+      "used": false
+    },
+    {
+      "id": 486,
+      "title": "3 Harrowing Stories of Retail Workers Who Were Attacked by Customers During Store Closures",
+      "used": false
+    },
+    {
+      "id": 487,
+      "title": "3 Chilling Experiences of People Who Found Strange Objects in Their Vacation Rentals",
+      "used": false
+    },
+    {
+      "id": 488,
+      "title": "3 True Stories of Employees Who Were Coerced into Working in Confined Spaces Without Safety Gear",
+      "used": false
+    },
+    {
+      "id": 489,
+      "title": "3 Unsettling Stories of Solo Female Travelers Who Were Scammed by Fake Taxi Drivers at Airports",
+      "used": false
+    },
+    {
+      "id": 490,
+      "title": "3 Terrifying Stories of Men Who Were Stalked by Ex-Coworkers at Industry Conferences",
+      "used": false
+    },
+    {
+      "id": 491,
+      "title": "3 Disturbing Accounts of People Who Found Hidden Cameras in Their Gym Locker Rooms",
+      "used": false
+    },
+    {
+      "id": 492,
+      "title": "3 Chilling Experiences of Night Shift Workers Who Were Confronted by Hostile Strangers in Abandoned Construction Sites",
+      "used": false
+    },
+    {
+      "id": 493,
+      "title": "3 Horrifying Stories of Hospital Patients Who Were Given Wrong Treatments by Inexperienced Residents",
+      "used": false
+    },
+    {
+      "id": 494,
+      "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Internship Programs at Non-Profits",
+      "used": false
+    },
+    {
+      "id": 495,
+      "title": "3 True Stories of Employees Who Were Blackmailed by Former Colleagues Using Company Secrets",
+      "used": false
+    },
+    {
+      "id": 496,
+      "title": "3 Terrifying Stories of Women Who Were Harassed by Strangers in Public Art Galleries",
+      "used": false
+    },
+    {
+      "id": 497,
+      "title": "3 Disturbing Accounts of People Who Received Threatening Messages on Their Online Marketplace Accounts",
+      "used": false
+    },
+    {
+      "id": 498,
+      "title": "3 Harrowing Stories of Solo Travelers Who Were Scammed by Fake Travel Bloggers in Foreign Countries",
+      "used": false
+    },
+    {
+      "id": 499,
+      "title": "3 Unsettling Stories of Couples Who Were Harassed by Neighbors During Home Parties",
+      "used": false
+    },
+    {
+      "id": 500,
+      "title": "3 Terrifying Stories of Men Who Were Stalked by Strangers They Met at Sports Bars",
+      "used": false
+    }
+  ]
+}

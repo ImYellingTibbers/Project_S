@@ -19,6 +19,9 @@ from story_arcs import get_random_story_arc
 
 from idea_generator import generate_best_horror_idea
 
+CHANNEL_ROOT = Path(__file__).resolve().parents[2]
+VIDEO_PLAN_PATH = CHANNEL_ROOT / "video_plan.json"
+
 # ============================================================
 # Environment
 # ============================================================
@@ -203,8 +206,8 @@ def generate_long_form_hook(idea: str) -> str:
     )
 
 
-def generate_concept_and_hook() -> Dict[str, str]:
-    idea = generate_best_horror_idea()
+def generate_concept_and_hook(seeded_idea: str | None = None) -> Dict[str, str]:
+    idea = seeded_idea if seeded_idea else generate_best_horror_idea()
     arc = get_random_story_arc()
     hook = generate_long_form_hook(idea)
 
@@ -247,11 +250,22 @@ def generate_concept_and_hook() -> Dict[str, str]:
 
     data = json.loads(raw)
 
+    def _str(val) -> str:
+        """Flatten LLM values that occasionally come back as dicts/lists instead of strings."""
+        if isinstance(val, str):
+            return val.strip()
+        if isinstance(val, dict):
+            # e.g. {"description": "..."} — grab first string value
+            for v in val.values():
+                if isinstance(v, str):
+                    return v.strip()
+        return str(val).strip()
+
     return {
-        "TITLE": data["title"].strip(),
+        "TITLE": _str(data["title"]),
         "HOOK": hook.strip(),
-        "CORE ANOMALY": data["core_anomaly"].strip(),
-        "SETTING": data["setting"].strip(),
+        "CORE ANOMALY": _str(data["core_anomaly"]),
+        "SETTING": _str(data["setting"]),
         "ARC": arc,
     }
 
@@ -470,8 +484,8 @@ def judge_act_scope(act_text: str, arc: Dict[str, str], act_number: int) -> bool
 # Main Orchestration
 # ============================================================
 
-def generate_full_story() -> str:
-    concept = generate_concept_and_hook()
+def generate_full_story(seeded_idea: str | None = None) -> str:
+    concept = generate_concept_and_hook(seeded_idea=seeded_idea)
     acts = generate_act_outline(concept)
 
     full_script = f"{concept['HOOK']}\n"
@@ -702,18 +716,15 @@ def generate_full_story() -> str:
         f"ACT 5 RULES: {arc['act_5_rules']}\n"
         f"ACT 5 FOCUS: {arc['act_5_focus']}\n\n"
         "ACT 5 MANDATE:\n"
-        "- The immediate danger is over.\n"
-        "- The narrator is physically safe in the present.\n"
-        "- The story is being told well after the events ended.\n"
+        "- The narrator has survived and is telling this from a remove in time.\n"
         "- The threat was never fully explained or confronted.\n\n"
         "ACT 5 REQUIRED ELEMENTS:\n"
         "- A permanent behavioral change caused by the event.\n"
-        "- A specific place, situation, or routine the narrator avoids.\n"
-        "- A clear sense that the narrator survived, but was affected.\n\n"
+        "- A specific place, situation, or person-type the narrator now avoids or can no longer face.\n\n"
         "ACT 5 ENDING RULE:\n"
-        "- End on reflection or habit, not danger.\n"
-        "- The last line should acknowledge distance from the event.\n"
-        "- Unease comes from memory, not immediate risk.\n"
+        "- End on the thing that still doesn't fit — a detail, a question, or a silence that was never explained.\n"
+        "- Do not end with acceptance or closure. End with the unresolved thing that still surfaces.\n"
+        "- The last line should leave the listener with something they can't shake.\n"
     )
 
     act_5_text = None
@@ -796,6 +807,26 @@ if __name__ == "__main__":
     from datetime import datetime
 
     # ------------------------------------------------------------
+    # Load story seed from video_plan.json if available
+    # ------------------------------------------------------------
+    story_seed: str | None = None
+    story_mini_title: str | None = None
+
+    story_index = int(os.environ.get("STORY_INDEX", "-1"))
+
+    if VIDEO_PLAN_PATH.exists() and story_index >= 0:
+        plan = json.loads(VIDEO_PLAN_PATH.read_text(encoding="utf-8"))
+        stories = plan.get("stories", [])
+        if story_index < len(stories):
+            story_seed = stories[story_index]["seed"]
+            story_mini_title = stories[story_index]["mini_title"]
+            print(f"[SCRIPT] Using seeded idea (story {story_index + 1}): {story_seed[:80]}...")
+        else:
+            print(f"[SCRIPT] Warning: story_index {story_index} out of range, generating idea freely.")
+    else:
+        print("[SCRIPT] No video_plan.json or STORY_INDEX found — generating idea freely.")
+
+    # ------------------------------------------------------------
     # Run folder setup
     # ------------------------------------------------------------
     RUNS_ROOT = Path(__file__).resolve().parents[2] / "runs"
@@ -811,7 +842,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     # Generate script
     # ------------------------------------------------------------
-    result = generate_full_story()
+    result = generate_full_story(seeded_idea=story_seed)
     full_script = result["full_script"].strip()
     
     acts_dir = script_dir / "acts"
@@ -879,6 +910,16 @@ if __name__ == "__main__":
             indent=2
         ),
         encoding="utf-8",
+    )
+
+    # Save story identity for the stitcher
+    identity = {
+        "story_index": story_index,
+        "mini_title": story_mini_title or result.get("title", ""),
+        "run_id": run_id,
+    }
+    (script_dir / "story_identity.json").write_text(
+        json.dumps(identity, indent=2), encoding="utf-8"
     )
 
     print(f"[SCRIPT] run created: {run_dir.resolve()}", flush=True)

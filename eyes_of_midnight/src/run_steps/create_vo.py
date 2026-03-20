@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 
+import requests as _requests
 import torch
 import soundfile as sf
 import numpy as np
@@ -252,6 +253,19 @@ def main():
     if not paragraph_files:
         raise RuntimeError("No paragraph files found")
 
+    # Free ComfyUI VRAM before loading TTS model (both need ~4GB on 8GB GPU)
+    try:
+        resp = _requests.post(
+            "http://127.0.0.1:8188/free",
+            json={"unload_models": True, "free_memory": True},
+            timeout=10,
+        )
+        print(f"[TTS] ComfyUI /free: {resp.status_code}", flush=True)
+    except Exception as e:
+        print(f"[TTS] ComfyUI not reachable, skipping /free: {e}", flush=True)
+
+    torch.cuda.empty_cache()
+
     model = get_model()
 
     print(f"[TTS] Run: {run_id}")
@@ -279,7 +293,8 @@ def main():
                     f"[TTS] retry {attempt}/5 failed for {p_file.name}: {e}",
                     flush=True,
                 )
-                time.sleep(1)
+                torch.cuda.empty_cache()
+                time.sleep(2)
 
         if not success:
             raise RuntimeError(

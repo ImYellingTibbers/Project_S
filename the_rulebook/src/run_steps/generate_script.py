@@ -59,12 +59,24 @@ def call_llm(
     backoff = 15
 
     for attempt in range(1, max_attempts + 1):
-        response = requests.post(
-            OPENROUTER_URL,
-            headers=HEADERS,
-            json=payload,
-            timeout=180,
-        )
+        try:
+            response = requests.post(
+                OPENROUTER_URL,
+                headers=HEADERS,
+                json=payload,
+                timeout=180,
+            )
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
+            if attempt < max_attempts:
+                print(
+                    f"[LLM] Network error ({type(e).__name__}) — waiting {backoff}s "
+                    f"before retry {attempt + 1}/{max_attempts}...",
+                    flush=True,
+                )
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+            raise
 
         if response.status_code in (429, 500, 502, 503, 504):
             if attempt < max_attempts:
@@ -281,6 +293,7 @@ def summarize_and_update_rules(
 # Context Builder
 # ============================================================
 
+
 def build_act_context(
     act_number: int,
     act_type: str,
@@ -293,6 +306,8 @@ def build_act_context(
     narrator: Dict,
     place: Dict,
     total_acts: int,
+    prev_ending_beat: Optional[str] = None,
+    variation_idx: int = 0,
 ) -> str:
     """
     Assembles the full context string passed into each act writing call.
@@ -439,39 +454,8 @@ def build_act_context(
             lines.append(f"Consequence tone: {primary_rule['consequence_tone']}")
             lines.append(f"Story moment: {primary_rule['story_moment']}")
             lines.append("")
-            lines.append(
-                "ACT DIRECTIVE:\n"
-                "This act is built entirely around the PRIMARY RULE above being triggered "
-                "for the first time.\n\n"
-                "SETUP: The act should begin with the narrator doing ordinary work — "
-                "a mundane task specific to this place. Let that normalcy breathe for "
-                "several paragraphs before anything shifts. The longer the normal feels "
-                "real, the harder the turn hits.\n\n"
-                "TRIGGER: The narrator encounters the exact situation the rule was written for. "
-                "They do not immediately recognize it as the rule. They first try to explain "
-                "it rationally — a practical concern, a misperception, fatigue. "
-                "Only when it becomes undeniable does the rule surface in their memory. "
-                "When it does, they recall it imperfectly — a fragment, the gist, "
-                "the feeling of having read it — NOT a verbatim recitation.\n\n"
-                "COST: Following the rule must cost something real. "
-                "The narrator has to make a choice that is uncomfortable, "
-                "that goes against instinct, that they will second-guess. "
-                "They do not get to follow the rule and feel safe. "
-                "They follow it and survive, but something is lost — "
-                "certainty, composure, a piece of their confidence that this is fine.\n\n"
-                "AMBIGUITY: The threat is never seen directly. Never explained. "
-                "Never touches the narrator. What they experience could almost — "
-                "almost — have another explanation. But it can't quite.\n\n"
-                "END STATE: The narrator has survived this act but is more unsettled "
-                "than before. They cannot go back to dismissing the rules. "
-                "They believe them now, even if they don't understand them.\n\n"
-                "BEFORE WRITING YOUR FINAL PARAGRAPH, confirm all three are true:\n"
-                "1. The narrator is in a specific physical location doing a specific thing.\n"
-                "2. The rule encounter has reached a definite outcome — followed or failed, "
-                "with a consequence. Do not end on 'I waited to see what happened.'\n"
-                "3. One concrete thing has changed — a belief, a habit, a physical state — "
-                "that the narrator will carry into the next act."
-            )
+            lines.append("ACT DIRECTIVE:")
+            lines.append(build_rule_act_directive(variation_idx, prev_ending_beat))
 
         if active_rules:
             lines.append("")
@@ -579,7 +563,13 @@ def write_act(
         "'a metallic smell/scent', "
         "'the smell of pennies'. "
         "Find a physical response specific to this narrator and this moment. "
-        "Every act of fear must be expressed differently.\n\n"
+        "Every act of fear must be expressed differently.\n"
+        "- BANNED ACT STRUCTURES — do not use these dramatic shapes:\n"
+        "  * Narrator notices thing → dismisses it → notices again → recalls rule → complies. "
+        "This is the default shape. It has already been used. Break it.\n"
+        "  * Do not have the narrator stand still weighing options for more than one paragraph.\n"
+        "  * Do not end two consecutive acts with the narrator deciding to document, "
+        "record, or write down what happened.\n\n"
 
         "RULE HANDLING — CRITICAL:\n"
         "- A rule is introduced ONCE in Act 1 when the narrator reads the document. "
@@ -635,6 +625,10 @@ def write_act(
         f"{context}\n\n"
         f"TARGET LENGTH: approximately {target_words} words.\n"
         "Do not artificially cut off. Write until the act feels complete.\n\n"
+        "HARD CONSTRAINT: If this is a rule act, the narrator's rationalization of what "
+        "they are experiencing must resolve within a single paragraph. After that one "
+        "paragraph, the situation forces their hand. Do not extend doubt across multiple "
+        "paragraphs. One dismissal, then action.\n\n"
         "Write this act now."
     )
 
@@ -646,6 +640,150 @@ def write_act(
         temperature=0.72,
         max_tokens=max(2500, target_words * 2),
     )
+
+# ============================================================
+# Banned Phrase Checker
+# ============================================================
+
+BANNED_PHRASES = [
+    "couldn't shake the feeling",
+    "could not shake the feeling",
+    "heart hammered",
+    "heart pounded",
+    "heart raced",
+    "hands were trembling",
+    "hands were shaking",
+    "metallic smell",
+    "metallic scent",
+    "smell of pennies",
+    "scent of pennies",
+]
+
+
+def check_banned_phrases(act_text: str, act_number: int) -> list:
+    found = [p for p in BANNED_PHRASES if p in act_text.lower()]
+    if found:
+        print(f"[ACT {act_number}] WARNING — banned phrases found: {found}", flush=True)
+    return found
+
+
+# ============================================================
+# Rule Act Directive Builder
+# ============================================================
+
+def build_rule_act_directive(variation_idx: int, prev_ending_beat: Optional[str]) -> str:
+    """Build a rule act directive centered on a specific structural variation.
+    The variation is the frame, not an addendum — the model gets one coherent shape."""
+
+    base = (
+        "This act is built around the PRIMARY RULE above being triggered "
+        "for the first time.\n\n"
+        "SETUP: Begin with the narrator doing a specific mundane task at this place. "
+        "Let normalcy breathe for several paragraphs before anything shifts. "
+        "The longer the normal feels real, the harder the turn hits.\n\n"
+    )
+
+    variations = [
+        # 0 — preemptive compliance
+        (
+            "CORE TENSION: The narrator senses something is wrong before they can "
+            "identify what. They comply with the rule before the situation fully "
+            "develops — preemptively, almost instinctively. The horror is in what "
+            "they don't get to see. What was behind the door, around the corner, "
+            "at the end of the hall — they will never know. End on that absence.\n\n"
+            "NOTE: There is no hesitation scene. No weighing of options. "
+            "The narrator acts, then understands what they just avoided. "
+            "Realisation comes after compliance, not before."
+        ),
+        # 1 — near failure
+        (
+            "CORE TENSION: The narrator moves toward the wrong choice. They are "
+            "seconds from breaking the rule when something — not supernatural, "
+            "just physical reality — stops them. A sound. A smell. Something "
+            "shifts in their peripheral vision. They correct. But the near-miss "
+            "is the horror. They know now how close the margin is.\n\n"
+            "NOTE: The narrator does not stand still weighing options. "
+            "They are already moving in the wrong direction when the correction "
+            "happens. Speed matters here. The act should feel like a near-accident."
+        ),
+        # 2 — rule vs urgent need
+        (
+            "CORE TENSION: Following the rule means the narrator cannot do "
+            "something they urgently need to do. Not want — need. Check on "
+            "something. Reach something. Leave. The rule and their instinct are "
+            "directly opposed and both feel necessary. They choose the rule. "
+            "It costs them something real.\n\n"
+            "NOTE: The cost must be concrete and specific, not vague unease. "
+            "Something they needed to do did not get done because of this rule. "
+            "That consequence should be present in the act's final beat."
+        ),
+        # 3 — ambiguous trigger
+        (
+            "CORE TENSION: The narrator isn't sure this situation qualifies. "
+            "The rule was written for something specific and this might be it "
+            "or might be completely ordinary. They cannot tell. They have to "
+            "decide without enough information, right now, because hesitating "
+            "too long is its own kind of answer.\n\n"
+            "NOTE: Do not resolve the ambiguity. The narrator chooses, survives, "
+            "and still doesn't know if they were right. That unresolved "
+            "uncertainty is what they carry out of this act."
+        ),
+        # 4 — perfect compliance, still witnesses
+        (
+            "CORE TENSION: The narrator follows the rule exactly. No hesitation, "
+            "no mistakes. They do everything right. And they still see something "
+            "they cannot explain. Compliance was not protection — it was just the "
+            "minimum requirement to survive. There is more here than the rules "
+            "account for.\n\n"
+            "NOTE: What the narrator witnesses must be at the edge of confirmation "
+            "— almost explainable, but not quite. The act ends with the narrator "
+            "having done everything right and feeling worse for it."
+        ),
+    ]
+
+    closing = (
+        "BEFORE WRITING YOUR FINAL PARAGRAPH, confirm all three:\n"
+        "1. The narrator is in a specific physical location doing a specific thing.\n"
+        "2. The rule encounter has reached a definite outcome — do not end on waiting.\n"
+        "3. One concrete thing has changed that the narrator carries into the next act."
+    )
+
+    directive = base + variations[variation_idx % len(variations)] + "\n\n" + closing
+
+    if prev_ending_beat:
+        directive += (
+            f"\n\nPREVIOUS ACT ENDED WITH: {prev_ending_beat}\n"
+            "Do NOT end this act the same way. Find a different final beat — "
+            "a different physical action, a different emotional register, "
+            "a different kind of silence."
+        )
+
+    return directive
+
+
+# ============================================================
+# Ending Beat Extractor
+# ============================================================
+
+def extract_ending_beat(act_text: str) -> str:
+    """Return a 10-word-or-fewer description of how the act ends, for use as a
+    prohibition in the next act so consecutive acts don't share the same final beat."""
+    system = "You are a story analyst. Be extremely concise."
+    user = (
+        "In 10 words or fewer, describe the final emotional or physical note of this act. "
+        "Focus on what the narrator does or perceives in the last paragraph — "
+        "not the theme, the specific action or image.\n\n"
+        f"ACT TEXT (last 300 words):\n{' '.join(act_text.split()[-300:])}"
+    )
+    try:
+        return call_llm(
+            [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            temperature=0.0,
+            max_tokens=40,
+        )
+    except Exception:
+        return ""
+
 
 # ============================================================
 # Word Target Calculator
@@ -722,6 +860,13 @@ def generate_full_story() -> Dict:
     full_story_summary: Optional[str] = None
     full_script = ""
     act_texts: Dict[str, str] = {}
+    prev_ending_beat: Optional[str] = None
+
+    # Shuffled variation order — each run gets a different shape sequence
+    import random
+    variation_order = list(range(5))
+    random.shuffle(variation_order)
+    rule_act_count = 0  # tracks how many rule acts have been written
 
     # ---- Step 4: Write each act ----
     for act_def in acts:
@@ -731,6 +876,13 @@ def generate_full_story() -> Dict:
         active_rules = act_def.get("active_rules", [])
 
         print(f"[ACT {act_number}/{total_acts}] Writing ({act_type})...", flush=True)
+
+        # Determine structural variation index for rule acts
+        if act_type == "rule":
+            variation_idx = variation_order[rule_act_count % len(variation_order)]
+            rule_act_count += 1
+        else:
+            variation_idx = 0
 
         # Calculate target word count
         target_words = get_target_words(act_number, act_type, total_acts)
@@ -758,6 +910,8 @@ def generate_full_story() -> Dict:
             narrator=narrator,
             place=place,
             total_acts=total_acts,
+            prev_ending_beat=prev_ending_beat,
+            variation_idx=variation_idx,
         )
 
         # Write the act — retry once if it comes in more than 20% under target
@@ -770,13 +924,21 @@ def generate_full_story() -> Dict:
 
         actual_words = len(act_text.split())
         min_acceptable = int(target_words * 0.80)
+        banned = check_banned_phrases(act_text, act_number)
+        needs_retry = actual_words < min_acceptable or bool(banned)
 
-        if actual_words < min_acceptable:
-            print(
-                f"[ACT {act_number}/{total_acts}] Too short "
-                f"({actual_words} words, target {target_words}). Retrying...",
-                flush=True,
-            )
+        if needs_retry:
+            if actual_words < min_acceptable:
+                print(
+                    f"[ACT {act_number}/{total_acts}] Too short "
+                    f"({actual_words} words, target {target_words}). Retrying...",
+                    flush=True,
+                )
+            if banned:
+                print(
+                    f"[ACT {act_number}/{total_acts}] Retrying due to banned phrases...",
+                    flush=True,
+                )
             retry_text = write_act(
                 context=context,
                 act_number=act_number,
@@ -784,17 +946,21 @@ def generate_full_story() -> Dict:
                 target_words=target_words,
             )
             retry_words = len(retry_text.split())
-            # Take whichever attempt is longer
-            if retry_words > actual_words:
+            retry_banned = check_banned_phrases(retry_text, act_number)
+            # Prefer retry if: cleaner phrases AND not shorter than original
+            retry_better = len(retry_banned) < len(banned) or (
+                not retry_banned and retry_words >= min_acceptable
+            )
+            if retry_better:
                 act_text = retry_text
                 print(
                     f"[ACT {act_number}/{total_acts}] Retry accepted "
-                    f"({retry_words} words).",
+                    f"({retry_words} words, {len(retry_banned)} banned phrases).",
                     flush=True,
                 )
             else:
                 print(
-                    f"[ACT {act_number}/{total_acts}] Retry not longer, "
+                    f"[ACT {act_number}/{total_acts}] Retry not better, "
                     f"keeping original ({actual_words} words).",
                     flush=True,
                 )
@@ -807,6 +973,13 @@ def generate_full_story() -> Dict:
         act_key = f"act_{act_number}"
         act_texts[act_key] = act_text
         full_script += ("\n\n" if full_script else "") + act_text
+
+        # Extract ending beat so the next act can avoid repeating it
+        if act_type == "rule":
+            print(f"[ACT {act_number}/{total_acts}] Extracting ending beat...", flush=True)
+            prev_ending_beat = extract_ending_beat(act_text)
+        else:
+            prev_ending_beat = None
 
         # Skip summarizer for resolution act — story is complete
         if act_type == "resolution":

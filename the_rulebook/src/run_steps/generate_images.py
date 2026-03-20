@@ -359,14 +359,27 @@ def download_image(cfg: ComfyConfig, pid: str) -> bytes:
 # Main execution
 # ============================================================
 
+def free_comfyui_vram():
+    try:
+        r = requests.post(
+            f"{COMFY_URL}/free",
+            json={"unload_models": True, "free_memory": True},
+            timeout=10,
+        )
+        print(f"[IMG] ComfyUI /free: {r.status_code}", flush=True)
+    except Exception as e:
+        print(f"[IMG] ComfyUI /free skipped: {e}", flush=True)
+
+
 def main():
     start_comfyui()
+    free_comfyui_vram()
     cfg = ComfyConfig()
 
     run_dir = get_latest_run_with_script()
     script_path = run_dir / "script" / "full_script.txt"
     script_text = script_path.read_text(encoding="utf-8").strip()
-    
+
     print(f"[IMG] Using run: {run_dir.name}", flush=True)
 
     thumbnail_concepts = extract_thumbnail_concepts(script_text)

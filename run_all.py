@@ -31,9 +31,9 @@ RUNS = [
     },
     {
         "label": "Eyes of Midnight",
-        "script": ROOT / "eyes_of_midnight" / "src" / "run.py",
+        "script": ROOT / "eyes_of_midnight" / "src" / "batch_run.py",
         "enabled": True,
-        "repeat": 3,
+        "repeat": 1,
     },
 ]
 
