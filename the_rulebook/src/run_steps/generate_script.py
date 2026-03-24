@@ -16,6 +16,12 @@ ASSETS_DIR = ROOT / "assets"
 sys.path.insert(0, str(ASSETS_DIR))
 
 from idea_generator import build_story_frame
+from narrative_library import (
+    sample_names,
+    pick_opening_approach,
+    pick_handoff_method,
+    pick_resolution_ending,
+)
 
 # ============================================================
 # Environment
@@ -306,6 +312,10 @@ def build_act_context(
     narrator: Dict,
     place: Dict,
     total_acts: int,
+    name_pool: List[str],
+    opening_approach: str = "",
+    handoff_method: str = "",
+    resolution_ending: str = "",
     prev_ending_beat: Optional[str] = None,
     variation_idx: int = 0,
 ) -> str:
@@ -328,6 +338,15 @@ def build_act_context(
         f"{narrator['one_personal_detail']}"
     )
     lines.append("")
+    if name_pool:
+        lines.append(
+            "SIDE CHARACTER NAMES — if this story requires named background characters, "
+            "draw exclusively from this list: " + ", ".join(name_pool) + ".\n"
+            "Do not invent names outside this list for any character who appears more "
+            "than once or has dialogue. One-time background figures glimpsed briefly "
+            "do not need names."
+        )
+        lines.append("")
 
     # ---- Summary context ----
     if act_number == 1:
@@ -372,56 +391,37 @@ def build_act_context(
     if act_type == "setup":
         lines.append("ACT DIRECTIVE:")
         lines.append(
-            # OPENING PARAGRAPH GUIDANCE — replaces the cinematic establishing-shot default
-            # The model was consistently opening with physical surface descriptions
-            # ('the chipped Formica felt cold under my elbows') across every run.
-            # This guidance steers it toward how a real person begins a story they're telling.
             "OPENING PARAGRAPH — THIS IS THE MOST IMPORTANT PARAGRAPH IN THE STORY:\n"
             "This story is being told by a real person recounting something that happened "
             "to them. Write the opening paragraph the way that person would actually begin "
-            "talking — not with a description of the room, not with the furniture or the "
-            "lighting, but with whatever is most alive in their memory about walking into "
-            "that situation for the first time.\n\n"
-            "The opening paragraph must do one of the following:\n"
-            "  A) Start with why the narrator took the job — the specific pressure, "
-            "the specific number, the specific thing they were trying to fix — and let "
-            "the place arrive through that lens. The listener should feel the desperation "
-            "before they see the building.\n"
-            "  B) Start with the first thing that felt wrong — not explained, not named, "
-            "just the specific detail that stuck. The thing the narrator noticed and filed "
-            "away and only understood later. Let the place build around that detail.\n"
-            "  C) Start with the person handing over the keys — their manner, something "
-            "they said or didn't say, the way they left. The handoff is the first signal "
-            "that this place has a history. Begin there and let the narrator's arrival "
-            "unfold from that moment.\n\n"
-            "The opening paragraph should feel like someone leaning forward and saying "
-            "'So here's the thing about that job.' It should pull the listener in "
-            "because the narrator's voice is already specific and human, not because "
-            "the scene has been visually established.\n\n"
+            "talking — grounded in a specific memory, a specific pressure, or a specific "
+            "detail. Not a description of the room. Not the furniture or the lighting. "
+            "Whatever is most alive in this narrator's memory about arriving at this place.\n\n"
+            f"OPENING STRATEGY FOR THIS STORY:\n{opening_approach}\n\n"
             "After the opening paragraph, establish the physical space — "
             "the narrator has just arrived for their first shift and is taking everything in. "
             "Describe the building, the equipment, the smell, the sounds, the light. "
-            "Make it specific enough that a listener could picture exactly where they are. "
+            "Make it specific to this exact place and role. "
             "Details established here will pay off in later acts — the layout, the exits, "
-            "the equipment, the specific quirks of the place.\n\n"
+            "the equipment, the specific quirks of this location.\n\n"
             "Weave the narrator's financial situation into their inner voice naturally — "
-            "not as a monologue but as the undercurrent behind every decision. "
+            "not as a monologue but as the undercurrent behind every observation. "
             "They need this job. That has to be felt, not stated.\n\n"
-            "Introduce the rules document organically — handed over by a departing coworker, "
-            "found taped to a desk, left in a folder with a key. "
-            "The handoff should feel casual and slightly odd — the person giving them the rules "
-            "doesn't explain anything, doesn't linger. They just leave.\n\n"
-            "The narrator reads the rules aloud or to themselves, one by one. "
+            f"THE RULES DOCUMENT ARRIVES THIS WAY:\n{handoff_method}\n"
+            "The handoff should feel casual and slightly odd. "
+            "No explanation is offered. No context is given. "
+            "The narrator is left alone with a list they don't yet take seriously.\n\n"
+            "The narrator reads the rules one by one. "
             "Present each rule as numbered, typed or handwritten, oddly specific. "
-            "The narrator reacts to each one — confusion, mild unease, dismissal, "
-            "a joke to themselves. They are not scared yet. They think it's eccentric "
+            "The narrator reacts to each — confusion, mild unease, dismissal, "
+            "an internal joke. They are not scared yet. They think it's eccentric "
             "workplace culture, previous employee superstition, or a prank.\n\n"
             "Nothing dangerous happens in this act. "
             "End with the narrator alone, shift beginning, rules set aside. "
             "The last beat should carry a quiet unease — not dread, just the feeling "
             "that something about this place is slightly off in a way they can't name. "
             "Do not name or describe this unease directly. "
-            "Show it through a specific physical detail or action, not through a stated feeling."
+            "Show it through a specific physical detail or action."
         )
         lines.append("")
         lines.append(
@@ -429,14 +429,11 @@ def build_act_context(
             "IMPORTANT: Some rules contain bracketed placeholders such as "
             "[specific location], [specific warning sign], or [specific sound]. "
             "Before writing, replace every bracketed placeholder with a specific, "
-            "concrete detail that fits this exact place and narrator. "
-            "Examples: [specific location] at a school becomes 'the boiler room' or "
-            "'the custodial closet at the end of the east wing'. "
-            "[specific warning sign] becomes 'the emergency exit light above the gym "
-            "doors flashes three times'. "
-            "[specific sound] becomes 'something dragging across linoleum'. "
-            "The rules in the story must read as if a real person wrote them for this "
-            "specific building. No brackets should appear in the final prose."
+            "concrete detail derived from this exact place and this narrator's role. "
+            "The replacement must be grounded in what a real person in this building "
+            "would actually notice and name — not horror tropes, not generic imagery. "
+            "The rules must read as if a real person wrote them for this specific building. "
+            "No brackets should appear in the final prose."
         )
         all_rules = established + [
             {"id": r["id"], "name": r["name"], "template": r["template"]}
@@ -498,12 +495,10 @@ def build_act_context(
             "The final lines should imply the cycle continues — "
             "the job will be posted again, someone else will take it, "
             "someone else will get the rules. Not as a twist. As a fact.\n\n"
-            "ENDING HOOK: Your absolute final paragraph must contain one specific, "
-            "concrete, unexpected detail — something the narrator notices or does "
-            "that the listener will not have anticipated. Not a twist. A sharp, "
-            "precise final image that lands and stays. It should feel inevitable "
-            "in retrospect but not telegraphed. This is the last thing the listener "
-            "hears. Make it count."
+            f"{resolution_ending}\n\n"
+            "The final paragraph must be specific and concrete — one image, one action, "
+            "one detail that lands and stays. It should feel inevitable in retrospect "
+            "but not telegraphed. This is the last thing the listener hears."
         )
         if active_rules:
             lines.append("")
@@ -575,10 +570,9 @@ def write_act(
         "- A rule is introduced ONCE in Act 1 when the narrator reads the document. "
         "After that it lives in memory only.\n"
         "- When a rule becomes relevant, the narrator does NOT quote it verbatim. "
-        "They recall a fragment, a feeling, the gist of it. "
-        "Example: not 'Rule 4 stated: if your shadow behaves differently...' "
-        "but 'something about shadows — don't go to the shed if — I couldn't "
-        "remember the exact wording.'\n"
+        "They recall a fragment, an impression, the gist of it — uncertain, partial, "
+        "imprecise. The remembered version should feel like something retrieved "
+        "under pressure, not recited from memory.\n"
         "- The rationalization phase — where the narrator tries to explain away what "
         "they are experiencing — must be brief. One paragraph maximum. "
         "The narrator dismisses it once, then the situation forces their hand. "
@@ -862,11 +856,21 @@ def generate_full_story() -> Dict:
     act_texts: Dict[str, str] = {}
     prev_ending_beat: Optional[str] = None
 
-    # Shuffled variation order — each run gets a different shape sequence
+    # Per-story random selections — picked once so they stay consistent across all acts
     import random
     variation_order = list(range(5))
     random.shuffle(variation_order)
     rule_act_count = 0  # tracks how many rule acts have been written
+
+    name_pool = sample_names(12)
+    opening_approach = pick_opening_approach()
+    handoff_method = pick_handoff_method()
+    resolution_ending = pick_resolution_ending()
+
+    print(f"[STORY] Opening approach: {opening_approach[:60]}...", flush=True)
+    print(f"[STORY] Handoff method: {handoff_method[:60]}...", flush=True)
+    print(f"[STORY] Resolution ending: {resolution_ending[:60]}...", flush=True)
+    print(f"[STORY] Name pool: {', '.join(name_pool)}", flush=True)
 
     # ---- Step 4: Write each act ----
     for act_def in acts:
@@ -910,6 +914,10 @@ def generate_full_story() -> Dict:
             narrator=narrator,
             place=place,
             total_acts=total_acts,
+            name_pool=name_pool,
+            opening_approach=opening_approach,
+            handoff_method=handoff_method,
+            resolution_ending=resolution_ending,
             prev_ending_beat=prev_ending_beat,
             variation_idx=variation_idx,
         )

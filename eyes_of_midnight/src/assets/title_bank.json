@@ -1,6 +1,6 @@
 {
   "total": 500,
-  "available": 495,
+  "available": 492,
   "titles": [
     {
       "id": 1,
@@ -375,7 +375,7 @@
     {
       "id": 75,
       "title": "3 Horrifying Stories of Women Who Were Stalked by Men They Met at Bars",
-      "used": false
+      "used": true
     },
     {
       "id": 76,
@@ -1225,7 +1225,7 @@
     {
       "id": 245,
       "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Roommates",
-      "used": false
+      "used": true
     },
     {
       "id": 246,
@@ -1315,7 +1315,7 @@
     {
       "id": 263,
       "title": "3 Horrifying Stories of Women Who Were Harassed by Strangers in Library Study Rooms",
-      "used": false
+      "used": true
     },
     {
       "id": 264,

@@ -1,30 +1,30 @@
 {
-  "main_title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Online Marketplaces",
-  "sanitized_title": "3_Unsettling_Stories_of_College_Students_Who_Were_Scammed_by_Fake_Online_Marketplaces",
-  "created_at": "2026-03-19T11:11:13.297392+00:00",
+  "main_title": "3 Horrifying Stories of Women Who Were Stalked by Men They Met at Bars",
+  "sanitized_title": "3_Horrifying_Stories_of_Women_Who_Were_Stalked_by_Men_They_Met_at_Bars",
+  "created_at": "2026-03-24T09:54:18.454007+00:00",
   "stories": [
     {
       "index": 0,
-      "mini_title": "\"My Online Deal\"",
-      "seed": "I thought I'd found an amazing laptop deal through a Facebook Marketplace seller, but when I met him at the campus coffee shop to exchange cash, he seemed overly interested in my class schedule. As I walked back to my dorm, I realized he'd been casually asking me questions about my alone time and daily habits, and now I'm convinced he's been watching me ever since.",
-      "summary": "A college student's attempt to buy a laptop online turns into a stalking nightmare when the seller becomes obsessed with their daily routine."
+      "mini_title": "The Bartender's Obsession",
+      "seed": "I started noticing that the bartender at my favorite pub would always seem to be working on the nights I went in, and at first, I thought it was just a coincidence, but then I saw him outside my apartment building, lingering by the entrance. I tried to brush it off as mere curiosity, but the way he'd smile at me from across the bar, his eyes locked on mine, made my skin crawl.",
+      "summary": "A woman is stalked by a bartender who becomes increasingly unhinged after she rejects his advances."
     },
     {
       "index": 1,
-      "mini_title": "\"Ride Share Nightmare\"",
-      "seed": "I booked a ride through a sketchy online carpooling service to get to my part-time job at a restaurant on the outskirts of town, and the driver, who claimed to be a fellow student, took a detour down a deserted road, saying his GPS was malfunctioning. As we drove further into the woods, I realized his ID didn't match the one on the service's website, and he started asking me invasive questions about my financial situation.",
-      "summary": "A college student's daily commute turns into a terrifying ordeal when their ride share driver takes a detour into the woods with sinister intentions."
+      "mini_title": "Ride Share Nightmare",
+      "seed": "I thought I'd met a charming and harmless guy at a bar, and we exchanged numbers, but after a few casual meetups, he started showing up at my workplace, claiming he was in the area and wanted to \"surprise\" me, and I realized he'd been tracking my daily commute using the ride-sharing app we'd used on our first date. I tried to distance myself, but he'd send me messages, saying he knew exactly where I was, and would often \"coincidentally\" be in the same carpool as me, sitting silently in the backseat, staring at me.",
+      "summary": "A woman is stalked by a man she met through a ride-sharing service, who uses the app to track her movements and confront her in terrifying ways."
     },
     {
       "index": 2,
-      "mini_title": "\"The House Sitting Scam\"",
-      "seed": "I responded to an ad on a college forum to house sit for a professor over winter break, but when I arrived at the mansion, I discovered it was actually a group of strangers running some kind of fake rental scam, and they expected me to stay and \"watch the house\" in exchange for a place to stay. As I tried to leave, they became aggressive, insisting I'd signed a contract and owed them money, and now I'm trapped in this huge, creepy house with no phone signal.",
-      "summary": "A college student falls prey to a house sitting scam and finds themselves trapped in a strange mansion with a group of hostile strangers who refuse to let them leave."
+      "mini_title": "The Music Festival Encounter",
+      "seed": "I met a guy at an outdoor music festival, and we had a wild night, but when I woke up the next morning, he was gone, and I thought that was the end of it, until I started receiving packages at my home, each containing a small memento from that night, like a guitar pick or a festival map, with no note, just his initials. I was horrified when I realized that he'd not only found out where I lived, but had also been following me to my favorite hiking trails, leaving these \"gifts\" for me to find, each one a reminder that he was always watching.",
+      "summary": "A woman is stalked by a man she met at a music festival, who uses gifts and surveillance to manipulate and control her, making her feel trapped and vulnerable in her own home and outdoor spaces."
     }
   ],
   "run_folders": [
-    "2026-03-19_05-11-13",
-    "2026-03-19_06-05-00",
-    "2026-03-19_07-04-47"
+    "2026-03-24_03-54-18",
+    "2026-03-24_04-51-11",
+    "2026-03-24_05-43-06"
   ]
 }
