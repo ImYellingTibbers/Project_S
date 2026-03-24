@@ -1,231 +1,205 @@
-Project S — v1.0
+# Project S
 
-Automated Short-Form Video Generation Pipeline
+An automated YouTube video production system. You run one command at night. By morning there's a finished video — script written, narrated, illustrated, and edited — sitting in the output folder.
 
-Overview
+No human writes a script, records audio, or touches a timeline.
 
-Project S is a modular, end-to-end system for automatically generating short-form vertical videos (e.g., YouTube Shorts, TikTok, Reels) at scale.
+The system manages multiple YouTube channels, each with its own content format and generation pipeline. Every channel handles the full stack: story concept → script → text-to-speech → AI-generated visuals → video assembly → YouTube metadata. Two channels are in active production, two are built for a different format.
 
-The system is channel-agnostic. A “channel” is defined purely by configuration: tone, genre, prompt constraints, visual style, narration rules, and monetization safety. The same pipeline can power horror, facts, psychology, motivation, fiction, or any other short-form content category.
+---
 
-Project S is designed to:
+## Active Channels
 
-Run locally
+**Eyes of Midnight** — longform horror compilations (10–15 min). Three separate confessional horror stories generated, narrated, and illustrated, then stitched together with title cards into a single compilation video.
 
-Scale horizontally (multiple runs, multiple channels)
+**The Rulebook** — rule-based workplace horror. Stories are structured around a set of strange rules a narrator discovers on a new job. The pipeline manages which rules have been introduced, which are active, and how their accumulation changes the story's options over time.
 
-Remain deterministic and auditable
+**Residual Fear / Off Hours Encounters** — shorter format channels sharing a similar pipeline but using a different model stack and adding burned-in captions for Shorts/TikTok format. Built and functional, run independently.
 
-Avoid platform policy violations
+---
 
-Support partial automation (manual review where desired)
+## Tech Stack
 
-Core Capabilities
+| Layer | What |
+|---|---|
+| Script generation | Google Gemma 3 27B (OpenRouter) |
+| Planning / story seeding | Meta Llama 3.3 70B (OpenRouter) |
+| Text-to-speech | Qwen3-TTS 1.7B — local, CUDA |
+| Image generation | Stable Diffusion XL via ComfyUI — local, CUDA |
+| Video encoding | FFmpeg + H264 NVENC (GPU) |
+| Audio processing | pyloudnorm, scipy |
+| Python environment | `.venv`, 3.11+ |
 
-Fully automated video creation from idea → final render
+---
 
-Deterministic run-based architecture (each video is reproducible)
+## Top-Level Structure
 
-Modular steps that can be swapped or upgraded independently
+```
+run_all.py                              ← master night runner
+├── the_rulebook/src/run.py
+├── eyes_of_midnight/src/batch_run.py
+├── residual_fear/src/run.py
+└── off_hours_encounters/src/run.py
+```
 
-Channel-specific behavior driven by config, not code forks
+`run_all.py` is intentionally minimal — it runs each enabled channel as a subprocess, logs timing, and stops the entire run on the first failure. You schedule it with cron and don't think about it.
 
-Designed for batch creation and scheduled publishing
+---
 
-Built for Shorts-first vertical video (9:16)
+## Eyes of Midnight
 
-High-Level Pipeline
+### Pipeline
 
-Each run follows the same logical sequence:
+```
+Step 0  plan_video.py          Pick unused title, generate 3 story seeds → video_plan.json
+Step 1  run.py STORY_INDEX=0   Full 4-step pipeline for story 1
+Step 2  run.py STORY_INDEX=1   Full 4-step pipeline for story 2
+Step 3  run.py STORY_INDEX=2   Full 4-step pipeline for story 3
+Step 4  stitch_videos.py       Title cards + concat → compiled_final.mp4
+Step 5  generate_metadata.py   YouTube SEO metadata
+```
 
-Idea Generation
-Generates multiple candidate concepts based on channel rules.
+Each `run.py` call handles script → VO → images → video for one story and writes its output folder name back into `video_plan.json`, so the stitcher can find all three.
 
-Idea Selection & Scoring
-Removes order bias, scores ideas, and selects one deterministically.
+### Title Bank
 
-Script Writing
-Produces a short-form narration script optimized for retention, pacing, and clarity.
+`title_bank.json` holds 500 curated YouTube-style horror compilation titles. Step 0 picks one that hasn't been used, marks it consumed, and uses it as the creative brief for the whole batch. A separate generator script replenishes the bank when it runs low.
 
-Timing & Beat Planning
-Breaks the script into timed beats aligned to sentences or clauses.
+### Script Generation
 
-Image Prompt Planning
-Converts beats into image prompts with consistency rules (style, identity, setting).
+Scripts are 5-act first-person confessional horror, written by Gemma 3 27B. Step 0 uses Llama 70B to generate three 2-sentence story seeds from the main title — each one a different setting and threat dynamic. Each `run.py` picks up its seed via a `STORY_INDEX` environment variable and hands it to the script generator.
 
-Image Generation
-Generates visuals per beat using local or external image models.
+The model receives the seed, a narrative structure, and voice guidelines, then writes the full script. The approach is deliberately light on constraint — over-prompting produces generic output faster than under-prompting does.
 
-Voiceover Generation
-Produces narration audio (local or API-based).
+### Text-to-Speech
 
-Caption Generation
-Generates time-aligned captions/subtitles.
+Narration runs through Qwen3-TTS locally on the GPU. The model is conditioned on a reference recording (`jacob_whisper_ref.wav`) for consistent speaker identity across the full video. Temperature is kept low (0.45) for the flat, controlled delivery that works well for horror narration.
 
-Music Selection & Mixing
-Adds background music with normalized loudness.
+TTS runs paragraph by paragraph, saving individual WAV files that later feed into image timing. After generation:
+- **RMS compression** — gentle (2:1 ratio, -22dB threshold) to even out dynamics
+- **LUFS normalization** — target -18 LUFS, -3dB true-peak ceiling (YouTube's loudness standard)
 
-Video Assembly
-Assembles images, audio, captions, transitions, and effects into final video.
+### Image Generation
 
-Final Render & Archival
-Outputs a platform-ready video and stores all artifacts for traceability.
+ComfyUI runs as a background server with SD XL loaded. The script identifies visual chunks from the narration, builds a prompt for each, and sends jobs over WebSocket using a pre-built workflow graph. Prompts and seeds are injected dynamically; everything else (sampler, steps, CFG) stays fixed per channel.
 
-Channel Architecture
+Every image is anchored to a shared aesthetic — photorealistic nighttime photography, empty real-world locations, deep shadows, no people. The negative prompt specifically excludes faces, creatures, and anything overtly monstrous. The goal is unsettling by absence.
 
-Project S does not hardcode channels.
+Image generation retries up to 6 times with exponential backoff to handle ComfyUI hiccups and API rate limits.
 
-Each channel is defined by:
+### Video Assembly
 
-Prompt constraints
+FFmpeg does everything in a single NVENC pass at 4K/30fps: zoom-pan with sinusoidal drift (so images don't feel static), vignetting, subtle grain, fade-in, full audio mix with narration + ambient music + bass sting. Image durations come directly from paragraph audio lengths — each visual holds on screen for exactly as long as the corresponding narration takes.
 
-Allowed / disallowed themes
+### Stitching Three Stories Together
 
-Visual style rules
+`stitch_videos.py` pulls the three completed story videos from `video_plan.json`, generates title card images with Pillow (main title + per-story mini titles), and concatenates everything into the final compilation.
 
-Narration tone
+The tricky part was audio. FFmpeg's built-in AAC encoder occasionally produces malformed frames — a known "too many bits" bug — which causes the concat demuxer to crash. The fix was to pre-process each story individually before concatenation: extract audio to clean PCM WAV with error-tolerant flags, then remux with freshly encoded AAC. Trying to make the demuxer tolerate the bad frames through flags didn't work; the remux approach does.
 
-Monetization safety rules
+---
 
-Output pacing targets
+## The Rulebook
 
-This allows:
+### What Makes It Different
 
-Multiple channels sharing the same codebase
+Eyes of Midnight is seed-driven — a 2-sentence idea becomes a script. The Rulebook is system-driven — a place plus a set of rules becomes a script. The story's structure is determined before any writing starts, and the generation engine has to track state as it goes.
 
-Easy experimentation without refactoring
+### Assets
 
-Parallel channel operation
+**`places_library.py`** — 50+ real-world workplace locations, each tagged with which rule types make sense for that setting.
 
-Run-Based Design
+**`rules_library.py`** — 20+ violation rules, each with a template (including bracketed placeholders like `[specific sound]`, `[specific location]`), a consequence tone, a suggested story moment, and compatibility tags that match against place types.
 
-Every video is a run.
+**`narrative_library.py`** — per-story randomization pools. Twelve opening approaches describing different ways the narrator could begin the story, ten handoff methods describing how they might first receive the rules, eight resolution ending types, and a pool of 130+ character names. One of each is sampled per story and injected into the prompts. The LLM only sees the one it's working with — never a menu.
 
-A run:
+This last file exists because any example you put in a prompt tends to become the default across all runs. Moving the selection to Python and injecting only the chosen option eliminates that problem.
 
-Has a unique ID
+### Story Generation
 
-Produces a self-contained artifact directory
+`idea_generator.py` assembles the story frame before writing starts:
+1. Randomly selects a place
+2. Samples compatible rules (8–10 per story), shuffles them to determine act order
+3. Generates a narrator backstory via LLM — age, financial situation, reason for taking the job — and runs it through a separate judge call to verify it's specific enough before accepting it
 
-Stores every intermediate output (JSON, images, audio, captions)
+Then `generate_script.py` writes the story one act at a time, maintaining a rules state object throughout:
 
-Can be inspected, replayed, or debugged independently
+```python
+rules_state = {
+    "established": [...],  # rules the narrator has already encountered
+    "pending": [...]        # rules not yet triggered — LLM is told to ignore these
+}
+```
 
-This design:
+After each act, a second LLM call does two things in one JSON response: summarizes the act (3–5 sentences for early acts, updating a rolling 10-sentence summary for later ones) and records exactly how the primary rule manifested. The running summary becomes the context window for the next act — keeping the story coherent across 10+ acts without blowing the token budget.
 
-Prevents silent failures
+### Structural Variation
 
-Enables deterministic debugging
+Early versions of the Rulebook produced stories with the same shape every time: narrator notices something, dismisses it, notices it again, remembers the rule, complies. The prompt described a default structure so thoroughly that an appended "vary this" instruction couldn't override it.
 
-Makes quality audits possible
+The fix was to make the variation the frame itself, not an addendum. There are 5 distinct structural shapes for rule acts (preemptive compliance, near-miss, rule vs. urgent need, ambiguous trigger, perfect compliance that still witnesses something). At the start of each story, they're shuffled into a random order and assigned to acts in sequence — so each act gets a different shape, and the same act slot gets different shapes across runs.
 
-Allows partial reruns without regenerating everything
+### Banned Phrase Detection
 
-Determinism & Reproducibility
+Certain phrases kept showing up no matter what the prompt said — "I couldn't shake the feeling", "my heart hammered", "the smell of pennies". Listing them as banned in the system prompt made things worse, not better — long lists of forbidden phrases dilute attention, and the model stops registering them.
 
-Project S prioritizes controlled randomness:
+The solution was to move detection out of the prompt entirely. After each act is generated, a Python function scans the text. If banned phrases are found, the act gets one retry. Deterministic, free, and doesn't cost any of the model's attention.
 
-Seeds are generated and stored
+---
 
-Selection steps are logged
+## Residual Fear / Off Hours Encounters
 
-Inputs and outputs are archived
+Shorts-format channels with a slightly different tech stack — scripts generated via OpenAI + local Ollama, same ComfyUI image pipeline, plus a timing planner step that maps narration to visual beats and a caption-burning step for Shorts/TikTok format. They share the structural bones of the longform channels but run on their own schedule.
 
-If a video performs well, the conditions that produced it can be analyzed and reused.
+---
 
-Monetization & Safety
+## Engineering Notes
 
-The pipeline is built with monetization in mind:
+**VRAM contention** — ComfyUI runs with `--normalvram` and keeps the SD model resident between jobs. The TTS model also needs ~4GB. On an 8GB GPU they can't coexist. The fix is to call ComfyUI's `/free` API endpoint before TTS starts, forcing it to evict cached models. Both production channels do this now.
 
-Avoids explicit, graphic, or policy-violating content
+**Rate limits during long runs** — A full Rulebook run (10+ acts × 2 LLM calls each, then TTS, then image generation) can run for several hours and hammer the OpenRouter API. Retry logic handles 429s and server errors with exponential backoff. The original code didn't catch network-level timeouts (`ReadTimeout`, `ConnectionError`) at all — those now go through the same retry path.
 
-Supports “safe horror” and other ad-friendly genres
+**LLM output coercion** — LLMs occasionally return a nested dict or list where a string is expected. Rather than crashing, the code has a small helper that knows how to unwrap common malformed shapes and raises cleanly if it still can't get a usable string.
 
-Prevents accidental escalation through prompt constraints
+**Opening repetition** — Any concrete example phrase in a prompt tends to become the LLM's default across all runs. The system originally had an example opening line in the setup directive and it showed up nearly verbatim in every story. Removing example phrases and describing intent instead of demonstrating it fixed it.
 
-Keeps narration and visuals aligned to platform guidelines
+---
 
-Safety is enforced at the prompt and planning level, not patched later.
+## Running It
 
-Extensibility
+```bash
+# activate the environment
+source .venv/bin/activate
 
-Project S is intentionally modular.
+# run all active channels (designed for nightly cron)
+python run_all.py
 
-You can:
+# run a single channel
+python eyes_of_midnight/src/batch_run.py
+python the_rulebook/src/run.py
+```
 
-Swap LLM providers
+ComfyUI needs to be running before image generation. The pipeline starts it automatically if it isn't up. Each channel reads its API keys and config from its own `.env` file.
 
-Replace image generators
+---
 
-Add new planning steps
+## Output Structure
 
-Insert human review gates
+```
+eyes_of_midnight/
+  runs/
+    {timestamp}/              ← one story: script, audio, images, video_final.mp4
+  {Sanitized_Title}/
+    compiled_final.mp4        ← finished YouTube video
+    metadata.json             ← title, description, tags
 
-Add analytics collectors
+the_rulebook/
+  runs/
+    {timestamp}/
+      script/                 ← full_script.txt, per-act files, paragraph index
+      audio/                  ← full narration + per-paragraph WAVs
+      img/                    ← 4K SD outputs + thumbnail variants
+      video_final.mp4
+```
 
-Integrate upload schedulers or APIs
-
-Each step is designed to fail loudly and early.
-
-Intended Use
-
-Project S is suited for:
-
-Automated Shorts channels
-
-Content experimentation at scale
-
-Solo creators running multiple channels
-
-Research into retention and pacing
-
-Long-term channel systems, not one-off videos
-
-It is not a template generator or a one-click gimmick.
-It is an automation framework.
-
-Project Status (v1.0)
-
-End-to-end pipeline functional
-
-Channel-agnostic architecture established
-
-Deterministic run system in place
-
-Modular scripts stabilized
-
-Ready for:
-
-Channel scaling
-
-Upload automation
-
-Performance analytics integration
-
-Future versions will focus on:
-
-Smarter feedback loops
-
-Performance-driven prompt adaptation
-
-Automated upload scheduling
-
-Multi-platform optimization
-
-Philosophy
-
-Project S follows three core principles:
-
-Config over forks
-New behavior should come from configuration, not new code paths.
-
-Artifacts over assumptions
-Every step leaves evidence. Nothing is “magic.”
-
-Scale without chaos
-Automation should increase control, not reduce it.
-
-License & Usage
-
-This project is intended for private or controlled use.
-Ensure all third-party models, APIs, and assets comply with their respective licenses and platform terms.
+Every intermediate artifact is saved. If a step fails partway through, you can restart from that step without regenerating everything before it.
