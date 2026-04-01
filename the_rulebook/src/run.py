@@ -12,6 +12,7 @@ STEP_1 = {"label": "Step 1 - Generate Script", "script": "run_steps/generate_scr
 STEP_2 = {"label": "Step 2 - Create VO", "script": "run_steps/create_vo.py"}
 STEP_3 = {"label": "Step 3 - Generate Images", "script": "run_steps/generate_images.py"}
 STEP_4 = {"label": "Step 4 - Render Video", "script": "run_steps/render_video.py"}
+STEP_5 = {"label": "Step 5 - Generate Metadata", "script": "run_steps/generate_metadata.py"}
 
 STEPS = [
     STEP_0,
@@ -19,6 +20,7 @@ STEPS = [
     STEP_2,
     STEP_3,
     STEP_4,
+    STEP_5,
 ]
 
 # Steps that get one automatic retry after a kill_all() if they fail.

@@ -1,6 +1,6 @@
 {
   "total": 500,
-  "available": 492,
+  "available": 484,
   "titles": [
     {
       "id": 1,
@@ -25,7 +25,7 @@
     {
       "id": 5,
       "title": "3 True Confessions From People Who Discovered Hidden Messages in Their Homes",
-      "used": false
+      "used": true
     },
     {
       "id": 6,
@@ -140,7 +140,7 @@
     {
       "id": 28,
       "title": "3 Unsettling Experiences of People Who Were Confronted by Ex-Partners at Work",
-      "used": false
+      "used": true
     },
     {
       "id": 29,
@@ -345,7 +345,7 @@
     {
       "id": 69,
       "title": "3 True Confessions From People Who Were Forced to Move Due to Stalking",
-      "used": false
+      "used": true
     },
     {
       "id": 70,
@@ -1395,7 +1395,7 @@
     {
       "id": 279,
       "title": "3 Unsettling Stories of College Students Who Were Scammed by Fake Scholarship Programs",
-      "used": false
+      "used": true
     },
     {
       "id": 280,
@@ -1920,7 +1920,7 @@
     {
       "id": 384,
       "title": "3 Terrifying Stories of Women Who Were Stalked by Strangers They Met at Book Signings",
-      "used": false
+      "used": true
     },
     {
       "id": 385,
@@ -1940,7 +1940,7 @@
     {
       "id": 388,
       "title": "3 Unsettling Stories of College Students Who Were Blackmailed by Former Classmates Using Compromising Photos",
-      "used": false
+      "used": true
     },
     {
       "id": 389,
@@ -1995,7 +1995,7 @@
     {
       "id": 399,
       "title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Roommates Using Personal Secrets",
-      "used": false
+      "used": true
     },
     {
       "id": 400,
@@ -2185,7 +2185,7 @@
     {
       "id": 437,
       "title": "3 Unsettling Stories of Solo Female Travelers Who Were Scammed by Fake Airport Staff",
-      "used": false
+      "used": true
     },
     {
       "id": 438,

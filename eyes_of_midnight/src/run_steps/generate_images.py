@@ -112,9 +112,9 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
             print(f"[IMG] Network error ({type(e).__name__}) — waiting {wait}s before retry {attempt + 1}/6")
             time.sleep(wait)
             continue
-        if r.status_code == 429:
+        if r.status_code in (429, 500, 502, 503, 504):
             wait = 30 * (attempt + 1)
-            print(f"[IMG] 429 rate limit — waiting {wait}s before retry {attempt + 1}/6")
+            print(f"[IMG] HTTP {r.status_code} — waiting {wait}s before retry {attempt + 1}/6")
             time.sleep(wait)
             continue
         r.raise_for_status()

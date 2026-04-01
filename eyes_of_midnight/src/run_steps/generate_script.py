@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import time
 from typing import Dict, List
 from dotenv import load_dotenv
 import requests
@@ -16,6 +17,14 @@ sys.path.insert(0, str(ASSETS_DIR))
 
 from reference_scripts import get_random_reference_block
 from story_arcs import get_random_story_arc
+from narrative_library import (
+    sample_names,
+    pick_hook_approach,
+    pick_act1_signal_type,
+    pick_act4_mistake_type,
+    pick_act5_ending_type,
+    pick_antagonist_relationship,
+)
 
 from idea_generator import generate_best_horror_idea
 
@@ -60,25 +69,55 @@ def call_llm(
     if require_json:
         payload["response_format"] = {"type": "json_object"}
 
-    response = requests.post(
-        OPENROUTER_URL,
-        headers=HEADERS,
-        json=payload,
-        timeout=120,
-    )
+    max_attempts = 10
+    backoff = 15
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            response = requests.post(
+                OPENROUTER_URL,
+                headers=HEADERS,
+                json=payload,
+                timeout=120,
+            )
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
+            if attempt < max_attempts:
+                print(
+                    f"[LLM] Network error ({type(e).__name__}) — waiting {backoff}s "
+                    f"before retry {attempt + 1}/{max_attempts}...",
+                    flush=True,
+                )
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+            raise
+
+        if response.status_code in (429, 500, 502, 503, 504):
+            if attempt < max_attempts:
+                print(
+                    f"[LLM] HTTP {response.status_code} — waiting {backoff}s "
+                    f"before retry {attempt + 1}/{max_attempts}...",
+                    flush=True,
+                )
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+
+        response.raise_for_status()
+
+        data = response.json()
+        content = data["choices"][0]["message"].get("content")
+
+        if content is None:
+            raise RuntimeError("LLM returned no content (null message)")
+
+        content = content.strip()
+        if not content:
+            raise RuntimeError("LLM returned empty content")
+
+        return content
+
     response.raise_for_status()
-
-    data = response.json()
-    content = data["choices"][0]["message"].get("content")
-
-    if content is None:
-        raise RuntimeError("LLM returned no content (null message)")
-
-    content = content.strip()
-    if not content:
-        raise RuntimeError("LLM returned empty content")
-
-    return content
 
 # ============================================================
 # TTS Polish Helper
@@ -161,30 +200,27 @@ def summarize_act(act_text: str) -> str:
 # Step 1: Concept + Hook
 # ============================================================
 
-def generate_long_form_hook(idea: str) -> str:
+def generate_long_form_hook(idea: str, hook_approach: str) -> str:
     system = (
-        "You are writing the opening paragraph of a Reddit-style first-person horror account.\n\n"
+        "You are writing the opening paragraph of a first-person horror account "
+        "intended for spoken YouTube narration.\n\n"
         "This is NOT a teaser, cold open, or in-the-moment scene.\n"
-        "This is the narrator explaining why they are posting the story.\n\n"
-        "OPENING REQUIREMENTS:\n"
+        "This is the narrator setting up the story — grounding the listener before "
+        "anything unusual happens.\n\n"
+        f"OPENING APPROACH FOR THIS STORY:\n{hook_approach}\n\n"
+        "REQUIREMENTS:\n"
         "- First person, past tense, conversational.\n"
-        "- Focus on establishing the narrator's *routine* and *ordinary* life before *anything* unsettling happens.\n"
         "- 3–5 sentences, ~45–70 words.\n"
-        "- Imply the story lingered in the narrator’s mind.\n"
-        "- *Avoid hinting at danger. The tone should be one of reflection, not foreboding.*\n\n"
-        "STRUCTURAL REQUIREMENTS:\n"
-        "- Establish time distance (months or years ago)\n"
-        "- Establish life context (job, trip, relationship, routine, age range)\n"
-        "- Make it clear nothing felt dangerous at first\n"
-        "- Imply the story has lingered in the narrator’s mind\n\n"
+        "- Nothing dangerous or frightening has happened yet.\n"
+        "- Tone is reflective, not urgent.\n\n"
         "STYLE RULES:\n"
-        "- No urgency\n"
-        "- No foreshadowing phrases like 'that was the first mistake'\n"
+        "- No foreshadowing phrases like 'that was the first mistake' or 'looking back'\n"
         "- No moral lessons\n"
         "- No dramatic framing\n"
         "- No supernatural language\n"
+        "- Do not use roles as examples — derive them from the story idea\n"
         "- Do not mention fear yet\n\n"
-        "This should feel like the first paragraph of a long Reddit post."
+        "Output ONLY the paragraph text."
     )
 
     user = (
@@ -201,15 +237,23 @@ def generate_long_form_hook(idea: str) -> str:
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        temperature=0.45,
+        temperature=0.65,
         max_tokens=2500,
     )
 
 
-def generate_concept_and_hook(seeded_idea: str | None = None) -> Dict[str, str]:
+def generate_concept_and_hook(
+    seeded_idea: str | None = None,
+    hook_approach: str = "",
+    act1_signal_type: str = "",
+    act4_mistake_type: str = "",
+    act5_ending_type: str = "",
+    antagonist_relationship: str = "",
+    name_pool: list | None = None,
+) -> Dict[str, str]:
     idea = seeded_idea if seeded_idea else generate_best_horror_idea()
     arc = get_random_story_arc()
-    hook = generate_long_form_hook(idea)
+    hook = generate_long_form_hook(idea, hook_approach)
 
     system = (
         "You are expanding a realistic first-person horror idea into a full story concept.\n"
@@ -220,6 +264,7 @@ def generate_concept_and_hook(seeded_idea: str | None = None) -> Dict[str, str]:
     user = (
         f"Core horror idea:\n{idea}\n\n"
         f"Established hook:\n{hook}\n\n"
+        f"Threat dynamic for this story:\n{antagonist_relationship}\n\n"
         "Expand this into a long-form horror story concept suitable for a 10–15 minute narration.\n\n"
         "Requirements:\n"
         "- First-person adult narrator\n"
@@ -227,8 +272,9 @@ def generate_concept_and_hook(seeded_idea: str | None = None) -> Dict[str, str]:
         "- No supernatural elements\n"
         "- No full names, exact addresses, or brand names\n"
         "- Broad locations are allowed (regions, states, highways)\n"
-        "- Use roles/descriptors only (e.g., 'a coworker', 'my landlord')\n"
+        "- Use roles/descriptors only — derive them from the story idea, not generic placeholders\n"
         "- The idea must remain recognizable and central\n"
+        "- The threat dynamic above must be honored throughout\n"
         "- Do NOT rewrite or replace the hook\n\n"
         "Output EXACTLY this JSON schema:\n"
         "{\n"
@@ -267,6 +313,11 @@ def generate_concept_and_hook(seeded_idea: str | None = None) -> Dict[str, str]:
         "CORE ANOMALY": _str(data["core_anomaly"]),
         "SETTING": _str(data["setting"]),
         "ARC": arc,
+        "ACT1_SIGNAL_TYPE": act1_signal_type,
+        "ACT4_MISTAKE_TYPE": act4_mistake_type,
+        "ACT5_ENDING_TYPE": act5_ending_type,
+        "ANTAGONIST_RELATIONSHIP": antagonist_relationship,
+        "NAME_POOL": name_pool or [],
     }
 
 # ============================================================
@@ -276,6 +327,8 @@ def generate_concept_and_hook(seeded_idea: str | None = None) -> Dict[str, str]:
 def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
     idea = concept["CORE ANOMALY"]
     reference_block = get_random_reference_block()
+
+    antagonist_relationship = concept.get("ANTAGONIST_RELATIONSHIP", "")
 
     system = (
         "You are outlining a long-form horror narrative.\n\n"
@@ -287,6 +340,7 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
         "DO NOT imitate sentence structure or wording.\n"
         "Use them ONLY as structural references.\n\n"
         f"{reference_block}\n\n"
+        f"Threat dynamic for this story:\n{antagonist_relationship}\n\n"
         "The story MUST follow this narrative progression:\n\n"
         f"{idea}\n\n"
         "1. Signal: an anomaly appears with no immediate cost\n"
@@ -294,6 +348,8 @@ def generate_act_outline(concept: Dict[str, str]) -> List[Dict[str, str]]:
         "3. Personalization: the anomaly targets the narrator personally\n"
         "4. Mistake: the narrator takes a logical action that worsens the situation\n"
         "5. Binding: the narrator is left in a permanent, unresolved state\n\n"
+        "The threat dynamic above must shape how the story escalates — "
+        "the kind of threat this is determines what the narrator can and cannot do about it.\n"
         "Do NOT collapse, merge, or skip phases.\n"
         "Each act must escalate tension and reveal new implications.\n"
         "Pacing must support spoken narration."
@@ -485,7 +541,29 @@ def judge_act_scope(act_text: str, arc: Dict[str, str], act_number: int) -> bool
 # ============================================================
 
 def generate_full_story(seeded_idea: str | None = None) -> str:
-    concept = generate_concept_and_hook(seeded_idea=seeded_idea)
+    hook_approach = pick_hook_approach()
+    act1_signal_type = pick_act1_signal_type()
+    act4_mistake_type = pick_act4_mistake_type()
+    act5_ending_type = pick_act5_ending_type()
+    antagonist_relationship = pick_antagonist_relationship()
+    name_pool = sample_names(12)
+
+    print(f"[STORY] Threat dynamic: {antagonist_relationship[:60]}...", flush=True)
+    print(f"[STORY] Hook approach: {hook_approach[:60]}...", flush=True)
+    print(f"[STORY] Act 1 signal type: {act1_signal_type[:60]}...", flush=True)
+    print(f"[STORY] Act 4 mistake type: {act4_mistake_type[:60]}...", flush=True)
+    print(f"[STORY] Act 5 ending type: {act5_ending_type[:60]}...", flush=True)
+    print(f"[STORY] Name pool: {', '.join(name_pool)}", flush=True)
+
+    concept = generate_concept_and_hook(
+        seeded_idea=seeded_idea,
+        hook_approach=hook_approach,
+        act1_signal_type=act1_signal_type,
+        act4_mistake_type=act4_mistake_type,
+        act5_ending_type=act5_ending_type,
+        antagonist_relationship=antagonist_relationship,
+        name_pool=name_pool,
+    )
     acts = generate_act_outline(concept)
 
     full_script = f"{concept['HOOK']}\n"
@@ -497,8 +575,21 @@ def generate_full_story(seeded_idea: str | None = None) -> str:
     act_1 = acts[0]
     arc = concept["ARC"]
 
+    name_pool = concept.get("NAME_POOL", [])
+    name_pool_line = (
+        "IF NAMED CHARACTERS APPEAR — draw names only from this list: "
+        + ", ".join(name_pool) + ".\n"
+        "Do not invent names outside this list for any character who recurs or has dialogue.\n\n"
+    ) if name_pool else ""
+
+    relationship_line = concept.get("ANTAGONIST_RELATIONSHIP", "")
+    if relationship_line:
+        relationship_line = relationship_line + "\n\n"
+
     act_1_context = (
         f"{concept['HOOK']}\n\n"
+        f"{name_pool_line}"
+        f"{relationship_line}"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 1 RULES: {arc['act_1_rules']}\n"
@@ -506,12 +597,10 @@ def generate_full_story(seeded_idea: str | None = None) -> str:
         "ACT 1 OPENING NOTE:\n"
         "- Begin with routine continuation before the anomaly appears.\n\n"
         "ACT 1 MANDATE:\n"
-        "- Introduce an event or behavior that is unusual or socially off.\n"
-        "- The narrator notices it, but rationalizes it at the time.\n"
-        "- This is not subtle, symbolic, or 'almost-right'. It is socially or physically invalid.\n\n"
-        "ACT 1 REQUIRED ELEMENTS:\n"
-        "- One concrete action by another person that forces a physical or instinctive response.\n"
-        "- The narrator reacts by freezing, fleeing, locking, watching, or leaving.\n\n"
+        "- Introduce something that is unusual or off in a way the narrator cannot immediately explain.\n"
+        "- The narrator notices it, tries to account for it, and mostly succeeds.\n"
+        "- This is not subtle or symbolic. It is physically or socially invalid in a specific way.\n\n"
+        f"{concept['ACT1_SIGNAL_TYPE']}\n\n"
         "ACT 1 CONSTRAINTS:\n"
         "- Do NOT explain motives.\n"
         "- Do NOT resolve the situation.\n"
@@ -553,6 +642,8 @@ def generate_full_story(seeded_idea: str | None = None) -> str:
 
     act_2_context = (
         "\n\n".join(full_script.split("\n\n")[-8:]) + "\n\n"
+        f"{name_pool_line}"
+        f"{relationship_line}"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 2 RULES: {arc['act_2_rules']}\n"
@@ -605,6 +696,8 @@ def generate_full_story(seeded_idea: str | None = None) -> str:
 
     act_3_context = (
         "\n\n".join(full_script.split("\n\n")[-8:]) + "\n\n"
+        f"{name_pool_line}"
+        f"{relationship_line}"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 3 RULES: {arc['act_3_rules']}\n"
@@ -658,24 +751,22 @@ def generate_full_story(seeded_idea: str | None = None) -> str:
 
     act_4_context = (
         "\n\n".join(full_script.split("\n\n")[-8:]) + "\n\n"
+        f"{name_pool_line}"
+        f"{relationship_line}"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 4 RULES: {arc['act_4_rules']}\n"
         f"ACT 4 FOCUS: {arc['act_4_focus']}\n\n"
         "ACT 4 MANDATE:\n"
-        "- The narrator gains certainty they are unsafe, not why.\n"
-        "- This certainty comes from actions, not confessions.\n\n"
-        "ACT 4 REQUIRED EVENTS:\n"
-        "- ONE failed attempt to regain control related directly to the established anomaly.\n"
-        "- Demonstrate escalation through anticipation or denial, not new behaviors.\n\n"
+        "- The narrator acts — makes a move toward resolution, safety, or understanding.\n"
+        "- That move does not go as hoped. The situation is not resolved.\n\n"
+        f"{concept['ACT4_MISTAKE_TYPE']}\n\n"
         "ACT 4 CONSTRAINTS:\n"
-        "- No clean confrontation.\n"
-        "- The antagonist must not verbally confirm the narrator’s interpretation.\n"
-        "- Any response must minimize, deflect, or reframe.\n"
-        "- No removal of threat.\n"
-        "- No explanation of how the antagonist knows what they know.\n\n"
+        "- No clean answers from the threat — no verbal confirmation, no admission.\n"
+        "- The threat is not removed.\n"
+        "- The narrator ends this act more aware of their position, not safer.\n\n"
         "ACT 4 END STATE:\n"
-        "- The narrator knows they are being targeted.\n"
+        "- The narrator knows they are being targeted. They do not know why, or what comes next.\n"
     )
 
     act_4_text = None
@@ -711,6 +802,8 @@ def generate_full_story(seeded_idea: str | None = None) -> str:
 
     act_5_context = (
         "\n\n".join(full_script.split("\n\n")[-8:]) + "\n\n"
+        f"{name_pool_line}"
+        f"{relationship_line}"
         f"STORY ARC: {arc['name']}\n"
         f"ARC THEME: {arc['theme']}\n"
         f"ACT 5 RULES: {arc['act_5_rules']}\n"
@@ -718,13 +811,11 @@ def generate_full_story(seeded_idea: str | None = None) -> str:
         "ACT 5 MANDATE:\n"
         "- The narrator has survived and is telling this from a remove in time.\n"
         "- The threat was never fully explained or confronted.\n\n"
-        "ACT 5 REQUIRED ELEMENTS:\n"
-        "- A permanent behavioral change caused by the event.\n"
-        "- A specific place, situation, or person-type the narrator now avoids or can no longer face.\n\n"
+        f"{concept['ACT5_ENDING_TYPE']}\n\n"
         "ACT 5 ENDING RULE:\n"
-        "- End on the thing that still doesn't fit — a detail, a question, or a silence that was never explained.\n"
-        "- Do not end with acceptance or closure. End with the unresolved thing that still surfaces.\n"
-        "- The last line should leave the listener with something they can't shake.\n"
+        "- Do not end with acceptance or closure.\n"
+        "- The final image must be specific and concrete — one thing, grounded in a real moment.\n"
+        "- The last line should land and stay.\n"
     )
 
     act_5_text = None
