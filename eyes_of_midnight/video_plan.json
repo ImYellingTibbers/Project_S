@@ -1,30 +1,30 @@
 {
-  "main_title": "3 Disturbing Accounts of People Who Were Blackmailed by Former Roommates Using Personal Secrets",
-  "sanitized_title": "3_Disturbing_Accounts_of_People_Who_Were_Blackmailed_by_Former_Roommates_Using_Personal_Secrets",
-  "created_at": "2026-04-01T09:23:28.512702+00:00",
+  "main_title": "3 Chilling Stories of People Who Found Strange Messages on Their Social Media Accounts",
+  "sanitized_title": "3_Chilling_Stories_of_People_Who_Found_Strange_Messages_on_Their_Social_Media_Accounts",
+  "created_at": "2026-04-07T11:05:02.909643+00:00",
   "stories": [
     {
       "index": 0,
-      "mini_title": "\"Secrets from the Shared House\"",
-      "seed": "I lived with three roommates in a small apartment, and it wasn't until we all went our separate ways that I realized one of them had been secretly recording our conversations and now they're using those recordings to blackmail me. I've been receiving these cryptic messages with audio clips of me sharing personal secrets, and I have no idea how to stop it or what they want from me.",
-      "summary": "A person is being blackmailed by a former roommate who recorded their private conversations and is now using the recordings for leverage."
+      "mini_title": "Messages from My Ex",
+      "seed": "I thought I'd finally blocked my ex from all my social media accounts, but then I started receiving strange, cryptic messages on Facebook from a profile that looked exactly like mine. At first, I thought it was just a prank, but as the messages continued, I realized that whoever was behind the account knew my daily routine and was watching me from the parking garage at my office building.",
+      "summary": "A woman receives disturbing messages from a doppelganger social media profile that seems to be run by her ex-boyfriend, who is stalking her at work."
     },
     {
       "index": 1,
-      "mini_title": "\"The Coworker's Hidden Agenda\"",
-      "seed": "I thought my former roommate and coworker, Rachel, was just being friendly when she offered to carpool with me to our job at the marketing firm, but it turns out she had been snooping through my belongings and found some pretty incriminating documents that she's now using to blackmail me into doing her work for her. I've tried to brush it off as mere office politics, but the fact that she knows my darkest secret and is using it to manipulate me has me walking on eggshells every time we're in the office together.",
-      "summary": "A marketing professional is being blackmailed by a former roommate and coworker who discovered their secrets during their daily commute."
+      "mini_title": "The Delivery Guy",
+      "seed": "I started noticing strange, flirtatious comments on my Instagram posts from a guy who claimed to be my regular food delivery driver, and at first, I thought it was just harmless and maybe even kind of flattering. But when I started receiving packages at my home with no return address and no indication of who sent them, I realized that this delivery guy had been inside my apartment building and was leaving me gifts, watching me through the security cameras in the lobby.",
+      "summary": "A man becomes uncomfortable when his food delivery driver starts leaving him strange gifts and messages on social media, blurring the lines between customer and stalker."
     },
     {
       "index": 2,
-      "mini_title": "\"Blackmailed on the Road\"",
-      "seed": "I met my former roommate, Alex, at a truck stop on my cross-country road trip, and we ended up traveling together for a few days, but what I didn't know was that he had been rummaging through my luggage and found my journal, which contained some pretty explosive secrets that he's now using to blackmail me into giving him money and doing his bidding. I've been driving for hours with him in the passenger seat, and every time we stop for gas or food, he finds a way to slip in a threatening comment or gesture that reminds me of the power he holds over me.",
-      "summary": "A long-haul truck driver is being blackmailed by a former roommate who discovered their secrets while they were traveling together on the road."
+      "mini_title": "Hacked on the Highway",
+      "seed": "I was driving home from a road trip when I noticed that my Twitter account was blowing up with strange, threatening messages from an unknown number, and as I scrolled through them, I realized that whoever was behind the account knew my exact location and was tracking my movements on the highway. As I pulled over at a rest stop to investigate, I saw a truck parked next to me with a custom license plate that matched the handle of the Twitter account, and I knew I had to get out of there fast.",
+      "summary": "A driver's social media account is hacked by someone who is tracking their location and movements on the highway, leading to a desperate bid to escape and uncover the identity of the stalker."
     }
   ],
   "run_folders": [
-    "2026-04-01_03-23-28",
-    "2026-04-01_04-16-08",
-    "2026-04-01_05-08-34"
+    "2026-04-07_05-05-03",
+    "2026-04-07_06-03-00",
+    "2026-04-07_07-08-42"
   ]
 }

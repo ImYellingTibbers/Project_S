@@ -1,6 +1,6 @@
 {
   "total": 500,
-  "available": 484,
+  "available": 479,
   "titles": [
     {
       "id": 1,
@@ -950,7 +950,7 @@
     {
       "id": 190,
       "title": "3 Chilling Stories of People Who Found Strange Messages on Their Social Media Accounts",
-      "used": false
+      "used": true
     },
     {
       "id": 191,
@@ -1325,7 +1325,7 @@
     {
       "id": 265,
       "title": "3 Terrifying Stories of Night Shift Workers Who Were Confronted by Hostile Security Guards",
-      "used": false
+      "used": true
     },
     {
       "id": 266,
@@ -1415,7 +1415,7 @@
     {
       "id": 283,
       "title": "3 Terrifying Stories of Solo Female Travelers Who Were Approached by Strangers in Train Stations at Night",
-      "used": false
+      "used": true
     },
     {
       "id": 284,
@@ -1790,7 +1790,7 @@
     {
       "id": 358,
       "title": "3 Unsettling Stories of Rideshare Drivers Who Were Threatened by Passengers with Fake Emergency Situations",
-      "used": false
+      "used": true
     },
     {
       "id": 359,
@@ -2500,7 +2500,7 @@
     {
       "id": 500,
       "title": "3 Terrifying Stories of Men Who Were Stalked by Strangers They Met at Sports Bars",
-      "used": false
+      "used": true
     }
   ]
 }

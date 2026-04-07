@@ -96,7 +96,7 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
     if require_json:
         payload["response_format"] = {"type": "json_object"}
 
-    for attempt in range(6):
+    for attempt in range(10):
         try:
             r = requests.post(
                 OPENROUTER_URL,
@@ -108,13 +108,13 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
                 timeout=120,
             )
         except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
-            wait = 30 * (attempt + 1)
-            print(f"[IMG] Network error ({type(e).__name__}) — waiting {wait}s before retry {attempt + 1}/6")
+            wait = min(15 * (2 ** attempt), 300)
+            print(f"[IMG] Network error ({type(e).__name__}) — waiting {wait}s before retry {attempt + 1}/10")
             time.sleep(wait)
             continue
         if r.status_code in (429, 500, 502, 503, 504):
-            wait = 30 * (attempt + 1)
-            print(f"[IMG] HTTP {r.status_code} — waiting {wait}s before retry {attempt + 1}/6")
+            wait = min(15 * (2 ** attempt), 300)
+            print(f"[IMG] HTTP {r.status_code} — waiting {wait}s before retry {attempt + 1}/10")
             time.sleep(wait)
             continue
         r.raise_for_status()
@@ -122,7 +122,7 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
         if not content:
             raise RuntimeError("LLM returned empty content")
         return content.strip()
-    raise RuntimeError("call_llm failed after 6 retries")
+    raise RuntimeError("call_llm failed after 10 retries")
 
 # ============================================================
 # Run discovery
@@ -348,6 +348,9 @@ def free_comfyui_vram():
 
 
 def main():
+    # Brief pause to let the OpenRouter rate-limit window reset after generate_script.py
+    print("[IMG] Waiting 30s for API rate limit to settle...", flush=True)
+    time.sleep(30)
     start_comfyui()
     free_comfyui_vram()
     cfg = ComfyConfig()

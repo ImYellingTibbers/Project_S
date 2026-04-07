@@ -150,9 +150,8 @@ def generate_metadata(script_text: str) -> dict:
 # ============================================================
 
 FONT_CANDIDATES = [
+    str(Path(__file__).resolve().parents[3] / "assets/fonts/Anton-Regular.ttf"),
     "/usr/share/fonts/opentype/bebas-neue/BebasNeue-Bold.otf",
-    "/usr/share/fonts/opentype/bebas-neue/BebasNeue-Regular.otf",
-    "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
     "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
 ]
@@ -202,27 +201,7 @@ def _draw_outlined_text(
     draw.text((x, y), text, font=font, fill=fill)
 
 
-def compose_thumbnail(seo_title: str, run_dir: Path) -> Optional[Path]:
-    """
-    Compose a YouTube thumbnail from the first chunk image in the run.
-    Overlays the SEO title as large outlined white text in the upper-center.
-    Saves to run_dir/thumbnail.jpg. Returns path or None if source image missing.
-    """
-    # Find the first available chunk image
-    source_img = None
-    for i in range(20):
-        candidate = run_dir / "img" / f"chunk_{i:02d}.png"
-        if candidate.exists():
-            source_img = candidate
-            break
-
-    if source_img is None:
-        print("[META] No chunk image found — skipping thumbnail composition")
-        return None
-
-    img = Image.open(source_img).convert("RGB")
-
-    # Resize/crop to exact YouTube thumbnail dimensions
+def _fit_and_crop(img: Image.Image) -> Image.Image:
     img_ratio = img.width / img.height
     target_ratio = THUMB_W / THUMB_H
     if img_ratio > target_ratio:
@@ -234,53 +213,129 @@ def compose_thumbnail(seo_title: str, run_dir: Path) -> Optional[Path]:
     img = img.resize((new_w, new_h), Image.LANCZOS)
     left = (new_w - THUMB_W) // 2
     top = (new_h - THUMB_H) // 2
-    img = img.crop((left, top, left + THUMB_W, top + THUMB_H))
+    return img.crop((left, top, left + THUMB_W, top + THUMB_H))
 
-    # Darken the top half so text pops
+
+def _apply_vignette(img: Image.Image) -> Image.Image:
+    """Darken edges so text area is readable while center stays visible."""
     overlay = Image.new("RGBA", (THUMB_W, THUMB_H), (0, 0, 0, 0))
-    overlay_draw = ImageDraw.Draw(overlay)
-    gradient_height = THUMB_H // 2
-    for y in range(gradient_height):
-        alpha = int(160 * (1 - y / gradient_height))
-        overlay_draw.line([(0, y), (THUMB_W, y)], fill=(0, 0, 0, alpha))
-    img = img.convert("RGBA")
-    img = Image.alpha_composite(img, overlay).convert("RGB")
+    d = ImageDraw.Draw(overlay)
+    top_depth = int(THUMB_H * 0.50)
+    bot_depth = int(THUMB_H * 0.20)
+    side_depth = int(THUMB_W * 0.06)
+    for i in range(top_depth):
+        a = int(170 * (1 - i / top_depth) ** 1.6)
+        d.line([(0, i), (THUMB_W, i)], fill=(0, 0, 0, a))
+    for i in range(bot_depth):
+        a = int(100 * (1 - i / bot_depth) ** 1.6)
+        d.line([(0, THUMB_H - 1 - i), (THUMB_W, THUMB_H - 1 - i)], fill=(0, 0, 0, a))
+    for i in range(side_depth):
+        a = int(60 * (1 - i / side_depth) ** 1.6)
+        d.line([(i, 0), (i, THUMB_H)], fill=(0, 0, 0, a))
+        d.line([(THUMB_W - 1 - i, 0), (THUMB_W - 1 - i, THUMB_H)], fill=(0, 0, 0, a))
+    return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
 
+
+def _render_text_block(img: Image.Image, seo_title: str) -> Image.Image:
+    """
+    Split title at ':' for two-tier layout.
+    Top line: smaller white text. Bottom: large yellow with black outline + drop shadow.
+    Separated by a thin red accent bar.
+    """
     draw = ImageDraw.Draw(img)
-    padding = 80
+    padding = 90
     max_text_w = THUMB_W - padding * 2
-    display_title = seo_title.upper()
 
-    font_size = 140
-    font = _load_font(font_size)
-    lines = _wrap_text(display_title, font, max_text_w, draw)
-    while len(lines) > 3 and font_size > 70:
-        font_size -= 8
-        font = _load_font(font_size)
-        lines = _wrap_text(display_title, font, max_text_w, draw)
+    YELLOW = (255, 218, 0)
+    WHITE = (230, 230, 230)
+    ACCENT_RED = (190, 15, 15)
+    BLACK = (0, 0, 0)
 
-    sample_bbox = draw.textbbox((0, 0), "Ag", font=font)
-    line_h = sample_bbox[3] - sample_bbox[1]
-    line_gap = 18
-    block_h = len(lines) * line_h + (len(lines) - 1) * line_gap
+    if ":" in seo_title:
+        tag_raw, main_raw = seo_title.split(":", 1)
+        tag_text = tag_raw.strip().upper()
+        main_text = main_raw.strip().upper()
+    else:
+        tag_text = None
+        main_text = seo_title.upper()
 
-    y_center = int(THUMB_H * 0.28)
-    y = y_center - block_h // 2
+    tag_font = _load_font(62) if tag_text else None
 
-    for line in lines:
-        bbox = draw.textbbox((0, 0), line, font=font)
-        x = (THUMB_W - (bbox[2] - bbox[0])) // 2
-        _draw_outlined_text(
-            draw, (x, y), line, font,
-            fill=(255, 255, 255),
-            outline=(0, 0, 0),
-            outline_width=7,
-        )
-        y += line_h + line_gap
+    font_size = 120
+    main_font = _load_font(font_size)
+    main_lines = _wrap_text(main_text, main_font, max_text_w, draw)
+    while len(main_lines) > 3 and font_size > 72:
+        font_size -= 6
+        main_font = _load_font(font_size)
+        main_lines = _wrap_text(main_text, main_font, max_text_w, draw)
+
+    def lh(font):
+        bb = draw.textbbox((0, 0), "Ag", font=font)
+        return bb[3] - bb[1]
+
+    tag_lh = lh(tag_font) + 10 if tag_font else 0
+    accent_h = 5
+    accent_pad = 18
+    main_lh = lh(main_font)
+    main_gap = 12
+
+    total_h = tag_lh
+    if tag_text:
+        total_h += accent_h + accent_pad * 2
+    total_h += len(main_lines) * main_lh + max(0, len(main_lines) - 1) * main_gap
+
+    y_center = int(THUMB_H * 0.36)
+    y = y_center - total_h // 2
+
+    if tag_text and tag_font:
+        bb = draw.textbbox((0, 0), tag_text, font=tag_font)
+        x = (THUMB_W - (bb[2] - bb[0])) // 2
+        _draw_outlined_text(draw, (x, y), tag_text, tag_font,
+                            fill=WHITE, outline=BLACK, outline_width=4)
+        y += tag_lh
+        y += accent_pad
+        bar_w = int(THUMB_W * 0.38)
+        bar_x = (THUMB_W - bar_w) // 2
+        draw.rectangle([(bar_x, y), (bar_x + bar_w, y + accent_h)], fill=ACCENT_RED)
+        y += accent_h + accent_pad
+
+    for line in main_lines:
+        bb = draw.textbbox((0, 0), line, font=main_font)
+        x = (THUMB_W - (bb[2] - bb[0])) // 2
+        # Drop shadow
+        draw.text((x + 5, y + 5), line, font=main_font, fill=BLACK)
+        # Yellow with clean black outline
+        _draw_outlined_text(draw, (x, y), line, main_font,
+                            fill=YELLOW, outline=BLACK, outline_width=8)
+        y += main_lh + main_gap
+
+    return img
+
+
+def compose_thumbnail(seo_title: str, run_dir: Path) -> Optional[Path]:
+    """
+    Compose a YouTube thumbnail from a mid-story chunk image.
+    Uses chunk_03 as first preference (deeper into the story, more atmospheric).
+    Saves to run_dir/thumbnail.jpg. Returns path or None if source image missing.
+    """
+    # Prefer a mid-story chunk — more atmospheric than the establishing shot
+    source_img = None
+    for i in [3, 4, 2, 5, 1, 0]:
+        candidate = run_dir / "img" / f"chunk_{i:02d}.png"
+        if candidate.exists():
+            source_img = candidate
+            break
+
+    if source_img is None:
+        print("[META] No chunk image found — skipping thumbnail composition")
+        return None
+
+    img = _fit_and_crop(Image.open(source_img).convert("RGB"))
+    img = _apply_vignette(img)
+    img = _render_text_block(img, seo_title)
 
     out_path = run_dir / "thumbnail.jpg"
     img.save(out_path, "JPEG", quality=88, optimize=True)
-
     size_kb = out_path.stat().st_size // 1024
     print(f"[META] Thumbnail written to {out_path} ({size_kb} KB)")
     return out_path

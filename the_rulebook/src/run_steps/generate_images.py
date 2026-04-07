@@ -101,7 +101,7 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
     if require_json:
         payload["response_format"] = {"type": "json_object"}
 
-    max_attempts = 6
+    max_attempts = 10
     backoff = 15
 
     for attempt in range(1, max_attempts + 1):
@@ -117,7 +117,7 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
             )
         except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
             if attempt < max_attempts:
-                wait = min(backoff, 60)
+                wait = min(backoff, 300)
                 print(
                     f"[LLM] {type(e).__name__} — waiting {wait}s "
                     f"before retry {attempt + 1}/{max_attempts}...",
@@ -130,7 +130,7 @@ def call_llm(messages, temperature=0.4, max_tokens=800, require_json=True) -> st
 
         if r.status_code in (429, 500, 502, 503, 504):
             if attempt < max_attempts:
-                wait = min(backoff, 60)
+                wait = min(backoff, 300)
                 print(
                     f"[LLM] HTTP {r.status_code} — waiting {wait}s "
                     f"before retry {attempt + 1}/{max_attempts}...",
@@ -372,6 +372,9 @@ def free_comfyui_vram():
 
 
 def main():
+    # Brief pause to let the OpenRouter rate-limit window reset after generate_script.py
+    print("[IMG] Waiting 30s for API rate limit to settle...", flush=True)
+    time.sleep(30)
     start_comfyui()
     free_comfyui_vram()
     cfg = ComfyConfig()
